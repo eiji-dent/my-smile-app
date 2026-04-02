@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>柴田の審美歯科画像解析ツール</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="logo-area">
+        <i data-lucide="activity" class="logo-icon"></i>
+        <span class="logo-text">柴田の審美歯科<br>画像解析ツール</span>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-section">ジャンプメニュー</div>
+        <a href="#card-frontal" class="nav-item">
+          <i data-lucide="user"></i>
+          ① 正面顔貌の分析
+        </a>
+        <a href="#card-lateral" class="nav-item">
+          <i data-lucide="user-plus"></i>
+          ② 側方顔貌の分析
+        </a>
+        <a href="#card-emidline" class="nav-item">
+          <i data-lucide="align-center-horizontal"></i>
+          ③ E音 (正中・カント)
+        </a>
+        <a href="#card-esound" class="nav-item">
+          <i data-lucide="mic"></i>
+          ④ E音 (Micro-esthetics)
+        </a>
+        <a href="#card-msound" class="nav-item">
+          <i data-lucide="volume-1"></i>
+          ⑤ M音 (Rest position)
+        </a>
+        <a href="#card-ssound" class="nav-item">
+          <i data-lucide="list-music"></i>
+          ⑥ S音 (Clearance)
+        </a>
+        <a href="#card-fvsound" class="nav-item">
+          <i data-lucide="speaker"></i>
+          ⑦ F/V音 (Fricatives)
+        </a>
+        <a href="#card-intraoral" class="nav-item">
+          <i data-lucide="zoom-in"></i>
+          ⑧ 圧排時の分析
+        </a>
+        <a href="#card-horizontal-bar-front" class="nav-item">
+          <i data-lucide="minus"></i>
+          ⑨-A ホリゾンタルバー（正面）
+        </a>
+        <a href="#card-horizontal-bar-top" class="nav-item">
+          <i data-lucide="minus"></i>
+          ⑨-B ホリゾンタルバー（頭側）
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="export-pdf-btn" class="btn btn-primary w-full">
+          <i data-lucide="file-down"></i> PDFレポートを出力
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area (Scrollable) -->
+    <main class="main-content" id="main-scroll-area">
+      <header class="topbar">
+        <div class="patient-info">
+          <h2>患者ケース (包括的分析)</h2>
+          <span class="badge">フルスクロールビュー</span>
+        </div>
+      </header>
+
+      <div class="workspace-scroll">
+
+        <!-- CARD 1: Frontal -->
+        <div class="analysis-card" id="card-frontal" data-phase="frontal">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>① 正面顔貌の分析 (Frontal Macro-esthetics)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <!-- Toolbar for Frontal -->
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-frontal" id="tool-interpupillary" value="interpupillary"
+                  class="tool-radio">
+                <label for="tool-interpupillary" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線を引く</label>
+
+                <input type="radio" name="tool-frontal" id="tool-midline" value="midline" class="tool-radio">
+                <label for="tool-midline" class="tool-label"><i data-lucide="align-center"></i> 顔面正中線を引く</label>
+
+                <input type="radio" name="tool-frontal" id="tool-commissural" value="commissural" class="tool-radio">
+                <label for="tool-commissural" class="tool-label"><i data-lucide="smile"></i> 口角線を引く</label>
+
+                <input type="radio" name="tool-frontal" id="tool-vertical-prop" value="vertical-proportions"
+                  class="tool-radio">
+                <label for="tool-vertical-prop" class="tool-label"><i data-lucide="activity"></i> 垂直計測 (6点)</label>
+              </div>
+              <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
+                <button class="btn btn-primary rotate-inter-btn" data-phase="frontal" title="瞳孔間線に合わせる"><i
+                    data-lucide="align-horizontal-justify-center"></i> 瞳孔間線に合わせる</button>
+                <button class="btn btn-primary rotate-mid-btn" data-phase="frontal" title="顔貌正中に合わせる"><i
+                    data-lucide="align-vertical-justify-center"></i> 顔貌正中に合わせる</button>
+              </div>
+            </div>
+            <div class="horizontal-card-layout">
+              <!-- DropZone + Canvas Area -->
+              <div class="canvas-wrapper drop-zone">
+                <canvas class="analysis-canvas"></canvas>
+                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                  value="100">
+                <div class="canvas-placeholder">
+                  <i data-lucide="camera-off"></i>
+                  <p>正面画像をドロップ</p>
+                </div>
+              </div>
+              <!-- Stats -->
+              <div class="quick-stats frontal-stats">
+                <div class="stat-group">
+                  <div class="stat-item">
+                    <span class="stat-label">正中線と瞳孔間線のズレ</span>
+                    <span class="stat-value cant-value">--°</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">口角線と瞳孔間線のズレ</span>
+                    <span class="stat-value dev-value">--°</span>
+                  </div>
+                </div>
+
+                <div class="stat-group prop-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">顔面3等分法</span>
+                    <span class="stat-value prop-thirds-value">-- : -- : --</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">ウィリス法 (Willis)</span>
+                    <span class="stat-value prop-willis-value">--</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">下顔面の比率（鼻下口唇：口唇オトガイ）</span>
+                    <span class="stat-value prop-lower-value">1 : --</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Floating Tooltip for Multi-point Tool -->
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 2: Lateral -->
+        <div class="analysis-card" id="card-lateral" data-phase="lateral">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>② 側方顔貌の分析 (Lateral Macro-esthetics)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <!-- Toolbar for Lateral -->
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-lateral" id="tool-eline" value="eline" class="tool-radio">
+                <label for="tool-eline" class="tool-label"><i data-lucide="ruler"></i> E-line を引く (4点計測)</label>
+
+                <input type="radio" name="tool-lateral" id="tool-nla" value="nla" class="tool-radio">
+                <label for="tool-nla" class="tool-label"><i data-lucide="split-square-vertical"></i> 鼻唇角 (NLA)
+                  (3点計測)</label>
+
+                <input type="radio" name="tool-lateral" id="tool-convexity" value="convexity" class="tool-radio">
+                <label for="tool-convexity" class="tool-label"><i data-lucide="align-start-vertical"></i> 側貌凸型度
+                  (Convexity) (3点計測)</label>
+              </div>
+            </div>
+            <div class="horizontal-card-layout">
+              <!-- DropZone + Canvas Area -->
+              <div class="canvas-wrapper drop-zone">
+                <canvas class="analysis-canvas"></canvas>
+                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                  value="100">
+                <div class="canvas-placeholder">
+                  <i data-lucide="camera-off"></i>
+                  <p>側方（横顔）画像をドロップ</p>
+                </div>
+              </div>
+              <!-- Stats Table -->
+              <div class="quick-stats lateral-stats">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>日本人平均</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>側貌凸型度 (Angle of Convexity)</strong></td>
+                      <td class="convexity-val">--</td>
+                      <td>--</td>
+                      <td>--</td>
+                    </tr>
+                    <tr>
+                      <td><strong>上唇 (Upper Lip)</strong></td>
+                      <td class="ulip-val">-- mm</td>
+                      <td>-2.5 mm</td>
+                      <td>-3.5 〜 -5.5 mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>下唇 (Lower Lip)</strong></td>
+                      <td class="llip-val">-- mm</td>
+                      <td>+0.9 mm</td>
+                      <td>0 〜 -2.0 mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>鼻唇角 (NLA)</strong></td>
+                      <td class="nla-val">-- °</td>
+                      <td>80 〜 100°</td>
+                      <td>90 〜 110°</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※現在は画像のピクセル数に基づく仮の表示であり、正確なミリ表示には「実寸キャリブレーション」が必要です（正面の結果を引き継ぐことも可能です）。</div>
+              </div>
+            </div>
+            <!-- Silhouette Hint -->
+            <div class="note-text" style="padding: 1rem 1.5rem 0.5rem; font-size: 0.8em; color: var(--text-muted); font-style: italic;">
+              ※AI自動解析（シルエット抽出）を使用する場合、なるべく背景は無地（白壁など）で、顎の下から首元まで鮮明に写るように撮影してください。
+            </div>
+            <!-- Floating Tooltip for Multi-point Tool -->
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 3: E-Sound Midline/Canting (NEW) -->
+        <div class="analysis-card" id="card-emidline" data-phase="e-midline">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>③ E音 発音時 (正中・傾斜パラメーター)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-emidline" id="tool-fmidline" value="f-midline" class="tool-radio">
+                <label for="tool-fmidline" class="tool-label"><i data-lucide="move-vertical"></i> 顔面正中線</label>
+
+                <input type="radio" name="tool-emidline" id="tool-dmidline" value="d-midline" class="tool-radio">
+                <label for="tool-dmidline" class="tool-label"><i data-lucide="list"></i> 歯列正中線</label>
+
+                <input type="radio" name="tool-emidline" id="tool-interpupillary-e" value="interpupillary-e"
+                  class="tool-radio">
+                <label for="tool-interpupillary-e" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線を引く</label>
+
+                <input type="radio" name="tool-emidline" id="tool-incisal-edge" value="incisal-edge" class="tool-radio">
+                <label for="tool-incisal-edge" class="tool-label"><i data-lucide="scissors"></i> 前歯切端線を引く</label>
+              </div>
+              <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
+                <button class="btn btn-primary rotate-inter-btn" data-phase="e-sound" title="瞳孔間線に合わせる"><i
+                    data-lucide="align-horizontal-justify-center"></i> 瞳孔間線に合わせる</button>
+                <button class="btn btn-primary rotate-mid-btn" data-phase="e-sound" title="顔貌正中に合わせる"><i
+                    data-lucide="align-vertical-justify-center"></i> 顔貌正中に合わせる</button>
+              </div>
+            </div>
+
+            <div class="horizontal-card-layout">
+              <div class="canvas-wrapper drop-zone">
+                <canvas class="analysis-canvas"></canvas>
+                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                  value="100">
+                <div class="canvas-placeholder">
+                  <i data-lucide="camera-off"></i>
+                  <p>顔全体と前歯が写ったE音画像のアップ画像をドロップ</p>
+                </div>
+              </div>
+
+              <div class="quick-stats lateral-stats">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>正中偏位（Midline Deviation）</strong></td>
+                      <td class="emid-dev-value">-- mm</td>
+                      <td>0~2mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>正中の傾斜</strong></td>
+                      <td class="emid-cant-value">-- °</td>
+                      <td>0〜4°</td>
+                    </tr>
+                    <tr>
+                      <td><strong>切端平面の傾斜</strong></td>
+                      <td class="emid-cant-new-value">-- °</td>
+                      <td>0〜1°</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※顔面正中線に対する歯列の倒れ込み（傾き）を評価します。平行なズレは許容されますが、傾きは非常に目立ちます。</div>
+              </div>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 4: E-Sound & Mini-esthetics -->
+        <div class="analysis-card" id="card-esound" data-phase="e-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>④ E音 / フルスマイル の分析 (Mini-esthetics)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-esound" id="tool-arc" value="smile-arc" class="tool-radio">
+                <label for="tool-arc" class="tool-label"><i data-lucide="smile-plus"></i> スマイルアーク (6点)</label>
+
+                <input type="radio" name="tool-esound" id="tool-corridor" value="corridor" class="tool-radio">
+                <label for="tool-corridor" class="tool-label"><i data-lucide="split-square-horizontal"></i> バッカルコリドー
+                  (4点)</label>
+
+                <input type="radio" name="tool-esound" id="tool-gingival" value="gingival" class="tool-radio">
+                <label for="tool-gingival" class="tool-label"><i data-lucide="move-vertical"></i> 歯肉露出量・切縁 (4点)</label>
+              </div>
+            </div>
+
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder">
+                <i data-lucide="camera-off"></i>
+                <p>スマイル時・E音発音時のアップ画像をドロップ</p>
+              </div>
+            </div>
+
+            <!-- Dynamic Stats Tables Container -->
+            <div class="quick-stats lateral-stats" id="esound-stats-container">
+
+              <!-- Table: Smile Arc -->
+              <div id="table-arc" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>スマイルアーク (Smile Arc)</strong></td>
+                      <td class="arc-val">-- (未判定)</td>
+                      <td>Consonant (下唇と平行なカーブ)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※Flat（平坦）やReverse（上に凸の逆カーブ）は加齢や咬耗の印象を与え、視覚的違和感を高めます。</div>
+              </div>
+
+              <!-- Table: Buccal Corridor -->
+              <div id="table-corridor" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>バッカルコリドー（Buccal Corridor）</strong></td>
+                      <td class="corridor-val">-- %</td>
+                      <td>1〜14%</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※スマイル幅（口角間）に対する暗い空隙の比率。広すぎると貧弱、狭すぎると義歯様(Denture look)に見えます。</div>
+              </div>
+
+              <!-- Table: Gingival/Vertical -->
+              <div id="table-gingival" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>歯肉露出量（Gingival Display )</strong></td>
+                      <td class="gingival-val">-- mm</td>
+                      <td>-2〜0 mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>切縁位置 (E音 上下唇の中間比)</strong></td>
+                      <td class="incisal-eb-val">-- %</td>
+                      <td>50% (ちょうど中間)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※歯肉露出が1.0mmでも専門家は非審美的と判定します。E音時の切縁は「上下の口唇のちょうど中心」が至適です。</div>
+              </div>
+
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 5: M-Sound -->
+        <div class="analysis-card" id="card-msound" data-phase="m-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑤ M音 安静位の分析 (Rest position)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-msound" id="tool-mmeasure" value="mmeasure" class="tool-radio">
+                <label for="tool-mmeasure" class="tool-label"><i data-lucide="ruler"></i> 安静時露出量を測る</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder">
+                <i data-lucide="camera-off"></i>
+                <p>M音(安静位)のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>安静時露出量 (Resting display)</strong></td>
+                    <td class="mmeasure-val">-- mm</td>
+                    <td>1.0 〜 3.0 mm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 6: S-Sound -->
+        <div class="analysis-card" id="card-ssound" data-phase="s-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑥ S音 発音時の分析 (Speaking clearance)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-ssound" id="tool-smeasure" value="smeasure" class="tool-radio">
+                <label for="tool-smeasure" class="tool-label"><i data-lucide="ruler"></i> Sクリアランスを測る</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder">
+                <i data-lucide="camera-off"></i>
+                <p>S音発音時のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Sクリアランス (Closest speaking space)</strong></td>
+                    <td class="smeasure-val">-- mm</td>
+                    <td>1.0 〜 1.5 mm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 7: F/V-Sound -->
+        <div class="analysis-card" id="card-fvsound" data-phase="fv-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑦ F/V音 発音時の分析 (Fricatives)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-fvsound" id="tool-fvmeasure" value="fvmeasure" class="tool-radio">
+                <label for="tool-fvmeasure" class="tool-label"><i data-lucide="ruler"></i> D&Wラインとの距離</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder">
+                <i data-lucide="camera-off"></i>
+                <p>F/V音発音時のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>ドライ・ウェットラインとの距離</strong></td>
+                    <td class="fvmeasure-val">-- mm</td>
+                    <td>0 mm (接触が理想)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 8: Retracted -->
+        <div class="analysis-card" id="card-intraoral" data-phase="intraoral">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑧ 圧排時の分析 (Intraoral Micro-esthetics)</h3>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-retracted" id="tool-wl" value="wl-ratio" class="tool-radio">
+                <label for="tool-wl" class="tool-label"><i data-lucide="box-select"></i> W/L 比率 (4点)</label>
+
+                <input type="radio" name="tool-retracted" id="tool-red" value="red-prop" class="tool-radio">
+                <label for="tool-red" class="tool-label"><i data-lucide="bar-chart"></i> 幅径バランス (7点)</label>
+
+                <input type="radio" name="tool-retracted" id="tool-pink" value="pink-esth" class="tool-radio">
+                <label for="tool-pink" class="tool-label"><i data-lucide="heart"></i> ピンク・エステティック (6点)</label>
+
+                <input type="radio" name="tool-retracted" id="tool-axial" value="axial-incl" class="tool-radio">
+                <label for="tool-axial" class="tool-label"><i data-lucide="scissors"></i> 歯冠傾斜度 (14点)</label>
+
+                <input type="radio" name="tool-retracted" id="tool-papilla" value="papilla" class="tool-radio">
+                <label for="tool-papilla" class="tool-label"><i data-lucide="align-horizontal-distribute-center"></i>
+                  歯間乳頭の左右差 (5点)</label>
+              </div>
+              <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
+                <button class="btn btn-primary apply-p3-mid-btn" title="Phase3の顔貌正中に合わせる"><i
+                    data-lucide="scan-line"></i> 顔貌正中に合わせる (Phase 3基準)</button>
+              </div>
+            </div>
+
+            <!-- DropZone + Canvas Area -->
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder">
+                <i data-lucide="camera-off"></i>
+                <p>圧排時の正面アップ画像をドロップ</p>
+              </div>
+            </div>
+
+            <!-- Dynamic Stats Tables Container -->
+            <div class="quick-stats lateral-stats" id="retracted-stats-container">
+
+              <!-- Table: W/L Ratio -->
+              <div id="table-wl" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>W/L 歯冠プロポーション</strong></td>
+                      <td class="wl-r-val">-- %</td>
+                      <td class="wl-l-val">-- %</td>
+                      <td>75% 〜 85% (80%基準)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>プロファイル診断</strong></td>
+                      <td class="wl-r-profile">--</td>
+                      <td class="wl-l-profile">--</td>
+                      <td>細長(女性的) 〜 幅広(男性的)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※中切歯の幅(Width)と長さ(Length)の比率。セントラル・ドミナンスの要です。</div>
+              </div>
+
+              <!-- Table: RED / Golden Proportion (Expanded 7-points) -->
+              <div id="table-red" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側バランス (中：側：犬)</th>
+                      <th>左側バランス (中：側：犬)</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>RED Proportion</strong></td>
+                      <td class="red-r-val">-- %</td>
+                      <td class="red-l-val">-- %</td>
+                      <td>標準: 70%, 長顔: 62%, 短顔: 80%</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Golden Percentage</strong></td>
+                      <td class="gp-r-val">-- : -- : --</td>
+                      <td class="gp-l-val">-- : -- : --</td>
+                      <td>25.0 : 15.0 : 10.0</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中切歯：側切歯：犬歯比率</strong></td>
+                      <td class="silver-r-val">-- : 1.00 : --</td>
+                      <td class="silver-l-val">-- : 1.00 : --</td>
+                      <td>黄金比(1.618:1:0.618) 　白銀比(1.414:1:0.707)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中切歯 幅の左右差</strong></td>
+                      <td colspan="2" class="red-diff1-val" style="text-align: center;">-- mm</td>
+                      <td>0 mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯 幅の左右差</strong></td>
+                      <td colspan="2" class="red-diff2-val" style="text-align: center;">-- mm</td>
+                      <td>2 mm</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※正面から見た「見かけの幅」の比率です。左右の対称性も同時に確認します。</div>
+              </div>
+
+              <!-- Table: Pink Esthetics (Expanded 6-points) -->
+              <div id="table-pink" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>左右中切歯 GZPの高低差</strong></td>
+                      <td class="pz-asym-val">-- mm</td>
+                      <td>1mm以下</td>
+                    </tr>
+                    <tr>
+                      <td><strong>左右犬歯 GZPの高低差</strong></td>
+                      <td class="pz-canine-val">-- mm</td>
+                      <td>2mm以下</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯 GZL (垂直レベル)</strong></td>
+                      <td class="pz-level-val">-- (平均) mm</td>
+                      <td>中+犬ラインより約1.0mm 歯冠側</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※中・側・犬のゼニス（歯肉最深点）が描くHigh-Low-Highラインと左右対称性を診査します。</div>
+              </div>
+
+              <!-- Table: Axial Inclination (NEW) -->
+              <div id="table-axial" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側の傾き</th>
+                      <th>左側の傾き</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>中切歯の傾斜度 (Axial tilt 1)</strong></td>
+                      <td class="ax1-r-val">-- °</td>
+                      <td class="ax1-l-val">-- °</td>
+                      <td>約 3° の倒れ込み</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯の傾斜度 (Axial tilt 2)</strong></td>
+                      <td class="ax2-r-val">-- °</td>
+                      <td class="ax2-l-val">-- °</td>
+                      <td>約 5° の倒れ込み</td>
+                    </tr>
+                    <tr>
+                      <td><strong>犬歯の傾斜度 (Axial tilt 3)</strong></td>
+                      <td class="ax3-r-val">-- °</td>
+                      <td class="ax3-l-val">-- °</td>
+                      <td>約 8° の倒れ込み</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※正中から遠ざかるほど歯冠軸の傾きが強くなるのが美しい配列の条件です。</div>
+              </div>
+
+              <!-- Table: Papilla (NEW) -->
+              <div id="table-papilla" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>犬・側間の乳頭レベル 左右差</strong></td>
+                      <td class="pap-dist-val">-- mm</td>
+                      <td>2.0mm以下</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側・中間の乳頭レベル 左右差</strong></td>
+                      <td class="pap-prox-val">-- mm</td>
+                      <td>2.0mm以下</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※ブラックトライアングル頂点部（歯間乳頭）の高さの左右完全非対称がないかを診査します。</div>
+              </div>
+            </div>
+
+            <!-- Lab Communication Form -->
+            <div class="lab-form-container">
+              <h3><i data-lucide="clipboard-list"></i> 技工指示用 マイクロエステティック評価</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>歯冠形態 (Morphology)</label>
+                  <div class="morph-options">
+                    <label class="morph-label">
+                      <input type="radio" name="morphology" value="ovoid">
+                      <span class="morph-icon ovoid"></span>
+                      1. Ovoid（オボイド）
+                    </label>
+                    <label class="morph-label">
+                      <input type="radio" name="morphology" value="tapered">
+                      <span class="morph-icon tapered"></span>
+                      2. Tapered（テーパード）
+                    </label>
+                    <label class="morph-label">
+                      <input type="radio" name="morphology" value="square">
+                      <span class="morph-icon square"></span>
+                      3. Square（スクエア）
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>表面性状 (Texture)</label>
+                  <div class="checkbox-group">
+                    <label><input type="checkbox" value="smooth" class="texture-cb"> 滑沢 (Smooth)</label>
+                    <label><input type="checkbox" value="horizontal" class="texture-cb"> 横走条線 (Horizontal lines)</label>
+                    <label><input type="checkbox" value="vertical" class="texture-cb"> 縦走溝 (Vertical lobes)</label>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>フェノタイプ (Phenotype)</label>
+                  <div class="radio-group">
+                    <label><input type="radio" name="phenotype" value="thick"> 厚い (Thick)</label>
+                    <label><input type="radio" name="phenotype" value="thin"> 薄い (Thin)</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>歯周組織の評価</label>
+                  <div class="checkbox-group">
+                    <label><input type="checkbox" value="gingivitis" class="perio-cb"> 歯肉炎</label>
+                    <label><input type="checkbox" value="enlargement" class="perio-cb"> 歯肉肥大</label>
+                    <label><input type="checkbox" value="recession" class="perio-cb"> 歯肉退縮</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tooltip -->
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 9-A: Horizontal Bar (正面) -->
+        <div class="analysis-card" id="card-horizontal-bar-front" data-phase="horizontal-bar-front">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Phase 9-A</div>
+              <h2>ホリゾンタルバー（正面像）</h2>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-hbar-front" id="tool-hbar-ref-front" value="hbar-ref" class="tool-radio">
+                <label for="tool-hbar-ref-front" class="tool-label"><i data-lucide="minus"></i> 水平基準プロット</label>
+
+                <input type="radio" name="tool-hbar-front" id="tool-hbar-bar-front" value="hbar-bar" class="tool-radio">
+                <label for="tool-hbar-bar-front" class="tool-label"><i data-lucide="minus"></i> ホリゾンタルバーのプロット</label>
+              </div>
+              <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
+                <button class="btn btn-primary rotate-hbar-ref-btn"><i
+                    data-lucide="align-horizontal-justify-center"></i> 水平基準にあわせる</button>
+              </div>
+            </div>
+
+            <div class="horizontal-card-layout">
+              <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
+                <canvas class="analysis-canvas"></canvas>
+                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                  value="100">
+                <div class="canvas-placeholder">
+                  <i data-lucide="camera-off"></i>
+                  <p>正面からのホリゾンタルバー画像をドロップ</p>
+                </div>
+              </div>
+
+              <div class="quick-stats lateral-stats">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>バーの傾斜角</strong></td>
+                      <td class="hbar-cant-val">-- °</td>
+                      <td>水平（0°）が技工上の基準</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※正面から撮影したホリゾンタルバーの水平基準を確認します。</div>
+              </div>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 9-B: Horizontal Bar (頭側) -->
+        <div class="analysis-card" id="card-horizontal-bar-top" data-phase="horizontal-bar-top">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Phase 9-B</div>
+              <h2>ホリゾンタルバー（頭側像）</h2>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>基準点・基準線を表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector">
+                <input type="radio" name="tool-hbar-top" id="tool-hbar-ref-top" value="hbar-ref" class="tool-radio">
+                <label for="tool-hbar-ref-top" class="tool-label"><i data-lucide="minus"></i> 水平基準プロット</label>
+
+                <input type="radio" name="tool-hbar-top" id="tool-hbar-bar-top" value="hbar-bar" class="tool-radio">
+                <label for="tool-hbar-bar-top" class="tool-label"><i data-lucide="minus"></i> ホリゾンタルバーのプロット</label>
+              </div>
+              <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
+                <button class="btn btn-primary rotate-hbar-ref-btn"><i
+                    data-lucide="align-horizontal-justify-center"></i> 水平基準にあわせる</button>
+              </div>
+            </div>
+
+            <div class="horizontal-card-layout">
+              <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
+                <canvas class="analysis-canvas"></canvas>
+                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                  value="100">
+                <div class="canvas-placeholder">
+                  <i data-lucide="camera-off"></i>
+                  <p>頭側（上方）からのホリゾンタルバー画像をドロップ</p>
+                </div>
+              </div>
+
+              <div class="quick-stats lateral-stats">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>測定値</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>バーの傾斜角</strong></td>
+                      <td class="hbar-cant-val">-- °</td>
+                      <td>水平（0°）が技工上の基準</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※頭側（上方）から撮影したホリゾンタルバーの水平基準を確認します。</div>
+              </div>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- Bottom spacing for scrolling -->
+        <div style="height: 100px;"></div>
+
+      </div>
+    </main>
+
+    <!-- Right Side Panel (Fixed Tools & Loupe) -->
+    <aside class="right-panel">
+      <div class="panel-section">
+        <h4><i data-lucide="zoom-in"></i> 拡大ポート (Loupe)</h4>
+        <p class="panel-desc">マウスポインター周辺を精密に拡大します。<br><span style="font-size:11px;color:#888;">※
+            プロット点に近づくとドラッグで微調整可能です。</span></p>
+        <div id="loupe-container" class="loupe fixed-loupe hidden">
+          <canvas id="loupe-canvas" width="160" height="160"></canvas>
+          <div class="loupe-crosshair"></div>
+        </div>
+      </div>
+
+      <div class="panel-section instruction-section">
+        <h4><i data-lucide="info"></i> 操作ガイド</h4>
+        <div id="global-tooltip" class="tooltip-text"
+          style="font-weight: bold; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px; margin-bottom: 8px;">
+          画像をドロップしてツールを選択してください。
+        </div>
+        <div id="aesthetic-explanation" class="tooltip-text"
+          style="color: #475569; font-size: 0.85rem; line-height: 1.5;">
+          <!-- ここにツールの審美的意義が表示されます -->
+          ツールの審美的意義と評価基準がここに表示されます。
+        </div>
+      </div>
+
+
+    </aside>
+
+
+    <div id="pdf-loading-overlay" class="hidden">
+      <div class="spinner"></div>
+      <div class="loading-text">PDFを生成しています...</div>
+      <div class="loading-progress" style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">Phase <span
+          id="pdf-progress-step">0</span> / 10</div>
+    </div>
+  </div> <!-- end .app-container -->
+  <!-- PDF Generation Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

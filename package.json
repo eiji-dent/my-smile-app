@@ -1,0 +1,17 @@
+{
+  "name": "aesthetic-dentistry-analysis-tool",
+  "version": "1.0.0",
+  "description": "Aesthetic Dentistry Analysis Tool using MediaPipe Face Mesh",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve ."
+  },
+  "keywords": [
+    "aesthetic",
+    "dentistry",
+    "face-mesh",
+    "mediapipe"
+  ],
+  "author": "Shibata",
+  "license": "MIT"
+}
