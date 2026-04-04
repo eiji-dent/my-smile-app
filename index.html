@@ -4,17 +4,115 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>柴田の審美歯科画像解析ツール</title>
+  <title>歯科審美画像解析ツール [Precision Core Beta]</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Critical blocking styles for Modal */
+    #privacy-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); /* Deep slate with overlay */
+      backdrop-filter: blur(12px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #privacy-modal.hidden { display: none; }
+    
+    #auth-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #0f172a; /* Solid dark for auth gate */
+      z-index: 20000; /* Higher than privacy modal */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #auth-modal.hidden { display: none; }
+  </style>
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
+  <!-- Authentication Modal (Password Gate) -->
+  <div id="auth-modal">
+    <div class="auth-card">
+      <div class="auth-header">
+        <i data-lucide="lock" class="lock-icon"></i>
+        <h2>関係者専用アクセス認証</h2>
+      </div>
+      <div class="auth-body">
+        <p class="auth-intro">本ツールは、研究および評価目的のベータ版プロトタイプです。アクセスには専用パスワードが必要です。</p>
+        <div class="auth-field">
+          <label for="auth-password">アクセスパスワード</label>
+          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="off">
+        </div>
+        <div id="auth-error-msg" class="auth-error hidden">
+          <i data-lucide="alert-circle"></i> パスワードが正しくありません。
+        </div>
+        <div class="expiry-notice">
+          <p>【重要】利用期限通知</p>
+          <span>ベータ版の使用可能期間は <strong>2026年5月31日まで</strong> です。</span>
+        </div>
+        <div id="expiry-error-msg" class="auth-error hidden">
+          <i data-lucide="clock"></i> 利用期限（2026年5月末）が終了しています。
+        </div>
+      </div>
+      <div class="auth-footer">
+        <button id="auth-submit-btn" class="auth-submit-btn">認証する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy & Terms Modal (Beta Disclaimer) -->
+  <div id="privacy-modal">
+    <div class="privacy-card">
+      <div class="privacy-header">
+        <i data-lucide="shield-check" class="shield-icon"></i>
+        <h2>【重要】ベータ版利用に関する規約と注意事項</h2>
+      </div>
+      <div class="privacy-body">
+        <section>
+          <h3>1. 画像データの取り扱い</h3>
+          <p>本アプリで行う解析はすべて<strong>ブラウザ内（ローカル）で完結</strong>し、画像データが外部サーバーへ送信・保存されることはありません。患者様の個人情報（氏名等が写り込んだ画像など）はアップロードしないでください。</p>
+        </section>
+        <section>
+          <h3>2. 知的財産権と著作権</h3>
+          <p>本アプリの独自機能、アルゴリズム、デザイン、およびユーザーインターフェースを無断で模倣・複製することは、<strong>著作権および知的財産権の侵害</strong>に該当し、法的措置の対象となる場合があります。</p>
+        </section>
+        <section>
+          <h3>3. 免責事項</h3>
+          <p>本アプリは評価・開発中のベータ版です。解析結果は補助的な参考値であり、最終的な診断および決定は臨床的な知見に基づき歯科医師の責任において行ってください。</p>
+        </section>
+        <section class="feedback-info">
+          <h3>4. 不具合報告・フィードバック</h3>
+          <p>動作不良や改善要望がございましたら、お手数ですが以下のInstagram DMまでお知らせください。</p>
+          <a href="https://www.instagram.com/shibata_dds?igsh=Y2ljdHB4em9hZmoz&utm_source=qr" target="_blank" class="insta-link">
+            <i data-lucide="instagram"></i> @shibata_dds
+          </a>
+        </section>
+      </div>
+      <div class="privacy-footer">
+        <button id="agree-button" class="agree-btn">同意して利用を開始する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG Filter for Shade Correction -->
+  <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true">
+    <filter id="shade-auto-filter" color-interpolation-filters="sRGB">
+      <feColorMatrix id="shade-auto-matrix" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" />
+    </filter>
+  </svg>
+
   <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar">
@@ -57,13 +155,10 @@
           <i data-lucide="zoom-in"></i>
           ⑧ 圧排時の分析
         </a>
-        <a href="#card-horizontal-bar-front" class="nav-item">
-          <i data-lucide="minus"></i>
-          ⑨-A ホリゾンタルバー（正面）
-        </a>
-        <a href="#card-horizontal-bar-top" class="nav-item">
-          <i data-lucide="minus"></i>
-          ⑨-B ホリゾンタルバー（頭側）
+        <a href="#card-lab-tools" class="nav-item">
+          <i data-lucide="wrench"></i>
+          技工用ツール
+          <span class="lab-marker">LAB</span>
         </a>
       </nav>
 
@@ -96,7 +191,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -187,7 +282,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -284,7 +379,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -345,7 +440,7 @@
                     </tr>
                     <tr>
                       <td><strong>正中の傾斜</strong></td>
-                      <td class="emid-cant-value">-- °</td>
+                      <td class="emid-dev-value">-- °</td>
                       <td>0〜4°</td>
                     </tr>
                     <tr>
@@ -373,7 +468,7 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn btn-primary ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -858,221 +953,348 @@
                   <thead>
                     <tr>
                       <th>評価項目</th>
-                      <th>測定値</th>
+                      <th>測定値 (遠心)</th>
+                      <th>測定値 (近心)</th>
                       <th>基準値</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>犬・側間の乳頭レベル 左右差</strong></td>
+                      <td><strong>Papilla Proportion</strong></td>
                       <td class="pap-dist-val">-- mm</td>
-                      <td>2.0mm以下</td>
-                    </tr>
-                    <tr>
-                      <td><strong>側・中間の乳頭レベル 左右差</strong></td>
                       <td class="pap-prox-val">-- mm</td>
-                      <td>2.0mm以下</td>
+                      <td>1.5 〜 2.0 mm (黒い三角形の回避)</td>
                     </tr>
                   </tbody>
                 </table>
-                <div class="note-text">※ブラックトライアングル頂点部（歯間乳頭）の高さの左右完全非対称がないかを診査します。</div>
+                <div class="note-text">※歯間乳頭の高さと位置を評価します。低すぎる（または欠落している）場合は、補綴的な対策が必要です。</div>
               </div>
-            </div>
 
-            <!-- Lab Communication Form -->
-            <div class="lab-form-container">
-              <h3><i data-lucide="clipboard-list"></i> 技工指示用 マイクロエステティック評価</h3>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>歯冠形態 (Morphology)</label>
-                  <div class="morph-options">
-                    <label class="morph-label">
-                      <input type="radio" name="morphology" value="ovoid">
-                      <span class="morph-icon ovoid"></span>
-                      1. Ovoid（オボイド）
-                    </label>
-                    <label class="morph-label">
-                      <input type="radio" name="morphology" value="tapered">
-                      <span class="morph-icon tapered"></span>
-                      2. Tapered（テーパード）
-                    </label>
-                    <label class="morph-label">
-                      <input type="radio" name="morphology" value="square">
-                      <span class="morph-icon square"></span>
-                      3. Square（スクエア）
-                    </label>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label>表面性状 (Texture)</label>
-                  <div class="checkbox-group">
-                    <label><input type="checkbox" value="smooth" class="texture-cb"> 滑沢 (Smooth)</label>
-                    <label><input type="checkbox" value="horizontal" class="texture-cb"> 横走条線 (Horizontal lines)</label>
-                    <label><input type="checkbox" value="vertical" class="texture-cb"> 縦走溝 (Vertical lobes)</label>
-                  </div>
-                </div>
-              </div>
-              <div class="form-row">
-                <div class="form-group">
-                  <label>フェノタイプ (Phenotype)</label>
-                  <div class="radio-group">
-                    <label><input type="radio" name="phenotype" value="thick"> 厚い (Thick)</label>
-                    <label><input type="radio" name="phenotype" value="thin"> 薄い (Thin)</label>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label>歯周組織の評価</label>
-                  <div class="checkbox-group">
-                    <label><input type="checkbox" value="gingivitis" class="perio-cb"> 歯肉炎</label>
-                    <label><input type="checkbox" value="enlargement" class="perio-cb"> 歯肉肥大</label>
-                    <label><input type="checkbox" value="recession" class="perio-cb"> 歯肉退縮</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Tooltip -->
+            </div> <!-- end retracted-stats-container -->
             <div class="instruction-tooltip hidden"></div>
-          </div>
-        </div>
+          </div> <!-- end card-content -->
+        </div> <!-- end analysis-card (Phase 8) -->
 
-        <!-- CARD 9-A: Horizontal Bar (正面) -->
-        <div class="analysis-card" id="card-horizontal-bar-front" data-phase="horizontal-bar-front">
+        <!-- CARD: Lab Tools (Consolidated Phase 9 & 10) -->
+        <div class="analysis-card lab-card" id="card-lab-tools">
           <div class="card-header">
             <div class="card-title-group">
-              <div class="step-badge">Phase 9-A</div>
-              <h2>ホリゾンタルバー（正面像）</h2>
-              <label class="plot-toggle">
-                <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
-              </label>
+              <div class="step-badge">Lab Tools</div>
+              <h2>技工用ツール <span class="lab-badge">技工指示</span></h2>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
-              <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
-                <input type="file" class="file-input" accept="image/*" hidden>
-              </label>
+              <!-- Global actions -->
             </div>
           </div>
-          <div class="card-content">
-            <div class="horizontal-toolbar">
-              <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
-                <input type="radio" name="tool-hbar-front" id="tool-hbar-ref-front" value="hbar-ref" class="tool-radio">
-                <label for="tool-hbar-ref-front" class="tool-label"><i data-lucide="minus"></i> 水平基準プロット</label>
-
-                <input type="radio" name="tool-hbar-front" id="tool-hbar-bar-front" value="hbar-bar" class="tool-radio">
-                <label for="tool-hbar-bar-front" class="tool-label"><i data-lucide="minus"></i> ホリゾンタルバーのプロット</label>
-              </div>
-              <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
-                <button class="btn btn-primary rotate-hbar-ref-btn"><i
-                    data-lucide="align-horizontal-justify-center"></i> 水平基準にあわせる</button>
-              </div>
-            </div>
-
-            <div class="horizontal-card-layout">
-              <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
-                <canvas class="analysis-canvas"></canvas>
-                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
-                  value="100">
-                <div class="canvas-placeholder">
-                  <i data-lucide="camera-off"></i>
-                  <p>正面からのホリゾンタルバー画像をドロップ</p>
+          <div class="card-content" style="padding: 0;">
+            
+            <!-- Unit 9-A: Horizontal Bar Frontal -->
+            <div class="sub-analysis-section analysis-unit" id="card-horizontal-bar-front" data-phase="horizontal-bar-front">
+              <div class="sub-header">
+                <h4><span class="badge-text">9-A</span> ホリゾンタルバー（正面像）</h4>
+                <div class="sub-actions">
+                  <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+                  <label class="btn btn-secondary btn-upload btn-sm">
+                    <i data-lucide="upload"></i> 画像を読み込む
+                    <input type="file" class="file-input" accept="image/*" hidden>
+                  </label>
                 </div>
               </div>
 
-              <div class="quick-stats lateral-stats">
-                <table class="analysis-table">
-                  <thead>
-                    <tr>
-                      <th>評価項目</th>
-                      <th>測定値</th>
-                      <th>基準値</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>バーの傾斜角</strong></td>
-                      <td class="hbar-cant-val">-- °</td>
-                      <td>水平（0°）が技工上の基準</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="note-text">※正面から撮影したホリゾンタルバーの水平基準を確認します。</div>
-              </div>
-            </div>
-            <div class="instruction-tooltip hidden"></div>
-          </div>
-        </div>
+              <div class="horizontal-toolbar">
+                <span class="tool-caption">ツール：</span>
+                <div class="tool-selector">
+                  <input type="radio" name="tool-hbar-front" id="tool-hbar-ref-front" value="hbar-ref" class="tool-radio">
+                  <label for="tool-hbar-ref-front" class="tool-label"><i data-lucide="minus"></i> 水平基準</label>
 
-        <!-- CARD 9-B: Horizontal Bar (頭側) -->
-        <div class="analysis-card" id="card-horizontal-bar-top" data-phase="horizontal-bar-top">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="step-badge">Phase 9-B</div>
-              <h2>ホリゾンタルバー（頭側像）</h2>
-              <label class="plot-toggle">
-                <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
-              </label>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
-              <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
-                <input type="file" class="file-input" accept="image/*" hidden>
-              </label>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="horizontal-toolbar">
-              <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
-                <input type="radio" name="tool-hbar-top" id="tool-hbar-ref-top" value="hbar-ref" class="tool-radio">
-                <label for="tool-hbar-ref-top" class="tool-label"><i data-lucide="minus"></i> 水平基準プロット</label>
-
-                <input type="radio" name="tool-hbar-top" id="tool-hbar-bar-top" value="hbar-bar" class="tool-radio">
-                <label for="tool-hbar-bar-top" class="tool-label"><i data-lucide="minus"></i> ホリゾンタルバーのプロット</label>
-              </div>
-              <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
-                <button class="btn btn-primary rotate-hbar-ref-btn"><i
-                    data-lucide="align-horizontal-justify-center"></i> 水平基準にあわせる</button>
-              </div>
-            </div>
-
-            <div class="horizontal-card-layout">
-              <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
-                <canvas class="analysis-canvas"></canvas>
-                <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
-                  value="100">
-                <div class="canvas-placeholder">
-                  <i data-lucide="camera-off"></i>
-                  <p>頭側（上方）からのホリゾンタルバー画像をドロップ</p>
+                  <input type="radio" name="tool-hbar-front" id="tool-hbar-bar-front" value="hbar-bar" class="tool-radio">
+                  <label for="tool-hbar-bar-front" class="tool-label"><i data-lucide="minus"></i> バープロット</label>
+                </div>
+                <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
+                  <button class="btn btn-primary rotate-hbar-ref-btn btn-sm"><i data-lucide="align-horizontal-justify-center"></i> 基準にあわせる</button>
                 </div>
               </div>
 
-              <div class="quick-stats lateral-stats">
-                <table class="analysis-table">
-                  <thead>
-                    <tr>
-                      <th>評価項目</th>
-                      <th>測定値</th>
-                      <th>基準値</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td><strong>バーの傾斜角</strong></td>
-                      <td class="hbar-cant-val">-- °</td>
-                      <td>水平（0°）が技工上の基準</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <div class="note-text">※頭側（上方）から撮影したホリゾンタルバーの水平基準を確認します。</div>
+              <div class="horizontal-card-layout">
+                <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
+                  <canvas class="analysis-canvas"></canvas>
+                  <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
+                  <div class="canvas-placeholder">
+                    <i data-lucide="camera-off"></i>
+                    <p>正面の画像をドロップ</p>
+                  </div>
+                </div>
+
+                <div class="quick-stats lateral-stats" style="min-width: 200px;">
+                  <table class="analysis-table">
+                    <thead>
+                      <tr>
+                        <th>項目</th>
+                        <th>値</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>傾斜角</strong></td>
+                        <td class="hbar-cant-val">-- °</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-            <div class="instruction-tooltip hidden"></div>
+
+            <!-- Unit 9-B: Horizontal Bar Top -->
+            <div class="sub-analysis-section analysis-unit" id="card-horizontal-bar-top" data-phase="horizontal-bar-top">
+              <div class="sub-header">
+                <h4><span class="badge-text">9-B</span> ホリゾンタルバー（頭側像）</h4>
+                <div class="sub-actions">
+                  <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+                  <label class="btn btn-secondary btn-upload btn-sm">
+                    <i data-lucide="upload"></i> 画像を読み込む
+                    <input type="file" class="file-input" accept="image/*" hidden>
+                  </label>
+                </div>
+              </div>
+
+              <div class="horizontal-toolbar">
+                <span class="tool-caption">ツール：</span>
+                <div class="tool-selector">
+                  <input type="radio" name="tool-hbar-top" id="tool-hbar-ref-top" value="hbar-ref" class="tool-radio">
+                  <label for="tool-hbar-ref-top" class="tool-label"><i data-lucide="minus"></i> 水平基準</label>
+
+                  <input type="radio" name="tool-hbar-top" id="tool-hbar-bar-top" value="hbar-bar" class="tool-radio">
+                  <label for="tool-hbar-bar-top" class="tool-label"><i data-lucide="minus"></i> バープロット</label>
+                </div>
+                <div class="rotation-controls" style="margin-left:auto; display:flex; gap:8px;">
+                  <button class="btn btn-primary rotate-hbar-ref-btn btn-sm"><i data-lucide="align-horizontal-justify-center"></i> 基準にあわせる</button>
+                </div>
+              </div>
+
+              <div class="horizontal-card-layout">
+                <div class="canvas-wrapper drop-zone" style="aspect-ratio: 16/9;">
+                  <canvas class="analysis-canvas"></canvas>
+                  <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
+                  <div class="canvas-placeholder">
+                    <i data-lucide="camera-off"></i>
+                    <p>頭側の画像をドロップ</p>
+                  </div>
+                </div>
+
+                <div class="quick-stats lateral-stats" style="min-width: 200px;">
+                  <table class="analysis-table">
+                    <thead>
+                      <tr>
+                        <th>項目</th>
+                        <th>値</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>傾斜角</strong></td>
+                        <td class="hbar-cant-val">-- °</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unit 10: Shade Take -->
+            <div class="sub-analysis-section analysis-unit" id="card-shade-take" data-phase="shade-take">
+              <div class="sub-header">
+                <h4><span class="badge-text">10</span> シェードテイク (Shade Analysis)</h4>
+                <div class="sub-actions">
+                  <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
+                  <label class="btn btn-secondary btn-upload btn-sm">
+                    <i data-lucide="upload"></i> 画像を読み込む
+                    <input type="file" class="file-input" accept="image/*" hidden>
+                  </label>
+                </div>
+              </div>
+
+              <div class="horizontal-toolbar">
+                <span class="tool-caption">ツール：</span>
+                <div class="tool-selector">
+                  <input type="radio" name="tool-shade-take" id="tool-shade-calibrator" value="shade-calibrator" class="tool-radio">
+                  <label for="tool-shade-calibrator" class="tool-label" style="margin-right: auto;"><i data-lucide="crosshair"></i> 色調補正</label>
+
+                  <input type="radio" name="tool-shade-take" id="tool-shade-picker" value="shade-picker" class="tool-radio" checked>
+                  <label for="tool-shade-picker" class="tool-label"><i data-lucide="pipette"></i> シェードテイキング</label>
+
+                  <input type="radio" name="tool-shade-take" id="tool-shade-diff" value="shade-diff" class="tool-radio">
+                  <label for="tool-shade-diff" class="tool-label"><i data-lucide="split-square-horizontal"></i> 色の比較分析</label>
+
+                  <input type="radio" name="tool-shade-take" id="tool-shade-map" value="shade-map" class="tool-radio">
+                  <label for="tool-shade-map" class="tool-label"><i data-lucide="layers"></i> シェードマップ</label>
+                </div>
+              </div>
+
+              <div class="shade-calibration-controls">
+                <div class="calibration-settings">
+                  <div class="palette-container">
+                    <div class="palette-main">
+                      <div class="guide-selector-area" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                        <span class="label">シェードガイド：</span>
+                        <select id="shade-guide-select" class="form-select" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; background: white; cursor: pointer;">
+                          <option value="vita-classical" selected>Vita Classical</option>
+                          <option value="vita-3d-master">Vita 3D Master</option>
+                          <option value="chromascop">Chromascop</option>
+                          <option value="vintage">Vintage Color Indicator</option>
+                        </select>
+                      </div>
+                      <div id="shade-guide-description" class="note-text" style="margin-bottom: 12px; font-size: 0.75rem; color: var(--text-muted); padding-left: 4px; border-left: 2px solid var(--primary-color);">
+                        スタンダード16色。ホワイトニングには通常OM1〜OM3が併用されます。
+                      </div>
+                      <span class="label">基準を選択してプロット：</span>
+                      <div id="shade-palette" class="shade-palette single-row"></div>
+                    </div>
+                    <div class="palette-actions">
+                      <div class="action-item">
+                        <button id="btn-ai-enhance" class="btn-ai-enhance" type="button">
+                          <i data-lucide="sparkles"></i>
+                          <span>AI画像補正</span>
+                        </button>
+                      </div>
+                      <button id="shade-calib-reset-btn" class="btn btn-ghost btn-xs">
+                        <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> リセット
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="shade-plot-list" class="calibration-plot-list"></div>
+                <div id="shade-calib-status" class="calibration-status-badge hidden">
+                  <span class="pulse"></span> <span id="shade-calib-label">補正適用中</span> <span id="shade-offset-values">(L:0, a:0, b:0)</span>
+                </div>
+              </div>
+
+              <div class="horizontal-card-layout">
+                <!-- Wrapper to stack canvas and comparison panel vertically -->
+                <div class="analysis-main-column">
+                  <div class="canvas-wrapper drop-zone" style="aspect-ratio: 1/1; max-height: 500px;">
+                    <canvas class="analysis-canvas"></canvas>
+                    <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="800" step="10" value="100">
+                    <div class="canvas-placeholder">
+                      <i data-lucide="palette"></i>
+                      <p>口腔内写真またはシェード画像をドロップ</p>
+                    </div>
+                  </div>
+
+                  <!-- Relocated Shade Comparison Result Panel (Part of the main column under canvas) -->
+                  <div id="shade-diff-panel" class="shade-diff-panel">
+                    <div class="diff-header">色の比較分析結果</div>
+                    <div class="diff-chips">
+                      <div class="diff-chip-group">
+                        <span class="chip-label">A (基準)</span>
+                        <div id="diff-swatch-a" class="color-swatch-sm"></div>
+                      </div>
+                      <div class="diff-vs">VS</div>
+                      <div class="diff-chip-group">
+                        <span class="chip-label">B (対象)</span>
+                        <div id="diff-swatch-b" class="color-swatch-sm"></div>
+                      </div>
+                    </div>
+                    <div id="diff-status-badge" class="diff-status-badge">
+                      <span class="diff-label">Delta E:</span>
+                      <span id="diff-delta-e-val" class="diff-val">--</span>
+                      <span id="diff-judgment" class="diff-judgment">--</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="quick-stats lateral-stats">
+                  <div class="shade-result-container">
+                    <div class="shade-preview-box">
+                      <div id="shade-color-swatch" class="color-swatch"></div>
+                      <div class="shade-id-badge">判定: <span id="shade-result-id">--</span></div>
+                    </div>
+                    <table class="analysis-table">
+                      <thead><tr><th>項目</th><th>値</th></tr></thead>
+                      <tbody>
+                        <tr><td><strong>L* (明度)</strong></td><td id="shade-lab-l">--</td></tr>
+                        <tr><td><strong>a* (赤-緑)</strong></td><td id="shade-lab-a">--</td></tr>
+                        <tr><td><strong>b* (黄-青)</strong></td><td id="shade-lab-b">--</td></tr>
+                        <tr><td><strong>Delta E</strong></td><td id="shade-delta-e">--</td></tr>
+                      </tbody>
+                    </table>
+
+                    <!-- Magnifier (Shade Map) moved to right, but Comparison Result is now under canvas -->
+                    <div id="shade-magnifier-container" class="shade-magnifier-container hidden">
+                      <div class="magnifier-label">
+                        <i data-lucide="zoom-in"></i> 詳細拡大ルーペ (100分割解析)
+                      </div>
+                      <div class="magnifier-canvas-wrapper">
+                        <canvas id="shade-zoom-canvas"></canvas>
+                      </div>
+                      <div class="magnifier-note">※選択範囲内の10x10平均シェードを解析中</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Unit: Free Supplemental Images -->
+            <div class="sub-analysis-section">
+              <div class="sub-header">
+                <h4><i data-lucide="images"></i> 補足画像（フリースペース）</h4>
+                <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
+              </div>
+              <div class="free-image-grid" id="free-image-grid">
+                <!-- 8 Slots generated manually -->
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 1</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 2</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 3</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 4</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 5</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 6</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 7</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+                <div class="image-slot" onclick="this.querySelector('input').click()">
+                  <i data-lucide="plus" class="slot-icon"></i>
+                  <span class="slot-label">画像 8</span>
+                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+                </div>
+              </div>
+            </div>
+
+            <!-- Unit: Lab Instructions Text -->
+            <div class="sub-analysis-section">
+              <div class="sub-header">
+                <h4><i data-lucide="message-square"></i> 技工指示内容</h4>
+              </div>
+              <div class="lab-textarea-container">
+                <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -1122,7 +1344,48 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+
+  <!-- Trial License Modal -->
+  <div id="trial-modal" class="modal-overlay" style="display: none;">
+    <div class="trial-card">
+      <div class="trial-header">
+        <i data-lucide="lock" class="lock-icon"></i>
+        <h2>ライセンス確認</h2>
+        <p>勉強会用・期間限定公開版</p>
+      </div>
+      <div id="trial-content">
+        <div class="input-group">
+          <label for="trial-passcode">合言葉を入力してください</label>
+          <input type="password" id="trial-passcode" placeholder="••••••••" class="input-field">
+        </div>
+        <button id="trial-submit-btn" class="btn btn-primary w-full">認証する</button>
+        <p class="trial-hint">※配布されたパスコードを入力してください</p>
+      </div>
+      <div id="trial-error-msg" class="error-msg" style="display: none;">
+        パスコードが正しくありません。
+      </div>
+      <div id="trial-expired-msg" class="expired-msg" style="display: none;">
+        <i data-lucide="calendar-off"></i>
+        <h3>試用期間が終了しました</h3>
+        <p>このツールの試用期間は終了いたしました。<br>継続的な利用については配布元（柴田）までお問い合わせください。</p>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
+
+  <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
+  <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="shade-auto-filter" color-interpolation-filters="sRGB">
+        <feColorMatrix id="shade-auto-matrix" type="matrix" 
+          values="1 0 0 0 0  
+                  0 1 0 0 0  
+                  0 0 1 0 0  
+                  0 0 0 1 0" />
+      </filter>
+    </defs>
+  </svg>
 </body>
 
 </html>

@@ -115,6 +115,48 @@ document.addEventListener('DOMContentLoaded', () => {
     constructor(cardElement) {
       this.card = cardElement;
       this.phase = cardElement.dataset.phase;
+
+      // 1. Authentication & Expiry Logic (Gatekeeper)
+      if (this.phase === 'intraoral') { 
+          const authModal = document.getElementById('auth-modal');
+          const privacyModal = document.getElementById('privacy-modal');
+          const passwordInput = document.getElementById('auth-password');
+          const submitBtn = document.getElementById('auth-submit-btn');
+          const authError = document.getElementById('auth-error-msg');
+          const expiryError = document.getElementById('expiry-error-msg');
+
+          const expiryDate = new Date('2026-06-01T00:00:00');
+          const now = new Date();
+          const isExpired = now >= expiryDate;
+
+          if (isExpired) {
+              authModal.classList.remove('hidden');
+              expiryError.classList.remove('hidden');
+              if (passwordInput) passwordInput.disabled = true;
+              if (submitBtn) submitBtn.disabled = true;
+          } else {
+              const isAuthenticated = sessionStorage.getItem('app-auth') === 'true';
+              if (isAuthenticated) {
+                  authModal.classList.add('hidden');
+                  this.checkPrivacyModal(privacyModal);
+              } else {
+                  authModal.classList.remove('hidden');
+                  if (window.lucide) lucide.createIcons();
+              }
+
+              submitBtn?.addEventListener('click', () => {
+                  if (passwordInput.value === 'shibata-beta') {
+                      sessionStorage.setItem('app-auth', 'true');
+                      authModal.classList.add('hidden');
+                      authError.classList.add('hidden');
+                      this.checkPrivacyModal(privacyModal);
+                  } else {
+                      authError.classList.remove('hidden');
+                      if (window.lucide) lucide.createIcons();
+                  }
+              });
+          }
+      }
       
       this.dropZone = cardElement.querySelector('.drop-zone');
       this.fileInput = cardElement.querySelector('.file-input');
@@ -138,9 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
       this.guidedMode = false; // 鼻先クリック誘導モード
       this.pxToMm = 0.075; // Default reference scale
       
-      // Inject Calibration Tool into Toolbar
+      // Inject Calibration Tool into Toolbar (Only for phases that use mm measurements)
+      const mmPhases = ['lateral', 'e-midline', 'e-sound', 'm-sound', 's-sound', 'fv-sound', 'intraoral'];
       const tSelector = this.card.querySelector('.tool-selector');
-      if (tSelector) {
+      if (tSelector && mmPhases.includes(this.phase)) {
         const calId = 'tool-calib-' + this.phase;
         const rd = document.createElement('input'); rd.type = 'radio'; rd.name = 'tool-'+this.phase; rd.id = calId; rd.value = 'calib'; rd.className = 'tool-radio';
         const lb = document.createElement('label'); lb.htmlFor = calId; lb.className = 'tool-label'; lb.style.marginRight = 'auto'; // push it left
@@ -149,6 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(window.lucide) window.lucide.createIcons({root: lb});
       }
       this.toolRadios = this.card.querySelectorAll('.tool-radio');
+      
+      // Initialize activeTool from checked radio
+      const checkedRadio = this.card.querySelector('.tool-radio:checked');
+      if (checkedRadio) this.activeTool = checkedRadio.value;
       
       // Drag/Hover State
       this.hoveredPoint = null;
@@ -161,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.lastPanPt = null;
       this.imgRotation = 0; // Rotation in radians
       
-      this.initEvents();
+
 
       // Per-card Plot Toggle Initialization
       this.showPlots = true;
@@ -175,6 +222,127 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // AI Analysis Button is initialized in initEvents()
+      
+      // Shade Take specific UI elements
+      if (this.phase === 'shade-take') {
+        this.shadeSwatch = this.card.querySelector('#shade-color-swatch');
+        this.shadeIdValue = this.card.querySelector('#shade-result-id');
+        this.shadeL = this.card.querySelector('#shade-lab-l');
+        this.shadeA = this.card.querySelector('#shade-lab-a');
+        this.shadeB = this.card.querySelector('#shade-lab-b');
+        this.shadeDelta = this.card.querySelector('#shade-delta-e');
+        
+        // Calibration UI
+        this.shadeCalibRef = this.card.querySelector('#shade-calib-ref');
+        this.shadeCalibResetBtn = this.card.querySelector('#shade-calib-reset-btn');
+        this.shadeCalibStatus = this.card.querySelector('#shade-calib-status');
+        this.shadeOffsetValues = this.card.querySelector('#shade-offset-values');
+        this.shadePlotList = this.card.querySelector('#shade-plot-list');
+        this.shadePalette = this.card.querySelector('#shade-palette');
+        this.shadeDiffPanel = this.card.querySelector('#shade-diff-panel');
+        this.aiEnhanceBtn = this.card.querySelector('#btn-ai-enhance');
+        this.shadeMagnifierContainer = this.card.querySelector('#shade-magnifier-container');
+        this.shadeZoomCanvas = this.card.querySelector('#shade-zoom-canvas');
+        this.shadeDiffA = null;
+        this.shadeDiffB = null;
+        this.shadeMapRect = null; // {x1, y1, x2, y2, active: bool, finalized: bool}
+        
+        // New Guide Selector Elements
+        this.shadeGuideSelect = this.card.querySelector('#shade-guide-select');
+        this.shadeGuideDescription = this.card.querySelector('#shade-guide-description');
+        
+        this.currentShadeGuideId = 'vita-classical'; 
+        this.currentCalibId = 'A2'; // Default
+        
+        this.shadeOffset = { l: 0, a: 0, b: 0 };
+        this.calibPoints = []; // [{id, sampledLab, offset, x, y}]
+        this.shadeMatrixValues = "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0";
+        
+        // Initialize dynamic palette
+        this.renderShadePalette();
+        this.initShadeGuide();
+
+        if (this.shadeCalibResetBtn) {
+            this.shadeCalibResetBtn.addEventListener('click', () => {
+                this.shadeOffset = { l: 0, a: 0, b: 0 };
+                this.calibPoints = [];
+                this.updateStats();
+                this.drawCanvas();
+                alert('色調補正をリセットしました。');
+            });
+        }
+
+        if (this.aiEnhanceBtn) {
+            this.aiEnhanceBtn.classList.remove('active'); // Ensure start as OFF
+            this.aiEnhanceBtn.addEventListener('click', () => {
+                this.aiEnhanceBtn.classList.toggle('active');
+                this.updateAutoCorrectionMatrix();
+                this.drawCanvas();
+            });
+        }
+      }
+      
+      this.initEventListeners();
+    }
+
+    checkPrivacyModal(privacyModal) {
+        const agreeBtn = document.getElementById('agree-button');
+        if (privacyModal && agreeBtn) {
+            // Always show modal on startup (removing localStorage check)
+            privacyModal.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+
+            if (!agreeBtn.hasListener) {
+                agreeBtn.addEventListener('click', () => {
+                    privacyModal.classList.add('hidden');
+                    if (window.lucide) lucide.createIcons();
+                });
+                agreeBtn.hasListener = true;
+            }
+        }
+    }
+
+    initEventListeners() {
+        this.initEvents();
+    }
+
+    /**
+     * Calculate the optimal R,G,B gains (Exposure/White Balance) to match all calibPoints.
+     */
+    solveAutoCorrection() {
+        if (this.calibPoints.length === 0) {
+            this.shadeMatrixValues = "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0";
+            return;
+        }
+
+        let sumRIn = 0, sumROut = 0, sumGIn = 0, sumGOut = 0, sumBIn = 0, sumBOut = 0;
+        this.calibPoints.forEach(p => {
+            const ideal = ColorSpace.labToRgb(p.idealLab.l, p.idealLab.a, p.idealLab.b);
+            sumRIn += p.sampledRGB.r; sumROut += ideal.r;
+            sumGIn += p.sampledRGB.g; sumGOut += ideal.g;
+            sumBIn += p.sampledRGB.b; sumBOut += ideal.b;
+        });
+
+        // Simple Average Gain Model
+        const gainR = Math.min(3, sumROut / (sumRIn || 1));
+        const gainG = Math.min(3, sumGOut / (sumGIn || 1));
+        const gainB = Math.min(3, sumBOut / (sumBIn || 1));
+
+        this.shadeMatrixValues = `${gainR.toFixed(3)} 0 0 0 0  0 ${gainG.toFixed(3)} 0 0 0  0 0 ${gainB.toFixed(3)} 0 0  0 0 0 1 0`;
+    }
+
+    updateAutoCorrectionMatrix() {
+        const matrix = document.getElementById('shade-auto-matrix');
+        if (!matrix) return;
+
+        const isActive = this.aiEnhanceBtn && this.aiEnhanceBtn.classList.contains('active');
+        if (isActive) {
+            this.solveAutoCorrection();
+            matrix.setAttribute('values', this.shadeMatrixValues);
+            this.canvas.style.filter = 'url(#shade-auto-filter)';
+        } else {
+            this.canvas.style.filter = 'none';
+        }
     }
 
     findHoverPoint(coords) {
@@ -197,6 +365,11 @@ document.addEventListener('DOMContentLoaded', () => {
        for (const key in this.lines) {
           if (activeKey && key !== activeKey) continue;
           const v = this.lines[key];
+          if (key === 'shadeSample' && v) {
+             if (this.activeTool === 'shade-picker' && Math.hypot(v.x - coords.realX, v.y - coords.realY) < threshold) {
+                 return { key:'shadeSample', pt:v, mode:'shade' };
+             }
+          }
           if(Array.isArray(v)) {
              for(let i=0; i<v.length; i++) {
                 if(Math.hypot(v[i].x - coords.realX, v[i].y - coords.realY) < threshold) return { key, index:i, pt:v[i], mode:'array' };
@@ -206,53 +379,83 @@ document.addEventListener('DOMContentLoaded', () => {
              if(Math.hypot(v.endX - coords.realX, v.endY - coords.realY) < threshold) return { key, index:'end', pt:v, mode:'end' };
           }
        }
+
+       // Check standalone shade diff points
+       if (this.phase === 'shade-take' && this.activeTool === 'shade-diff') {
+           if (this.shadeDiffA && Math.hypot(this.shadeDiffA.x - coords.realX, this.shadeDiffA.y - coords.realY) < threshold) {
+               return { key: 'shadeDiffA', pt: this.shadeDiffA, mode: 'shade-diff' };
+           }
+           if (this.shadeDiffB && Math.hypot(this.shadeDiffB.x - coords.realX, this.shadeDiffB.y - coords.realY) < threshold) {
+               return { key: 'shadeDiffB', pt: this.shadeDiffB, mode: 'shade-diff' };
+           }
+       }
+
        return null;
     }
 
     initEvents() {
       // 1. Tool Selection
+      const handleToolChange = (toolValue) => {
+          this.activeTool = toolValue;
+          this.tempStart = null;
+          this.tempPoints = [];
+          
+          // State machine updates based on tool type
+          const multiHndls = ['vertical-proportions', 'eline', 'nla', 'wl-ratio', 'red-prop', 'pink-esth', 'smile-arc', 'corridor', 'gingival', 'axial-incl', 'papilla', 'convexity'];
+          if (multiHndls.includes(this.activeTool)) {
+            this.drawState = 'multi-point';
+            if(this.activeTool === 'vertical-proportions') this.showTooltip(PROPORTION_STEPS[0]);
+            else if(this.activeTool === 'eline') this.showTooltip(ELINE_STEPS[0]);
+            else if(this.activeTool === 'nla') this.showTooltip(NLA_STEPS[0]);
+            else if(this.activeTool === 'convexity') this.showTooltip(CONVEXITY_STEPS[0]);
+            else if(this.activeTool === 'wl-ratio') this.showTooltip(WL_STEPS[0]);
+            else if(this.activeTool === 'red-prop') this.showTooltip(RED_STEPS[0]);
+            else if(this.activeTool === 'pink-esth') this.showTooltip(PINK_STEPS[0]);
+            else if(this.activeTool === 'smile-arc') this.showTooltip(ARC_STEPS[0]);
+            else if(this.activeTool === 'corridor') this.showTooltip(CORRIDOR_STEPS[0]);
+            else if(this.activeTool === 'gingival') this.showTooltip(GINGIVAL_STEPS[0]);
+            else if(this.activeTool === 'axial-incl') this.showTooltip(AXIAL_STEPS[0]);
+            else if(this.activeTool === 'papilla') this.showTooltip(PAPILLA_STEPS[0]);
+          } else if (this.activeTool === 'hbar-ref') {
+            this.drawState = 'idle'; this.showTooltip(HBAR_REF_STEPS[0]);
+          } else if (this.activeTool === 'hbar-bar') {
+            this.drawState = 'idle'; this.showTooltip(HBAR_BAR_STEPS[0]);
+          } else if (this.activeTool === 'calib') {
+            this.drawState = 'idle'; 
+            this.showTooltip(CALIB_STEPS[0]);
+          } else {
+            this.drawState = 'idle';
+            this.hideTooltip();
+          }
+
+          // Toggle Shade Palette Drawer
+          if (this.phase === 'shade-take' && this.shadePalette) {
+            const container = this.shadePalette.closest('.palette-container');
+            if (container) {
+              if (this.activeTool === 'shade-calibrator') {
+                container.classList.add('open');
+              } else {
+                container.classList.remove('open');
+              }
+            }
+          }
+
+          this.drawCanvas();
+      };
+
       this.toolRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
           if (e.target.checked) {
-             this.activeTool = e.target.value;
-             this.tempStart = null;
-             this.tempPoints = [];
-             
-             // Tables are now always visible sequentially at the bottom.
-             // Intraoral phase table toggle logic removed to allow all tables to remain visible.
-             // E-Sound phase table toggle logic removed to allow all tables to remain visible.
-             
-             // State machine updates based on tool type
-             const multiHndls = ['vertical-proportions', 'eline', 'nla', 'wl-ratio', 'red-prop', 'pink-esth', 'smile-arc', 'corridor', 'gingival', 'axial-incl', 'papilla', 'convexity'];
-             if (multiHndls.includes(this.activeTool)) {
-               this.drawState = 'multi-point';
-               if(this.activeTool === 'vertical-proportions') this.showTooltip(PROPORTION_STEPS[0]);
-               else if(this.activeTool === 'eline') this.showTooltip(ELINE_STEPS[0]);
-               else if(this.activeTool === 'nla') this.showTooltip(NLA_STEPS[0]);
-               else if(this.activeTool === 'convexity') this.showTooltip(CONVEXITY_STEPS[0]);
-               else if(this.activeTool === 'wl-ratio') this.showTooltip(WL_STEPS[0]);
-               else if(this.activeTool === 'red-prop') this.showTooltip(RED_STEPS[0]);
-               else if(this.activeTool === 'pink-esth') this.showTooltip(PINK_STEPS[0]);
-               else if(this.activeTool === 'smile-arc') this.showTooltip(ARC_STEPS[0]);
-               else if(this.activeTool === 'corridor') this.showTooltip(CORRIDOR_STEPS[0]);
-               else if(this.activeTool === 'gingival') this.showTooltip(GINGIVAL_STEPS[0]);
-               else if(this.activeTool === 'axial-incl') this.showTooltip(AXIAL_STEPS[0]);
-               else if(this.activeTool === 'papilla') this.showTooltip(PAPILLA_STEPS[0]);
-             } else if (this.activeTool === 'hbar-ref') {
-               this.drawState = 'idle'; this.showTooltip(HBAR_REF_STEPS[0]);
-             } else if (this.activeTool === 'hbar-bar') {
-               this.drawState = 'idle'; this.showTooltip(HBAR_BAR_STEPS[0]);
-             } else if (this.activeTool === 'calib') {
-               this.drawState = 'idle'; 
-               this.showTooltip(CALIB_STEPS[0]);
-             } else {
-               this.drawState = 'idle';
-               this.hideTooltip();
-             }
-             this.drawCanvas();
+              handleToolChange(e.target.value);
           }
         });
       });
+
+      // Trigger initial state for the checked radio
+      const initialChecked = this.card.querySelector('.tool-radio:checked');
+      if (initialChecked) {
+          handleToolChange(initialChecked.value);
+      }
 
       // 2. Clear Lines
       if (this.btnReset) {
@@ -362,6 +565,24 @@ document.addEventListener('DOMContentLoaded', () => {
            return;
         }
 
+        // Shade Picker Handler
+        if (this.activeTool === 'shade-picker') {
+          this.updateShade(coords.realX, coords.realY);
+          return;
+        }
+
+        // Shade Comparison Handler
+        if (this.activeTool === 'shade-diff') {
+          this.updateShade(coords.realX, coords.realY);
+          return;
+        }
+
+        // Shade Calibration Handler
+        if (this.activeTool === 'shade-calibrator') {
+          this.calibrateShade(coords.realX, coords.realY);
+          return;
+        }
+
         // Multi-Point Handler
         if (this.drawState === 'multi-point') {
            let limits = 0; let texts = []; let storeKey = '';
@@ -396,6 +617,13 @@ document.addEventListener('DOMContentLoaded', () => {
               this.drawCanvas();
            }
            return;
+        }
+
+        // Shade Map (Rectangle Drag)
+        if (this.activeTool === 'shade-map') {
+            this.shadeMapRect = { x1: coords.realX, y1: coords.realY, x2: coords.realX, y2: coords.realY, active: true, finalized: false };
+            this.drawCanvas();
+            return;
         }
 
         // Standard 2-Point
@@ -434,6 +662,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (dp.mode === 'multi' || dp.mode === 'array') { dp.pt.x = coords.realX; dp.pt.y = coords.realY; }
             else if (dp.mode === 'start') { dp.pt.startX = coords.realX; dp.pt.startY = coords.realY; }
             else if (dp.mode === 'end') { dp.pt.endX = coords.realX; dp.pt.endY = coords.realY; }
+            else if (dp.mode === 'shade' || dp.mode === 'shade-diff') {
+                dp.pt.x = coords.realX;
+                dp.pt.y = coords.realY;
+                // Resample color during drag
+                const newColor = this.sampleColorAt(coords.realX, coords.realY);
+                dp.pt.r = newColor.r; dp.pt.g = newColor.g; dp.pt.b = newColor.b;
+            }
             this.drawCanvas(); this.updateStats();
             return; // stop other hover actions during drag
         }
@@ -442,12 +677,27 @@ document.addEventListener('DOMContentLoaded', () => {
         this.hoveredPoint = this.findHoverPoint(coords);
         this.canvas.style.cursor = this.hoveredPoint ? 'grab' : 'crosshair';
 
+        if (this.activeTool === 'shade-map' && this.shadeMapRect && this.shadeMapRect.active) {
+            const dx = coords.realX - this.shadeMapRect.x1;
+            const dy = coords.realY - this.shadeMapRect.y1;
+            const side = Math.max(Math.abs(dx), Math.abs(dy));
+            this.shadeMapRect.x2 = this.shadeMapRect.x1 + (dx >= 0 ? side : -side);
+            this.shadeMapRect.y2 = this.shadeMapRect.y1 + (dy >= 0 ? side : -side);
+            this.drawCanvas();
+        }
+
         if (this.drawState === 'multi-point' && this.tempPoints.length > 0) { this.tempEnd = coords; this.drawCanvas(); }
         if (this.drawState === 'pt1-placed') { this.tempEnd = coords; this.drawCanvas(); }
       });
       
       // Mouse Up (Global)
       window.addEventListener('mouseup', () => {
+         if (this.shadeMapRect && this.shadeMapRect.active) {
+             this.shadeMapRect.active = false;
+             this.shadeMapRect.finalized = true;
+             this.drawCanvas();
+             this.updateStats();
+         }
          if (this.isPanning) {
              this.isPanning = false;
              if(this.canvas) this.canvas.style.cursor = 'crosshair';
@@ -1037,7 +1287,16 @@ document.addEventListener('DOMContentLoaded', () => {
       this.ctx.save();
       this.ctx.translate(centerX, centerY);
       this.ctx.rotate(this.imgRotation);
+      
+      // Apply Visual Correction Filter if enabled
+      if (this.phase === 'shade-take' && this.shadePreviewToggle && this.shadePreviewToggle.checked && (this.shadeOffset.l !== 0 || this.shadeOffset.a !== 0 || this.shadeOffset.b !== 0)) {
+          this.ctx.filter = 'url(#shade-correction-filter)';
+      } else {
+          this.ctx.filter = 'none';
+      }
+
       this.ctx.drawImage(this.currentImage, - (this.currentImage.width / 2) * scale, - (this.currentImage.height / 2) * scale, this.currentImage.width * scale, this.currentImage.height * scale);
+      this.ctx.filter = 'none'; // reset for other drawings
       this.ctx.restore();
       
       const mapC = (nx, ny) => {
@@ -1127,6 +1386,252 @@ document.addEventListener('DOMContentLoaded', () => {
       // Phase 9: Horizontal Bar
       if (this.lines['hbar-ref']) this.drawLineSpec(this.lines['hbar-ref'], 'hbar-ref', mapC);
       if (this.lines['hbar-bar']) this.drawLineSpec(this.lines['hbar-bar'], 'hbar-bar', mapC);
+
+      // Phase 10: Shade Take
+      if (this.lines.shadeSample) this.drawShadeSample(this.lines.shadeSample, mapC);
+      
+      // Draw Shade Comparison Points (Hollow Ring Design)
+      if (this.activeTool === 'shade-diff' && this.shadeDiffA) {
+          const m1 = mapC(this.shadeDiffA.x, this.shadeDiffA.y);
+          // Hollow ring A
+          this.ctx.beginPath();
+          this.ctx.arc(m1.x, m1.y, 10, 0, Math.PI*2);
+          this.ctx.strokeStyle = '#6366f1';
+          this.ctx.lineWidth = 4;
+          this.ctx.stroke();
+          // Inner white ring for visibility
+          this.ctx.beginPath();
+          this.ctx.arc(m1.x, m1.y, 8, 0, Math.PI*2);
+          this.ctx.strokeStyle = 'white';
+          this.ctx.lineWidth = 1.5;
+          this.ctx.stroke();
+          
+          this.ctx.font = 'bold 14px Inter';
+          this.ctx.fillStyle = '#6366f1';
+          this.ctx.fillText("A (Ref)", m1.x + 15, m1.y - 15);
+
+          if (this.shadeDiffB) {
+              const m2 = mapC(this.shadeDiffB.x, this.shadeDiffB.y);
+              // Hollow ring B
+              this.ctx.beginPath();
+              this.ctx.arc(m2.x, m2.y, 10, 0, Math.PI*2);
+              this.ctx.strokeStyle = '#ec4899';
+              this.ctx.lineWidth = 4;
+              this.ctx.stroke();
+              // Inner white ring
+              this.ctx.beginPath();
+              this.ctx.arc(m2.x, m2.y, 8, 0, Math.PI*2);
+              this.ctx.strokeStyle = 'white';
+              this.ctx.lineWidth = 1.5;
+              this.ctx.stroke();
+
+              this.ctx.font = 'bold 14px Inter';
+              this.ctx.fillStyle = '#ec4899';
+              this.ctx.fillText("B (Target)", m2.x + 15, m2.y - 15);
+          }
+      }
+
+      // Pro-Shade Map (Gradient / Contour)
+      if (this.activeTool === 'shade-map' && this.shadeMapRect) {
+          this.drawShadeMapOverlay(mapC);
+      }
+      
+      // Draw Calibration Points
+      if (this.phase === 'shade-take' && this.calibPoints) {
+          this.calibPoints.forEach(p => {
+              const m = mapC(p.x, p.y);
+              this.ctx.strokeStyle = '#10b981';
+              this.ctx.lineWidth = 1;
+              this.ctx.beginPath();
+              this.ctx.moveTo(m.x - 10, m.y); this.ctx.lineTo(m.x + 10, m.y);
+              this.ctx.moveTo(m.x, m.y - 10); this.ctx.lineTo(m.x, m.y + 10);
+              this.ctx.stroke();
+              this.ctx.font = '10px sans-serif';
+              this.ctx.fillStyle = '#10b981';
+              this.ctx.fillText(p.id, m.x + 12, m.y - 12);
+          });
+      }
+    }
+
+    drawShadeSample(s, mapC) {
+        const m = mapC(s.x, s.y);
+        this.ctx.strokeStyle = '#2563eb';
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        // Crosshair
+        this.ctx.moveTo(m.x - 15, m.y); this.ctx.lineTo(m.x + 15, m.y);
+        this.ctx.moveTo(m.x, m.y - 15); this.ctx.lineTo(m.x, m.y + 15);
+        this.ctx.stroke();
+        // Target circle
+        this.ctx.beginPath();
+        this.ctx.arc(m.x, m.y, 8, 0, Math.PI * 2);
+        this.ctx.stroke();
+        // Outer glow/contrast
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.arc(m.x, m.y, 9, 0, Math.PI * 2);
+        this.ctx.stroke();
+    }
+
+    drawShadeMapOverlay(mapC) {
+        const r = this.shadeMapRect;
+        const xMin = Math.min(r.x1, r.x2);
+        const yMin = Math.min(r.y1, r.y2);
+        const xMax = Math.max(r.x1, r.x2);
+        const yMax = Math.max(r.y1, r.y2);
+
+        const mMin = mapC(xMin, yMin);
+        const mMax = mapC(xMax, yMax);
+
+        // 1. Dimming Effect (Overlay except the inner rect)
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        // Top
+        this.ctx.fillRect(0, 0, this.canvas.width, mMin.y);
+        // Bottom
+        this.ctx.fillRect(0, mMax.y, this.canvas.width, this.canvas.height - mMax.y);
+        // Left (center row)
+        this.ctx.fillRect(0, mMin.y, mMin.x, mMax.y - mMin.y);
+        // Right (center row)
+        this.ctx.fillRect(mMax.x, mMin.y, this.canvas.width - mMax.x, mMax.y - mMin.y);
+        this.ctx.restore();
+
+        // 2. Selection border
+        this.ctx.strokeStyle = 'white';
+        this.ctx.lineWidth = 2;
+        this.ctx.setLineDash([5, 5]);
+        this.ctx.strokeRect(mMin.x, mMin.y, mMax.x - mMin.x, mMax.y - mMin.y);
+        this.ctx.setLineDash([]);
+
+        if (!r.finalized) return;
+
+        // 3. Generate 10x10 Grid (Fixed 100 Squares)
+        const gridCells = 10;
+        const results = [];
+        const guide = SHADE_GUIDES[this.currentShadeGuideId];
+        if (!guide) return;
+
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = this.currentImage.width;
+        offCanvas.height = this.currentImage.height;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.drawImage(this.currentImage, 0, 0);
+        
+        const realXMin = Math.floor(Math.min(xMin, xMax));
+        const realYMin = Math.floor(Math.min(yMin, yMax));
+        const rw = Math.floor(Math.abs(xMax - xMin));
+        const rh = Math.floor(Math.abs(yMax - yMin));
+
+        if (rw < 10 || rh < 10) return; // Ignore too small areas
+
+        const imgData = offCtx.getImageData(realXMin, realYMin, rw, rh);
+        const roiData = imgData.data;
+        const actualW = imgData.width;
+
+        const cellW = rw / gridCells;
+        const cellH = rh / gridCells;
+
+        for (let gx = 0; gx < gridCells; gx++) {
+            const row = [];
+            for (let gy = 0; gy < gridCells; gy++) {
+                // Average color in this cell
+                let sR = 0, sG = 0, sB = 0, count = 0;
+                const startX = Math.floor(gx * cellW);
+                const startY = Math.floor(gy * cellH);
+                const endX = Math.floor((gx + 1) * cellW);
+                const endY = Math.floor((gy + 1) * cellH);
+
+                for (let px = startX; px < endX; px++) {
+                    for (let py = startY; py < endY; py++) {
+                        const idx = (py * actualW + px) * 4;
+                        sR += roiData[idx]; sG += roiData[idx+1]; sB += roiData[idx+2];
+                        count++;
+                    }
+                }
+                
+                const avgR = sR / (count || 1);
+                const avgG = sG / (count || 1);
+                const avgB = sB / (count || 1);
+
+                const lab = ColorSpace.rgbToLab(avgR, avgG, avgB);
+                lab.l += this.shadeOffset.l; lab.a += this.shadeOffset.a; lab.b += this.shadeOffset.b;
+                
+                // Smart Filter: Skip dark areas (L < 30) or clear gingiva-like areas (a > 20)
+                let matchId = '---';
+                if (lab.l > 30 && lab.a < 20) {
+                    let bestMatch = guide.shades[0];
+                    let minDE = Infinity;
+                    guide.shades.forEach(ref => {
+                        const de = ColorSpace.deltaE(lab, ref);
+                        if (de < minDE) { minDE = de; bestMatch = ref; }
+                    });
+                    matchId = bestMatch ? bestMatch.id : 'N/A';
+                }
+                row.push({ match: matchId, x: realXMin + gx * cellW, y: realYMin + gy * cellH });
+            }
+            results.push(row);
+        }
+
+        // 4. Draw Grids and Labels (Main Canvas)
+        const mappedCellW = (mMax.x - mMin.x) / gridCells;
+        const mappedCellH = (mMax.y - mMin.y) / gridCells;
+        this.ctx.lineWidth = 1;
+
+        // 5. Update Magnifier View and Draw Sync Grid
+        if (this.shadeZoomCanvas) {
+            const zCtx = this.shadeZoomCanvas.getContext('2d');
+            this.shadeZoomCanvas.width = 400; // Resolution of magnifier
+            this.shadeZoomCanvas.height = 400;
+            zCtx.imageSmoothingEnabled = false; // Keep it crisp
+            zCtx.drawImage(this.currentImage, realXMin, realYMin, rw, rh, 0, 0, 400, 400);
+
+            // Draw sync grid on Loupe (Enhanced contrast)
+            const zw = 400 / gridCells;
+            const zh = 400 / gridCells;
+            zCtx.lineWidth = 1;
+            zCtx.strokeStyle = 'rgba(255, 255, 255, 0.7)'; // Brighter grid
+            zCtx.font = 'bold 16px sans-serif'; // Larger font
+            zCtx.fillStyle = 'white';
+            zCtx.textAlign = 'center';
+            zCtx.textBaseline = 'middle';
+
+            for (let gx = 0; gx < gridCells; gx++) {
+                for (let gy = 0; gy < gridCells; gy++) {
+                    const zx = gx * zw;
+                    const zy = gy * zh;
+                    zCtx.strokeRect(zx, zy, zw, zh);
+                    
+                    const cur = results[gx][gy];
+                    if (cur.match !== '---') {
+                        zCtx.shadowColor = 'rgba(0, 0, 0, 0.9)'; 
+                        zCtx.shadowBlur = 6;
+                        zCtx.fillText(cur.match, zx + zw/2, zy + zh/2);
+                        zCtx.shadowBlur = 0;
+                    }
+                }
+            }
+        }
+
+        // 6. Draw Final Grid on Main Canvas
+        this.ctx.strokeStyle = 'white';
+        this.ctx.font = 'bold 9px Inter';
+        this.ctx.fillStyle = 'white';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        for (let gx = 0; gx < gridCells; gx++) {
+            for (let gy = 0; gy < gridCells; gy++) {
+                const cx = mMin.x + gx * mappedCellW;
+                const cy = mMin.y + gy * mappedCellH;
+                this.ctx.strokeRect(cx, cy, mappedCellW, mappedCellH);
+                const cur = results[gx][gy];
+                if (cur.match !== '---') {
+                    this.ctx.shadowColor = 'black'; this.ctx.shadowBlur = 3;
+                    this.ctx.fillText(cur.match, cx + mappedCellW/2, cy + mappedCellH/2);
+                    this.ctx.shadowBlur = 0;
+                }
+            }
+        }
     }
 
     // --- Extracted specialized drawing functions ---
@@ -1711,6 +2216,12 @@ document.addEventListener('DOMContentLoaded', () => {
                elSilR.textContent=`${sil1.toFixed(2)} : 1.00 : ${sil3.toFixed(2)} ${note}`; 
                elSilR.style.color='var(--primary)'; 
             }
+            if (this.phase === 'shade-take') {
+                const hasSample = !!this.lines.shadeSample;
+                const hasMap = this.shadeMapRect && this.shadeMapRect.finalized;
+
+                if (this.shadeMagnifierContainer) this.shadeMagnifierContainer.classList.toggle('hidden', !hasMap || this.activeTool !== 'shade-map');
+            }
             if(elSilL && w2L>0) { 
                const sil1 = parseFloat((w1L/w2L).toFixed(3)); const sil3 = parseFloat((w3L/w2L).toFixed(3)); 
                const distG = absDist(sil1, 1.618) + absDist(sil3, 0.618);
@@ -1819,10 +2330,350 @@ document.addEventListener('DOMContentLoaded', () => {
                }
           } else if (elCant) { elCant.textContent = '-- °'; elCant.style.color = 'var(--text-main)'; }
       }
+
+      // 10. Shade Take Phase
+      if (this.phase === 'shade-take') {
+          // Update Plot List tags
+          this.renderCalibPlotList();
+
+          // Update Calibration UI Status
+          if (this.shadeCalibStatus && this.shadeOffsetValues) {
+            const isCalibrated = this.calibPoints.length > 0;
+            if (isCalibrated) {
+                this.shadeCalibStatus.classList.remove('hidden');
+                this.shadeOffsetValues.textContent = `(L:${this.shadeOffset.l > 0 ? '+' : ''}${this.shadeOffset.l.toFixed(1)}, a:${this.shadeOffset.a > 0 ? '+' : ''}${this.shadeOffset.a.toFixed(1)}, b:${this.shadeOffset.b > 0 ? '+' : ''}${this.shadeOffset.b.toFixed(1)})`;
+                
+                // Trigger Matrix Update
+                this.updateAutoCorrectionMatrix();
+            } else {
+                this.shadeCalibStatus.classList.add('hidden');
+                if (this.canvas) this.canvas.style.filter = 'none';
+            }
+          }
+
+          if (this.lines.shadeSample) {
+            const s = this.lines.shadeSample;
+            const rawLab = ColorSpace.rgbToLab(s.r, s.g, s.b);
+            
+            // Apply Calibration Offset
+            const lab = {
+                l: rawLab.l + this.shadeOffset.l,
+                a: rawLab.a + this.shadeOffset.a,
+                b: rawLab.b + this.shadeOffset.b
+            };
+            
+            // Find closest Shade in current guide
+            const currentGuide = SHADE_GUIDES[this.currentShadeGuideId];
+            let minDE = Infinity;
+            let bestMatch = null;
+            if (currentGuide) {
+                currentGuide.shades.forEach(ref => {
+                    const de = ColorSpace.deltaE(lab, ref);
+                    if (de < minDE) { minDE = de; bestMatch = ref; }
+                });
+            }
+
+            if (this.shadeSwatch) this.shadeSwatch.style.backgroundColor = `rgb(${s.r}, ${s.g}, ${s.b})`;
+            if (this.shadeIdValue) this.shadeIdValue.textContent = bestMatch ? bestMatch.id : '--';
+            if (this.shadeL) this.shadeL.textContent = lab.l.toFixed(1);
+            if (this.shadeA) this.shadeA.textContent = lab.a.toFixed(1);
+            if (this.shadeB) this.shadeB.textContent = lab.b.toFixed(1);
+            if (this.shadeDelta) this.shadeDelta.textContent = minDE.toFixed(2);
+          }
+
+          // Update Shade Comparison (Diff) mode UI (Always Visible)
+          if (this.shadeDiffPanel) {
+              const panel = this.shadeDiffPanel;
+              panel.classList.remove('hidden'); // Ensure it's not hidden
+              
+              const swatchA = panel.querySelector('#diff-swatch-a');
+              const swatchB = panel.querySelector('#diff-swatch-b');
+              const deltaEVal = panel.querySelector('#diff-delta-e-val');
+              const judgment = panel.querySelector('#diff-judgment');
+              const statusBadge = panel.querySelector('#diff-status-badge');
+
+              if (this.shadeDiffA) {
+                 swatchA.style.backgroundColor = `rgb(${this.shadeDiffA.r}, ${this.shadeDiffA.g}, ${this.shadeDiffA.b})`;
+              } else {
+                 swatchA.style.backgroundColor = 'transparent';
+              }
+
+              if (this.shadeDiffB) {
+                 swatchB.style.backgroundColor = `rgb(${this.shadeDiffB.r}, ${this.shadeDiffB.g}, ${this.shadeDiffB.b})`;
+                 
+                 // Calculate Delta E (CIE76 simple version)
+                 const labA = ColorSpace.rgbToLab(this.shadeDiffA.r, this.shadeDiffA.g, this.shadeDiffA.b);
+                 const labB = ColorSpace.rgbToLab(this.shadeDiffB.r, this.shadeDiffB.g, this.shadeDiffB.b);
+                 const de = ColorSpace.deltaE(labA, labB);
+
+                 deltaEVal.textContent = de.toFixed(2);
+                 
+                 // Judge with 3-tier traffic light system
+                 statusBadge.classList.remove('status-blue', 'status-yellow', 'status-red');
+                 if (de < 1.8) {
+                     judgment.textContent = ' 適合良好 (Excellent)';
+                     statusBadge.classList.add('status-blue');
+                 } else if (de < 3.6) {
+                     judgment.textContent = ' 許容範囲 (Acceptable)';
+                     statusBadge.classList.add('status-yellow');
+                 } else {
+                     judgment.textContent = ' 不適合 (Mismatch)';
+                     statusBadge.classList.add('status-red');
+                 }
+              } else {
+                 swatchB.style.backgroundColor = 'transparent';
+                 deltaEVal.textContent = '--';
+                 judgment.textContent = '--';
+                 statusBadge.classList.remove('status-blue', 'status-yellow', 'status-red');
+              }
+          }
+      }
     } // end updateStats
+
+    /**
+     * Calibrate shade analysis using multiple reference objects (Interactive)
+     */
+    calibrateShade(realX, realY) {
+        if (!this.currentImage) return;
+        
+        // Sampling (5x5)
+        const sampleSize = 5;
+        const half = Math.floor(sampleSize / 2);
+        
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = this.currentImage.width;
+        offCanvas.height = this.currentImage.height;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.drawImage(this.currentImage, 0, 0);
+
+        const imgData = offCtx.getImageData(realX - half, realY - half, sampleSize, sampleSize).data;
+        let sR = 0, sG = 0, sB = 0;
+        for (let i = 0; i < imgData.length; i += 4) {
+            sR += imgData[i]; sG += imgData[i+1]; sB += imgData[i+2];
+        }
+        const avgR = sR / (sampleSize * sampleSize);
+        const avgG = sG / (sampleSize * sampleSize);
+        const avgB = sB / (sampleSize * sampleSize);
+
+        const sampledLab = ColorSpace.rgbToLab(avgR, avgG, avgB);
+        
+        // Target Reference ID (from Palette selection)
+        const targetId = this.currentCalibId || 'A2';
+        const currentGuide = SHADE_GUIDES[this.currentShadeGuideId];
+        const targetShade = currentGuide ? currentGuide.shades.find(sh => sh.id === targetId) : null;
+        
+        if (targetShade) {
+            // Lab Offset (for statistics)
+            const offset = {
+                l: targetShade.l - sampledLab.l,
+                a: targetShade.a - sampledLab.a,
+                b: targetShade.b - sampledLab.b
+            };
+            
+            // Add to multi-point list
+            this.calibPoints.push({
+                id: targetId,
+                sampledRGB: { r: avgR, g: avgG, b: avgB },
+                idealLab: { l: targetShade.l, a: targetShade.a, b: targetShade.b },
+                offset: offset,
+                x: realX,
+                y: realY
+            });
+
+            // Recalculate average offset
+            let sumL = 0, sumA = 0, sumB = 0;
+            this.calibPoints.forEach(p => {
+                sumL += p.offset.l; sumA += p.offset.a; sumB += p.offset.b;
+            });
+            const count = this.calibPoints.length;
+            this.shadeOffset = { l: sumL/count, a: sumA/count, b: sumB/count };
+            
+            this.updateStats();
+            this.drawCanvas();
+            
+            this.showShadeToast(`${targetId} としてプロットしました。画像全体を自動補正します。`);
+        }
+    }
+
+    initShadeGuide() {
+        if (this.shadeGuideSelect) {
+            this.shadeGuideSelect.addEventListener('change', (e) => {
+                this.currentShadeGuideId = e.target.value;
+                const guide = SHADE_GUIDES[this.currentShadeGuideId];
+                if (guide && this.shadeGuideDescription) {
+                    this.shadeGuideDescription.textContent = guide.description;
+                }
+                this.renderShadePalette();
+                this.updateStats();
+            });
+        }
+        
+        if (this.shadePalette) {
+            this.shadePalette.addEventListener('click', (e) => {
+                const btn = e.target.closest('.shade-btn');
+                if (!btn) return;
+                
+                // Update active state
+                this.shadePalette.querySelectorAll('.shade-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentCalibId = btn.dataset.shade;
+
+                // Auto-switch to Calibrator tool
+                const calibRadio = this.card.querySelector('#tool-shade-calibrator');
+                if (calibRadio) {
+                    calibRadio.checked = true;
+                    // Manually trigger tool update logic
+                    this.activeTool = 'shade-calibrator';
+                    
+                    // Open drawer
+                    const container = this.shadePalette.closest('.palette-container');
+                    if (container) container.classList.add('open');
+                }
+                
+                this.showShadeToast(`${this.currentCalibId} が選択されました。画像をプロットしてください。`);
+            });
+        }
+    }
+
+    renderShadePalette() {
+        if (!this.shadePalette) return;
+        
+        const guide = SHADE_GUIDES[this.currentShadeGuideId];
+        if (!guide) return;
+        
+        this.shadePalette.innerHTML = '';
+        
+        guide.shades.forEach(s => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'shade-btn';
+            if (s.id === this.currentCalibId) btn.classList.add('active');
+            btn.dataset.shade = s.id;
+            btn.textContent = s.id;
+            
+            // Set background color preview if we have LAB values
+            const rgb = ColorSpace.labToRgb(s.l, s.a, s.b);
+            btn.style.setProperty('--shade-color', `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+            
+            this.shadePalette.appendChild(btn);
+        });
+    }
+
+    showShadeToast(msg) {
+        let t = document.getElementById('shade-toast');
+        if (!t) {
+            t = document.createElement('div'); t.id = 'shade-toast';
+            t.style.cssText = 'position:fixed; bottom:20px; right:20px; background:rgba(37,99,235,0.9); color:white; padding:10px 20px; border-radius:30px; font-weight:600; z-index:9999; pointer-events:none; transition: opacity 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg; t.style.opacity = '1';
+        setTimeout(() => { t.style.opacity = '0'; }, 2000);
+    }
+
+    renderCalibPlotList() {
+        if (!this.shadePlotList) return;
+        this.shadePlotList.innerHTML = '';
+        this.calibPoints.forEach((p, idx) => {
+            const tag = document.createElement('div');
+            tag.className = 'plot-tag';
+            tag.innerHTML = `<span>${p.id}</span><span class="remove-btn" title="削除">&times;</span>`;
+            tag.querySelector('.remove-btn').onclick = (e) => {
+                e.stopPropagation();
+                this.calibPoints.splice(idx, 1);
+                // Recalculate offset or reset if empty
+                if (this.calibPoints.length === 0) {
+                    this.shadeOffset = { l: 0, a: 0, b: 0 };
+                } else {
+                    let sL = 0, sA = 0, sB = 0;
+                    this.calibPoints.forEach(cp => { sL += cp.offset.l; sA += cp.offset.a; sB += cp.offset.b; });
+                    this.shadeOffset = { l: sL / this.calibPoints.length, a: sA / this.calibPoints.length, b: sB / this.calibPoints.length };
+                }
+                this.updateStats();
+                this.drawCanvas();
+            };
+            this.shadePlotList.appendChild(tag);
+        });
+    }
+
+    /**
+     * Helper to sample R,G,B at a specific coordinate
+     */
+    sampleColorAt(realX, realY) {
+        if (!this.currentImage) return { r: 128, g: 128, b: 128 };
+        const sampleSize = 5;
+        const half = Math.floor(sampleSize / 2);
+        
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = this.currentImage.width;
+        offCanvas.height = this.currentImage.height;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.drawImage(this.currentImage, 0, 0);
+
+        const imgData = offCtx.getImageData(realX - half, realY - half, sampleSize, sampleSize).data;
+        let sumR = 0, sumG = 0, sumB = 0;
+        const count = sampleSize * sampleSize;
+        for (let i = 0; i < imgData.length; i += 4) {
+            sumR += imgData[i]; sumG += imgData[i+1]; sumB += imgData[i+2];
+        }
+        return {
+            r: Math.round(sumR / count),
+            g: Math.round(sumG / count),
+            b: Math.round(sumB / count)
+        };
+    }
+
+    /**
+     * Shade Take Analysis Logic
+     */
+    updateShade(realX, realY) {
+        if (!this.currentImage || !this.canvas) return;
+
+        // 1. Pixel Sampling (5x5 neighborhood to reduce noise)
+        const sampleSize = 5;
+        const half = Math.floor(sampleSize / 2);
+        
+        // Sampling from the original image at the real coordinates
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = this.currentImage.width;
+        offCanvas.height = this.currentImage.height;
+        const offCtx = offCanvas.getContext('2d');
+        offCtx.drawImage(this.currentImage, 0, 0);
+
+        const imgData = offCtx.getImageData(realX - half, realY - half, sampleSize, sampleSize).data;
+        
+        let sumR = 0, sumG = 0, sumB = 0;
+        const count = sampleSize * sampleSize;
+
+        for (let i = 0; i < imgData.length; i += 4) {
+            sumR += imgData[i];
+            sumG += imgData[i+1];
+            sumB += imgData[i+2];
+        }
+
+        const avgR = Math.round(sumR / count);
+        const avgG = Math.round(sumG / count);
+        const avgB = Math.round(sumB / count);
+
+        // 2. Data Storage
+        if (this.activeTool === 'shade-diff') {
+            // Toggle between A and B
+            if (!this.shadeDiffA || (this.shadeDiffA && this.shadeDiffB)) {
+                this.shadeDiffA = { x: realX, y: realY, r: avgR, g: avgG, b: avgB };
+                this.shadeDiffB = null; // Clear B when new A is picked
+            } else {
+                this.shadeDiffB = { x: realX, y: realY, r: avgR, g: avgG, b: avgB };
+            }
+        } else {
+            this.lines['shadeSample'] = { x: realX, y: realY, r: avgR, g: avgG, b: avgB };
+        }
+        
+        // 3. UI Update
+        this.updateStats();
+        this.drawCanvas();
+    }
   }
 
-  const cardElements = document.querySelectorAll('.analysis-card');
+  const cardElements = document.querySelectorAll('.analysis-card:not(.lab-card), .analysis-unit'); 
   window.appCards = [];
   cardElements.forEach(el => window.appCards.push(new AnalysisCard(el)));
 
@@ -2010,5 +2861,277 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- Trial License Manager (Study Group Edition) ---
+  class TrialManager {
+    constructor() {
+      this.passcode = 'SHIBATA';
+      this.expirationDate = new Date('2026-05-31');
+      this.storageKey = 'aesthetic_trial_auth';
+      this.modal = document.getElementById('trial-modal');
+      this.input = document.getElementById('trial-passcode');
+      this.button = document.getElementById('trial-submit-btn');
+      this.errorMsg = document.getElementById('trial-error-msg');
+      this.content = document.getElementById('trial-content');
+      this.expiredMsg = document.getElementById('trial-expired-msg');
+      this.init();
+    }
+    init() {
+      if (!this.modal) return;
+      if (new Date() > this.expirationDate) {
+        this.showExpired(); return;
+      }
+      if (localStorage.getItem(this.storageKey) === 'true') {
+        this.hideModal();
+      } else {
+        this.showModal();
+      }
+      this.button.addEventListener('click', () => this.checkPasscode());
+      this.input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') this.checkPasscode();
+      });
+    }
+    showModal() {
+      this.modal.style.display = 'flex';
+      if (window.lucide) window.lucide.createIcons();
+    }
+    hideModal() { this.modal.style.display = 'none'; }
+    showExpired() {
+      this.modal.style.display = 'flex';
+      this.content.style.display = 'none';
+      this.expiredMsg.style.display = 'block';
+      if (window.lucide) window.lucide.createIcons();
+    }
+    checkPasscode() {
+      if (this.input.value.trim() === this.passcode) {
+        localStorage.setItem(this.storageKey, 'true');
+        this.hideModal();
+      } else {
+        this.errorMsg.style.display = 'block';
+        this.input.value = ''; this.input.focus();
+      }
+    }
+  }
+
+  // --- Trial License Manager ---
+  // ... (既存のコードの後に追記)
+
 });
+
+/**
+ * Color Space Conversion Utils
+ */
+const ColorSpace = {
+    // RGB [0-255] -> CIE L*a*b*
+    rgbToLab: function(r, g, b) {
+        // Normalize
+        let _r = r / 255, _g = g / 255, _b = b / 255;
+
+        // sRGB to linear XYZ
+        _r = (_r > 0.04045) ? Math.pow((_r + 0.055) / 1.055, 2.4) : _r / 12.92;
+        _g = (_g > 0.04045) ? Math.pow((_g + 0.055) / 1.055, 2.4) : _g / 12.92;
+        _b = (_b > 0.04045) ? Math.pow((_b + 0.055) / 1.055, 2.4) : _b / 12.92;
+
+        let x = (_r * 0.4124 + _g * 0.3576 + _b * 0.1805) * 100;
+        let y = (_r * 0.2126 + _g * 0.7152 + _b * 0.0722) * 100;
+        let z = (_r * 0.0193 + _g * 0.1192 + _b * 0.9505) * 100;
+
+        // XYZ to Lab (Reference: D65)
+        const refX = 95.047, refY = 100.0, refZ = 108.883;
+        x /= refX; y /= refY; z /= refZ;
+
+        const f = (t) => (t > 0.008856) ? Math.pow(t, 1/3) : (7.787 * t) + (16/116);
+
+        x = f(x); y = f(y); z = f(z);
+
+        return {
+            l: (116 * y) - 16,
+            a: 500 * (x - y),
+            b: 200 * (y - z)
+        };
+    },
+
+    // CIE L*a*b* -> RGB [0-255]
+    labToRgb: function(l, a, b) {
+        // Lab to XYZ (Reference: D65)
+        let y = (l + 16) / 116;
+        let x = a / 500 + y;
+        let z = y - b / 200;
+
+        const f = (t) => (t > 0.206897) ? Math.pow(t, 3) : (t - 16/116) / 7.787;
+        x = f(x) * 95.047;
+        y = f(y) * 100.000;
+        z = f(z) * 108.883;
+
+        // XYZ to linear RGB
+        let _r = (x * 0.032406 - y * 0.015372 - z * 0.004986);
+        let _g = (x * -0.009689 + y * 0.018758 + z * 0.000415);
+        let _b = (x * 0.000557 - y * 0.002040 + z * 0.010570);
+
+        // Linear RGB to sRGB
+        const comp = (c) => {
+            const clamped = Math.max(0, c); // Avoid NaN with negative values for out-of-gamut Lab
+            const srgb = (clamped > 0.0031308) ? (1.055 * Math.pow(clamped, 1 / 2.4) - 0.055) : (12.92 * clamped);
+            return Math.max(0, Math.min(255, Math.round(srgb * 255)));
+        };
+
+        return { r: comp(_r), g: comp(_g), b: comp(_b) };
+    },
+
+    // Calculate Delta E (Color Difference)
+    deltaE: function(lab1, lab2) {
+        return Math.sqrt(
+            Math.pow(lab1.l - lab2.l, 2) +
+            Math.pow(lab1.a - lab2.a, 2) +
+            Math.pow(lab1.b - lab2.b, 2)
+        );
+    }
+};
+
+/**
+ * Comprehensive Shade Guide Data (Vita Classical, 3D Master, Chromascop, Vintage)
+ */
+const SHADE_GUIDES = {
+    "vita-classical": {
+        "name": "Vita Classical",
+        "description": "スタンダード16色。ホワイトニングには通常OM1〜OM3（または3Dマスターの0M1〜0M3）が併用されます。",
+        "shades": [
+            { "id": "OM1", "l": 82.5, "a": -1.2, "b": 6.5 },
+            { "id": "OM2", "l": 81.3, "a": -1.0, "b": 8.0 },
+            { "id": "OM3", "l": 80.1, "a": -0.8, "b": 10.1 },
+            { "id": "A1", "l": 73.1, "a": -0.3, "b": 12.0 },
+            { "id": "A2", "l": 71.0, "a": 0.8, "b": 14.8 },
+            { "id": "A3", "l": 69.8, "a": 1.5, "b": 16.5 },
+            { "id": "A3.5", "l": 66.8, "a": 2.1, "b": 18.2 },
+            { "id": "A4", "l": 64.9, "a": 2.7, "b": 19.3 },
+            { "id": "B1", "l": 74.6, "a": -0.8, "b": 11.2 },
+            { "id": "B2", "l": 72.8, "a": -0.1, "b": 14.2 },
+            { "id": "B3", "l": 70.8, "a": 0.9, "b": 17.5 },
+            { "id": "B4", "l": 68.6, "a": 1.6, "b": 19.6 },
+            { "id": "C1", "l": 70.9, "a": -0.5, "b": 11.9 },
+            { "id": "C2", "l": 68.5, "a": 0.1, "b": 14.4 },
+            { "id": "C3", "l": 66.2, "a": 0.8, "b": 16.5 },
+            { "id": "C4", "l": 63.6, "a": 1.4, "b": 18.2 },
+            { "id": "D2", "l": 70.4, "a": -0.1, "b": 12.8 },
+            { "id": "D3", "l": 68.5, "a": 0.4, "b": 14.5 },
+            { "id": "D4", "l": 66.9, "a": 0.9, "b": 16.7 }
+        ]
+    },
+    "vita-3d-master": {
+        "name": "Vita 3D Master",
+        "description": "明度ベースの体系的システム。0グループがブリーチングシェードに該当します。",
+        "shades": [
+            { "id": "0M1", "l": 84.3, "a": -1.4, "b": 6.7 },
+            { "id": "0M2", "l": 83.0, "a": -1.2, "b": 8.8 },
+            { "id": "0M3", "l": 81.6, "a": -1.0, "b": 11.2 },
+            { "id": "1M1", "l": 78.5, "a": -0.5, "b": 12.0 },
+            { "id": "1M2", "l": 77.0, "a": -0.2, "b": 14.5 },
+            { "id": "2M1", "l": 74.0, "a": -0.1, "b": 14.0 },
+            { "id": "2M2", "l": 72.5, "a": 0.5, "b": 16.5 },
+            { "id": "2M3", "l": 71.0, "a": 1.2, "b": 19.5 },
+            { "id": "3M1", "l": 69.5, "a": 0.3, "b": 15.5 },
+            { "id": "3M2", "l": 68.0, "a": 0.8, "b": 18.0 },
+            { "id": "3M3", "l": 66.5, "a": 1.5, "b": 20.5 },
+            { "id": "4M1", "l": 65.0, "a": 0.6, "b": 17.0 },
+            { "id": "4M2", "l": 63.5, "a": 1.2, "b": 19.5 },
+            { "id": "4M3", "l": 62.0, "a": 1.8, "b": 22.0 },
+            { "id": "5M1", "l": 60.5, "a": 1.0, "b": 18.5 },
+            { "id": "5M2", "l": 59.0, "a": 1.5, "b": 21.0 },
+            { "id": "5M3", "l": 57.5, "a": 2.2, "b": 23.5 }
+        ]
+    },
+    "chromascop": {
+        "name": "Chromascop",
+        "description": "Ivoclarのシェードガイド。010〜040がブリーチングシェードとして設定されています。",
+        "shades": [
+            { "id": "010", "l": 83.0, "a": -1.0, "b": 6.5 },
+            { "id": "020", "l": 81.5, "a": -0.8, "b": 8.0 },
+            { "id": "030", "l": 80.0, "a": -0.6, "b": 9.5 },
+            { "id": "040", "l": 78.5, "a": -0.4, "b": 11.0 },
+            { "id": "110", "l": 79.7, "a": -0.6, "b": 14.6 },
+            { "id": "120", "l": 78.5, "a": -0.3, "b": 16.1 },
+            { "id": "130", "l": 76.6, "a": -0.7, "b": 17.0 },
+            { "id": "140", "l": 77.0, "a": 0.2, "b": 19.4 },
+            { "id": "210", "l": 75.4, "a": 0.1, "b": 20.9 },
+            { "id": "220", "l": 74.9, "a": 1.5, "b": 19.1 },
+            { "id": "230", "l": 73.0, "a": 1.7, "b": 21.2 },
+            { "id": "240", "l": 72.5, "a": 2.9, "b": 22.9 },
+            { "id": "310", "l": 73.1, "a": -0.1, "b": 23.1 },
+            { "id": "320", "l": 70.8, "a": 0.7, "b": 23.8 },
+            { "id": "330", "l": 71.9, "a": 1.3, "b": 27.7 },
+            { "id": "340", "l": 68.6, "a": 2.4, "b": 26.2 },
+            { "id": "410", "l": 72.2, "a": 0.7, "b": 16.8 },
+            { "id": "420", "l": 73.1, "a": 0.7, "b": 18.9 },
+            { "id": "430", "l": 72.8, "a": -0.0, "b": 19.5 },
+            { "id": "440", "l": 71.0, "a": -0.1, "b": 18.6 },
+            { "id": "510", "l": 70.1, "a": 0.5, "b": 20.2 },
+            { "id": "520", "l": 68.7, "a": 1.3, "b": 22.5 },
+            { "id": "530", "l": 68.8, "a": 1.6, "b": 24.8 },
+            { "id": "540", "l": 65.6, "a": 3.9, "b": 23.0 }
+        ]
+    },
+    "vintage": {
+        "name": "Vintage Color Indicator",
+        "description": "松風ヴィンテージシステム。ホワイトニングシェードはW1、W2、W3等で定義されます。C・Dグループも含めたフルセットです。",
+        "shades": [
+            { "id": "W1", "l": 82.0, "a": -1.0, "b": 7.0 },
+            { "id": "W2", "l": 80.5, "a": -0.8, "b": 8.5 },
+            { "id": "W3", "l": 79.0, "a": -0.5, "b": 10.0 },
+            { "id": "A1", "l": 73.5, "a": -0.2, "b": 12.5 },
+            { "id": "A2", "l": 71.5, "a": 0.7, "b": 15.0 },
+            { "id": "A3", "l": 70.0, "a": 1.4, "b": 17.0 },
+            { "id": "A3.5", "l": 67.5, "a": 2.0, "b": 18.5 },
+            { "id": "A4", "l": 65.5, "a": 2.5, "b": 19.5 },
+            { "id": "B1", "l": 75.0, "a": -0.7, "b": 11.5 },
+            { "id": "B2", "l": 73.0, "a": 0.0, "b": 14.5 },
+            { "id": "B3", "l": 71.0, "a": 0.8, "b": 18.0 },
+            { "id": "B4", "l": 69.0, "a": 1.5, "b": 20.0 },
+            { "id": "C1", "l": 71.2, "a": -0.4, "b": 12.0 },
+            { "id": "C2", "l": 69.0, "a": 0.2, "b": 14.5 },
+            { "id": "C3", "l": 66.5, "a": 0.9, "b": 16.8 },
+            { "id": "C4", "l": 64.0, "a": 1.5, "b": 18.5 },
+            { "id": "D2", "l": 70.8, "a": 0.0, "b": 13.0 },
+            { "id": "D3", "l": 68.8, "a": 0.5, "b": 14.8 },
+            { "id": "D4", "l": 67.2, "a": 1.0, "b": 17.0 }
+        ]
+    }
+};
+
+/**
+ * Handle image upload for the free supplemental image slots in Lab Tools.
+ * @param {HTMLInputElement} input 
+ */
+window.handleFreeImageUpload = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const slot = input.parentElement;
+    
+    // Remove existing image if any
+    const existingImg = slot.querySelector('img');
+    if (existingImg) existingImg.remove();
+    
+    // Create new image element
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    img.className = 'preview-img';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.position = 'absolute';
+    img.style.top = '0';
+    img.style.left = '0';
+    slot.appendChild(img);
+    
+    // Hide icon and label
+    const icon = slot.querySelector('.slot-icon');
+    const label = slot.querySelector('.slot-label');
+    if (icon) icon.style.opacity = '0';
+    if (label) label.style.opacity = '0';
+  };
+  reader.readAsDataURL(file);
+};
+
 
