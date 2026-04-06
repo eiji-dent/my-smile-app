@@ -48,18 +48,24 @@ window.ShadeHandlers = {
             }
 
             // --- Sampling/Analysis Display (Closest Shade ID) ---
-            const elId = card.card.querySelector('.shade-id-value');
-            const elL = card.card.querySelector('.shadeL');
-            const elA = card.card.querySelector('.shadeA');
-            const elB = card.card.querySelector('.shadeB');
-            const elDelta = card.card.querySelector('.shadeDelta');
+            // Use card properties set in initShadeUI (correct element references)
+            const elId = card.shadeIdValue || card.card.querySelector('#shade-result-id');
+            const elL = card.shadeL || card.card.querySelector('#shade-lab-l');
+            const elA = card.shadeA || card.card.querySelector('#shade-lab-a');
+            const elB = card.shadeB || card.card.querySelector('#shade-lab-b');
+            const elDelta = card.shadeDelta || card.card.querySelector('#shade-delta-e');
+            const shadeSwatch = card.shadeSwatch || card.card.querySelector('#shade-color-swatch');
 
             const currentGuide = window.SHADE_GUIDES[card.currentShadeGuideId];
             
-            if ((card.activeTool === 'shade-picker' || card.activeTool === 'shade-calibrator') && card.lastSampledColor) {
-                const s = card.lastSampledColor;
-                const lab = window.ColorSpace.rgbToLab(s.r, s.g, s.b);
+            // Show results whenever there's a sampled color (from shade-picker or shade-calibrator)
+            const sample = card.lines && card.lines.shadeSample;
+            if (sample) {
+                const lab = window.ColorSpace.rgbToLab(sample.r, sample.g, sample.b);
                 
+                // Update color swatch
+                if (shadeSwatch) shadeSwatch.style.backgroundColor = `rgb(${sample.r}, ${sample.g}, ${sample.b})`;
+
                 let minDE = Infinity;
                 let bestMatch = null;
                 if (currentGuide) {
@@ -68,15 +74,21 @@ window.ShadeHandlers = {
                         if (de < minDE) { minDE = de; bestMatch = ref; }
                     });
                 }
+                // Apply calibration offset to displayed values
+                const off = card.shadeOffset || { l: 0, a: 0, b: 0 };
+                const calL = lab.l + off.l;
+                const calA = lab.a + off.a;
+                const calB = lab.b + off.b;
+
                 if (elId) elId.textContent = bestMatch ? bestMatch.id : '--';
-                if (elL) elL.textContent = lab.l.toFixed(1);
-                if (elA) elA.textContent = lab.a.toFixed(1);
-                if (elB) elB.textContent = lab.b.toFixed(1);
+                if (elL) elL.textContent = calL.toFixed(1);
+                if (elA) elA.textContent = calA.toFixed(1);
+                if (elB) elB.textContent = calB.toFixed(1);
                 if (elDelta) elDelta.textContent = minDE.toFixed(2);
             }
 
             // --- Diff Panel Update ---
-            const diffPanel = card.card.querySelector('.shade-comparison-panel');
+            const diffPanel = card.card.querySelector('#shade-diff-panel');
             if (diffPanel) {
                 const swatchA = diffPanel.querySelector('#diff-swatch-a');
                 const swatchB = diffPanel.querySelector('#diff-swatch-b');

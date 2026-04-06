@@ -933,6 +933,9 @@ class AnalysisCard {
   calibrateShade(rX, rY) {
       if (!this.currentImage) return;
       const c = this.sampleColorAt(rX, rY);
+      // Update sample display so L*a*b* panel shows the clicked point
+      this.lastSampledColor = c;
+      this.lines['shadeSample'] = { x: rX, y: rY, ...c };
       const sLab = ColorSpace.rgbToLab(c.r, c.g, c.b);
       const tId = this.currentCalibId || 'A2';
       const g = SHADE_GUIDES[this.currentShadeGuideId];
@@ -998,10 +1001,13 @@ class AnalysisCard {
   }
   updateShade(rX, rY) {
       const c = this.sampleColorAt(rX, rY);
+      this.lastSampledColor = c; // Always track the last sampled color
       if (this.activeTool === 'shade-diff') {
           if (!this.shadeDiffA || (this.shadeDiffA && this.shadeDiffB)) { this.shadeDiffA = { x: rX, y: rY, ...c }; this.shadeDiffB = null; }
           else this.shadeDiffB = { x: rX, y: rY, ...c };
-      } else this.lines['shadeSample'] = { x: rX, y: rY, ...c };
+      } else {
+          this.lines['shadeSample'] = { x: rX, y: rY, ...c };
+      }
       this.updateStats(); this.drawCanvas();
   }
 
