@@ -1113,34 +1113,68 @@
 
               <div class="shade-calibration-controls">
                 <div class="calibration-settings">
-                  <div class="palette-container">
-                    <div class="palette-main">
-                      <div class="guide-selector-area" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                        <span class="label">シェードガイド：</span>
-                        <select id="shade-guide-select" class="form-select" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; background: white; cursor: pointer;">
-                          <option value="vita-classical" selected>Vita Classical</option>
-                          <option value="vita-3d-master">Vita 3D Master</option>
-                          <option value="chromascop">Chromascop</option>
-                          <option value="vintage">Vintage Color Indicator</option>
-                        </select>
-                      </div>
-                      <div id="shade-guide-description" class="note-text" style="margin-bottom: 12px; font-size: 0.75rem; color: var(--text-muted); padding-left: 4px; border-left: 2px solid var(--primary-color);">
-                        スタンダード16色。ホワイトニングには通常OM1〜OM3が併用されます。
-                      </div>
-                      <span class="label">基準を選択してプロット：</span>
-                      <div id="shade-palette" class="shade-palette single-row"></div>
+                  <!-- Calibration Target Type Switcher -->
+                  <div class="calib-type-switcher">
+                    <span class="label" style="font-size:0.8rem;font-weight:600;color:var(--text-muted);">補正基準：</span>
+                    <div class="calib-type-btns">
+                      <button class="calib-type-btn active" data-calib-type="shade-guide">シェードガイド</button>
+                      <button class="calib-type-btn" data-calib-type="gray-card">グレーカード</button>
+                      <button class="calib-type-btn" data-calib-type="color-checker">カラーチェッカー</button>
                     </div>
-                    <div class="palette-actions">
-                      <div class="action-item">
-                        <button id="btn-ai-enhance" class="btn-ai-enhance" type="button">
-                          <i data-lucide="sparkles"></i>
-                          <span>AI画像補正</span>
+                  </div>
+
+                  <!-- Shade Guide Panel (default) -->
+                  <div id="calib-panel-shade-guide" class="calib-panel active">
+                    <div class="palette-container">
+                      <div class="palette-main">
+                        <div class="guide-selector-area" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                          <span class="label">シェードガイド：</span>
+                          <select id="shade-guide-select" class="form-select" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; background: white; cursor: pointer;">
+                            <option value="vita-classical" selected>Vita Classical</option>
+                            <option value="vita-3d-master">Vita 3D Master</option>
+                            <option value="chromascop">Chromascop</option>
+                            <option value="vintage">Vintage Color Indicator</option>
+                          </select>
+                        </div>
+                        <div id="shade-guide-description" class="note-text" style="margin-bottom: 12px; font-size: 0.75rem; color: var(--text-muted); padding-left: 4px; border-left: 2px solid var(--primary-color);">
+                          スタンダード16色。ホワイトニングには通常OM1〜OM3が併用されます。
+                        </div>
+                        <span class="label">基準を選択してプロット：</span>
+                        <div id="shade-palette" class="shade-palette single-row"></div>
+                      </div>
+                      <div class="palette-actions">
+                        <div class="action-item">
+                          <button id="btn-ai-enhance" class="btn-ai-enhance" type="button">
+                            <i data-lucide="sparkles"></i>
+                            <span>AI画像補正</span>
+                          </button>
+                        </div>
+                        <button id="shade-calib-reset-btn" class="btn btn-ghost btn-xs">
+                          <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> リセット
                         </button>
                       </div>
-                      <button id="shade-calib-reset-btn" class="btn btn-ghost btn-xs">
-                        <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> リセット
+                    </div>
+                  </div>
+
+                  <!-- Gray Card Panel -->
+                  <div id="calib-panel-gray-card" class="calib-panel">
+                    <div class="gray-card-panel">
+                      <div class="gray-card-desc">
+                        <i data-lucide="square" style="width:14px;height:14px;color:var(--text-muted);"></i>
+                        <span>標準18%グレーカード (L=50, a=0, b=0) をクリックして補正基準を設定します。</span>
+                      </div>
+                      <button class="calib-type-btn active" id="gray-card-select-btn" style="margin-top:8px; cursor:default;">
+                        グレー18% &nbsp;<span style="font-size:0.75rem;opacity:0.7;">(L 50.0 / a 0.0 / b 0.0)</span>
                       </button>
                     </div>
+                  </div>
+
+                  <!-- ColorChecker Panel -->
+                  <div id="calib-panel-color-checker" class="calib-panel">
+                    <div class="color-checker-desc note-text" style="margin-bottom:8px;">
+                      X-Rite ColorChecker Classic 24パッチを選択→画像内の対応パッチをクリック
+                    </div>
+                    <div id="cc-patch-grid" class="cc-patch-grid"></div>
                   </div>
                 </div>
 

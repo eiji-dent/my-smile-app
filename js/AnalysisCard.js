@@ -166,10 +166,12 @@ class AnalysisCard {
     
     this.shadeDiffA = null;
     this.shadeDiffB = null;
-    this.shadeMapRect = null; 
+    this.shadeMapRect = null;
+    this.calibTargetType = 'shade-guide'; // 'shade-guide' | 'gray-card' | 'color-checker'
+    this.currentCalibPatchId = '22'; // Default: Neutral 5 (≈18% gray)
     
     this.currentShadeGuideId = 'vita-classical'; 
-    this.currentCalibId = 'A2'; 
+    this.currentCalibId = 'A2';
     
     this.shadeOffset = { l: 0, a: 0, b: 0 };
     this.calibPoints = []; 
@@ -177,6 +179,7 @@ class AnalysisCard {
     
     this.renderShadePalette();
     this.initShadeGuide();
+    this.initCalibTargetSwitcher();
 
     if (this.shadeCalibResetBtn) {
         this.shadeCalibResetBtn.addEventListener('click', () => {
@@ -195,6 +198,51 @@ class AnalysisCard {
             this.updateAutoCorrectionMatrix();
             this.drawCanvas();
         });
+    }
+  }
+
+  initCalibTargetSwitcher() {
+    const typeBtns = this.card.querySelectorAll('.calib-type-btn[data-calib-type]');
+    typeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.calibTargetType = btn.dataset.calibType;
+            ['shade-guide','gray-card','color-checker'].forEach(type => {
+                const panel = this.card.querySelector(`#calib-panel-${type}`);
+                if (panel) panel.classList.toggle('active', type === this.calibTargetType);
+            });
+        });
+    });
+
+    // Build ColorChecker patch grid
+    const grid = this.card.querySelector('#cc-patch-grid');
+    if (grid && window.CALIBRATION_TARGETS && window.CALIBRATION_TARGETS['color-checker']) {
+        const patches = window.CALIBRATION_TARGETS['color-checker'].patches;
+        patches.forEach(patch => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cc-patch-btn' + (patch.neutral ? ' cc-neutral' : '');
+            btn.dataset.patchId = patch.id;
+            btn.title = `${patch.id}: ${patch.label} (L${patch.l} / a${patch.a} / b${patch.b})`;
+            if (window.ColorSpace) {
+                const rgb = window.ColorSpace.labToRgb(patch.l, patch.a, patch.b);
+                btn.style.backgroundColor = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+            }
+            const idLabel = document.createElement('span');
+            idLabel.className = 'cc-patch-id';
+            idLabel.textContent = patch.id;
+            btn.appendChild(idLabel);
+            btn.addEventListener('click', () => {
+                grid.querySelectorAll('.cc-patch-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentCalibPatchId = patch.id;
+            });
+            grid.appendChild(btn);
+        });
+        // Default select patch 22 (Neutral 5)
+        const defaultBtn = grid.querySelector('[data-patch-id="22"]');
+        if (defaultBtn) defaultBtn.classList.add('active');
     }
   }
 
@@ -936,12 +984,28 @@ class AnalysisCard {
       // lastSampledColor drives the L*a*b* stats display (but does NOT draw the shade-picker crosshair)
       this.lastSampledColor = c;
       const sLab = ColorSpace.rgbToLab(c.r, c.g, c.b);
-      const tId = this.currentCalibId || 'A2';
-      const g = SHADE_GUIDES[this.currentShadeGuideId];
-      const tS = g ? g.shades.find(sh => sh.id === tId) : null;
-      if (tS) {
-          const off = { l: tS.l - sLab.l, a: tS.a - sLab.a, b: tS.b - sLab.b };
-          this.calibPoints.push({ id: tId, sampledRGB: c, idealLab: { l: tS.l, a: tS.a, b: tS.b }, offset: off, x: rX, y: rY });
+
+      // Determine target Lab from the active calibration type
+      let tId = null, tLab = null;
+
+      if (this.calibTargetType === 'gray-card') {
+          tId = 'Gray 18%';
+          tLab = { l: 50.0, a: 0.0, b: 0.0 };
+      } else if (this.calibTargetType === 'color-checker') {
+          const ccTarget = window.CALIBRATION_TARGETS && window.CALIBRATION_TARGETS['color-checker'];
+          const patch = ccTarget ? ccTarget.patches.find(p => p.id === this.currentCalibPatchId) : null;
+          if (patch) { tId = `CC-${patch.id} ${patch.label}`; tLab = { l: patch.l, a: patch.a, b: patch.b }; }
+      } else {
+          // shade-guide (default)
+          tId = this.currentCalibId || 'A2';
+          const g = SHADE_GUIDES[this.currentShadeGuideId];
+          const tS = g ? g.shades.find(sh => sh.id === tId) : null;
+          if (tS) tLab = { l: tS.l, a: tS.a, b: tS.b };
+      }
+
+      if (tId && tLab) {
+          const off = { l: tLab.l - sLab.l, a: tLab.a - sLab.a, b: tLab.b - sLab.b };
+          this.calibPoints.push({ id: tId, sampledRGB: c, idealLab: tLab, offset: off, x: rX, y: rY });
           let sL = 0, sA = 0, sB = 0;
           this.calibPoints.forEach(p => { sL += p.offset.l; sA += p.offset.a; sB += p.offset.b; });
           this.shadeOffset = { l: sL/this.calibPoints.length, a: sA/this.calibPoints.length, b: sB/this.calibPoints.length };

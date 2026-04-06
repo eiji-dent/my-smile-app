@@ -1982,6 +1982,124 @@ body.is-exporting * {
 }
 
 /* Shade Magnifier / Digital Loupe */
+/* ==========================================================================
+   Calibration Target Switcher
+   ========================================================================== */
+
+.calib-type-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.calib-type-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.calib-type-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.calib-type-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.calib-type-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Calibration Panels (show/hide) */
+.calib-panel {
+  display: none;
+}
+
+.calib-panel.active {
+  display: block;
+}
+
+/* Gray Card Panel */
+.gray-card-panel {
+  padding: 12px;
+  background: var(--bg-sidebar);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.gray-card-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* ColorChecker 6x4 Patch Grid */
+.cc-patch-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.cc-patch-btn {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2px;
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+.cc-patch-btn:hover {
+  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  transform: translateY(-1px) scale(1.08);
+  z-index: 2;
+}
+
+.cc-patch-btn.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.4);
+}
+
+.cc-patch-btn.cc-neutral {
+  border-style: dashed;
+  border-color: rgba(100,116,139,0.4);
+}
+
+.cc-patch-btn.cc-neutral.active {
+  border-style: solid;
+  border-color: var(--primary);
+}
+
+.cc-patch-id {
+  font-size: 0.55rem;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 0 4px rgba(255,255,255,0.4);
+  color: white;
+  letter-spacing: 0.02em;
+}
+
+/* Shade Magnifier */
 .shade-magnifier-container {
     width: 100%;
     padding: 14px;
