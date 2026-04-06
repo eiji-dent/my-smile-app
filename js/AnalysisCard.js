@@ -621,6 +621,15 @@ class AnalysisCard {
       }
   }
 
+  /**
+   * FaceLandmarker(正面・E音等)の結果を各ランドマークに適用
+   */
+  applyAILandmarks(result) {
+      if (!result || !result.faceLandmarks || !result.faceLandmarks[0]) return;
+      const landmarks = result.faceLandmarks[0];
+      this.applyLandmarksToPlots(landmarks, this.currentImage.width, this.currentImage.height);
+  }
+
   applyLateralLandmarks(pts) {
       // LateralAI.js から得られた自動計測点を適用
       this.lines.eLine = [pts.prn, pts.pg, pts.ls, pts.li];
