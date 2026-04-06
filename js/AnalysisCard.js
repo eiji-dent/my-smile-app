@@ -933,9 +933,8 @@ class AnalysisCard {
   calibrateShade(rX, rY) {
       if (!this.currentImage) return;
       const c = this.sampleColorAt(rX, rY);
-      // Update sample display so L*a*b* panel shows the clicked point
+      // lastSampledColor drives the L*a*b* stats display (but does NOT draw the shade-picker crosshair)
       this.lastSampledColor = c;
-      this.lines['shadeSample'] = { x: rX, y: rY, ...c };
       const sLab = ColorSpace.rgbToLab(c.r, c.g, c.b);
       const tId = this.currentCalibId || 'A2';
       const g = SHADE_GUIDES[this.currentShadeGuideId];

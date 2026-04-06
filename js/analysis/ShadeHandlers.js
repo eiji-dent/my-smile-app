@@ -58,8 +58,9 @@ window.ShadeHandlers = {
 
             const currentGuide = window.SHADE_GUIDES[card.currentShadeGuideId];
             
-            // Show results whenever there's a sampled color (from shade-picker or shade-calibrator)
-            const sample = card.lines && card.lines.shadeSample;
+            // Show results from shade-picker sample, or lastSampledColor (calibration click)
+            const sample = (card.lines && card.lines.shadeSample) ||
+                           (card.lastSampledColor ? { ...card.lastSampledColor } : null);
             if (sample) {
                 const lab = window.ColorSpace.rgbToLab(sample.r, sample.g, sample.b);
                 
