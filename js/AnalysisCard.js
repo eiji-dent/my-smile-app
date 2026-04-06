@@ -254,6 +254,7 @@ class AnalysisCard {
               if (this.activeTool === 'shade-calibrator') container.classList.add('open');
               else container.classList.remove('open');
             }
+            this.updateStats(); // Ensure magnifier toggles
           }
           this.drawCanvas();
       };
@@ -402,6 +403,7 @@ class AnalysisCard {
         if (this.activeTool === 'shade-map') {
             this.shadeMapRect = { x1: coords.realX, y1: coords.realY, x2: coords.realX, y2: coords.realY, active: true, finalized: false };
             this.drawCanvas();
+            this.updateStats();
             return;
         }
         if (this.drawState === 'idle') {
@@ -448,6 +450,7 @@ class AnalysisCard {
             this.shadeMapRect.x2 = this.shadeMapRect.x1 + (dx >= 0 ? side : -side);
             this.shadeMapRect.y2 = this.shadeMapRect.y1 + (dy >= 0 ? side : -side);
             this.drawCanvas();
+            this.updateStats();
         }
         if (this.drawState === 'multi-point' && this.tempPoints.length > 0) { this.tempEnd = coords; this.drawCanvas(); }
         if (this.drawState === 'pt1-placed') { this.tempEnd = coords; this.drawCanvas(); }

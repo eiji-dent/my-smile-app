@@ -109,6 +109,13 @@ window.ShadeHandlers = {
                     }
                 }
             }
+
+            // --- Shade Map Update (100-Division) --- always visible
+            const shadeZoomCanvas = card.card.querySelector('#shade-zoom-canvas');
+            
+            if (card.shadeMapRect && (card.shadeMapRect.active || card.shadeMapRect.finalized) && card.currentImage && shadeZoomCanvas) {
+                this.updateShadeMapZoom(card, shadeZoomCanvas);
+            }
         }
     },
 
@@ -165,6 +172,87 @@ window.ShadeHandlers = {
         }
         t.textContent = msg; t.style.opacity = '1';
         setTimeout(() => { t.style.opacity = '0'; }, 2000);
+    },
+
+    updateShadeMapZoom(card, zoomCanvas) {
+        const { x1, y1, x2, y2 } = card.shadeMapRect;
+        const rx = Math.min(x1, x2);
+        const ry = Math.min(y1, y2);
+        const rw = Math.max(1, Math.abs(x2 - x1));
+        const rh = Math.max(1, Math.abs(y2 - y1));
+
+        card.prepareOffScreenCanvas();
+        const srcCtx = window.AnalysisCard.offScreenCtx;
+        
+        // Ensure bounds are valid
+        const imgW = card.currentImage.width;
+        const imgH = card.currentImage.height;
+        if (rx >= imgW || ry >= imgH || rx + rw < 0 || ry + rh < 0) return;
+
+        // Visual Display Size
+        const cw = zoomCanvas.width = 300; 
+        const ch = zoomCanvas.height = 300;
+        const zCtx = zoomCanvas.getContext('2d', { willReadFrequently: true });
+        zCtx.clearRect(0, 0, cw, ch);
+
+        const stepW = rw / 10;
+        const stepH = rh / 10;
+
+        // Image boundary clamping for extraction
+        const safeX = Math.max(0, Math.min(Math.floor(rx), imgW - 1));
+        const safeY = Math.max(0, Math.min(Math.floor(ry), imgH - 1));
+        const safeW = Math.max(1, Math.min(Math.floor(rw), imgW - safeX));
+        const safeH = Math.max(1, Math.min(Math.floor(rh), imgH - safeY));
+        
+        let imgData;
+        try {
+             imgData = srcCtx.getImageData(safeX, safeY, safeW, safeH);
+        } catch(e) { return; }
+        
+        const cellW = cw / 10;
+        const cellH = ch / 10;
+        
+        // Offset mapping - extracted image coordinates start from 0
+        const offsetX = safeX - rx;
+        const offsetY = safeY - ry;
+
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                const sX = Math.max(0, Math.floor(col * stepW + offsetX));
+                const sY = Math.max(0, Math.floor(row * stepH + offsetY));
+                let eX = Math.floor((col + 1) * stepW + offsetX);
+                let eY = Math.floor((row + 1) * stepH + offsetY);
+                
+                if (eX > safeW) eX = safeW;
+                if (eY > safeH) eY = safeH;
+
+                let sumR = 0, sumG = 0, sumB = 0, count = 0;
+                
+                for(let y = sY; y < eY; y++) {
+                    for(let x = sX; x < eX; x++) {
+                        const idx = (y * safeW + x) * 4;
+                        sumR += imgData.data[idx];
+                        sumG += imgData.data[idx + 1];
+                        sumB += imgData.data[idx + 2];
+                        count++;
+                    }
+                }
+                
+                if (count > 0) {
+                    const avgR = Math.round(sumR / count);
+                    const avgG = Math.round(sumG / count);
+                    const avgB = Math.round(sumB / count);
+                    zCtx.fillStyle = `rgb(${avgR}, ${avgG}, ${avgB})`;
+                } else {
+                    zCtx.fillStyle = '#ccc';
+                }
+                
+                zCtx.fillRect(col * cellW, row * cellH, cellW, cellH);
+                zCtx.strokeStyle = 'rgba(255,255,255,0.3)';
+                zCtx.lineWidth = 1;
+                zCtx.strokeRect(col * cellW, row * cellH, cellW, cellH);
+            }
+        }
     },
 
     drawShade(card, mapC) {
@@ -229,6 +317,18 @@ window.ShadeHandlers = {
                 card.ctx.fillStyle = '#10b981';
                 card.ctx.fillText(p.id, m.x + 12, m.y - 12);
             });
+        }
+
+        if (card.shadeMapRect) {
+            const { x1, y1, x2, y2, active, finalized } = card.shadeMapRect;
+            const m1 = mapC(x1, y1);
+            const m2 = mapC(x2, y2);
+            card.ctx.strokeStyle = (active || finalized) ? '#f59e0b' : '#94a3b8'; // Amber or Slate
+            card.ctx.lineWidth = finalized ? 2 : 1;
+            if (active) card.ctx.setLineDash([5, 5]);
+            else card.ctx.setLineDash([]);
+            card.ctx.strokeRect(Math.min(m1.x, m2.x), Math.min(m1.y, m2.y), Math.abs(m2.x - m1.x), Math.abs(m2.y - m1.y));
+            card.ctx.setLineDash([]);
         }
     }
 };
