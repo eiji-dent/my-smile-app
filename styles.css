@@ -1779,6 +1779,23 @@ body.is-exporting * {
   pointer-events: none;
 }
 
+/* 開発中のボタン表示 (未完成版) */
+.btn-under-dev {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important;
+  color: #f1f5f9 !important;
+  border: 1px dashed rgba(255, 255, 255, 0.4) !important;
+  box-shadow: none !important;
+  filter: grayscale(0.8);
+  pointer-events: none;
+}
+
+.btn-under-dev i {
+  color: #f1f5f9 !important;
+  animation: none !important;
+}
+
 @keyframes shine-rotate {
   0% {
     transform: rotate(0deg);
