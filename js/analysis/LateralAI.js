@@ -1,38 +1,57 @@
 window.LateralAI = {
     /**
-     * 1クリック誘導式・双方向コントラスト追跡解析
+     * FaceMeshのランドマークをベースにした自動側貌解析
+     * @param {Array} landmarks - MediaPipe FaceLandmarkerの468点
      */
-    detectFromSeed(seedX, seedY, width, height, imageData, aiMask) {
-        // 1. 周辺範囲で「色の変化が最も激しい場所」を双方向に探す (クリック位置のズレ補完)
-        const noseEdgeX = this._findMaxGradientEdgeBidirectional(seedX, seedY, width, imageData);
-        if (noseEdgeX === -1) return null;
+    detectFromLandmarks(landmarks, width, height, imageData) {
+        if (!landmarks || landmarks.length === 0) return null;
 
-        const bgSample = this._getBackgroundColor(imageData, width, height);
+        // --- 1. インデックスの定義 ---
+        // 8: Glabella(眉間), 4: Pronasale(鼻先), 164: Subnasale(鼻下), 
+        // 0: Upper Lip(上唇), 17: Lower Lip(下唇), 199: Pogonion(オトガイ前点), 152: Menton(オトガイ最下点)
+        const indices = {
+            g: 8, prn: 4, sn: 164, ls: 0, li: 17, pg: 199
+        };
 
-        // 2. エッジフォロワー（輪郭追跡）
-        let profile = this._traceProfileByContrast(noseEdgeX, seedY, width, height, imageData, bgSample);
-        if (profile.length < 40) return null;
+        const pts = {};
+        for (const [key, idx] of Object.entries(indices)) {
+            const lm = landmarks[idx];
+            if (!lm) continue;
 
-        // 3. データの平滑化 (ノイズ除去)
-        profile = this._smoothProfile(profile);
+            // 2D画像座標に変換
+            let rx = lm.x * width;
+            let ry = lm.y * height;
 
-        // 4. 特徴点の検出
-        return this._extractLandmarksFromProfile(profile);
+            // 輪郭（右端）へ吸着させる
+            pts[key] = this._snapToRightEdge(rx, ry, width, height, imageData);
+        }
+
+        // コルメラ(Col)は鼻先と鼻下の間
+        pts.col = { 
+            x: (pts.prn.x + pts.sn.x) / 2, 
+            y: (pts.prn.y + pts.sn.y) / 2 
+        };
+
+        // 簡易的なプロファイルラインの生成 (特徴点を繋ぐ)
+        pts.profileLine = this._generateProfileLine(pts);
+
+        return pts;
     },
 
     /**
-     * クリック地点から左右50pxの範囲で、最もコントラストが強い地点をエッジとして特定
+     * AIの推定位置から右側へ最大30px走査し、最もコントラストが強い地点（輪郭）に吸着
      */
-    _findMaxGradientEdgeBidirectional(startX, y, width, imageData) {
+    _snapToRightEdge(startX, y, width, height, imageData) {
         let maxGrad = -1;
-        let edgeX = -1;
-        const radius = 60; // 左右60pxの範囲をスキャン
+        let edgeX = startX;
+        const searchRange = 50; // 最大50px右側を探す
+        const ry = Math.floor(y);
 
-        for (let x = Math.max(0, startX - radius); x < Math.min(width - 2, startX + radius); x++) {
-            const idx1 = (y * width + x) * 4;
-            const idx2 = (y * width + (x + 1)) * 4;
+        for (let x = Math.floor(startX - 10); x < Math.min(width - 2, startX + searchRange); x++) {
+            const idx1 = (ry * width + x) * 4;
+            const idx2 = (ry * width + (x + 1)) * 4;
             
-            // 色距離（勾配）の計算
+            // 明度差（簡易勾配）を計算
             const diff = Math.abs(imageData[idx1] - imageData[idx2]) + 
                          Math.abs(imageData[idx1+1] - imageData[idx2+1]) + 
                          Math.abs(imageData[idx1+2] - imageData[idx2+2]);
@@ -42,127 +61,32 @@ window.LateralAI = {
                 edgeX = x;
             }
         }
-        return maxGrad > 20 ? edgeX : -1;
-    },
-
-    /**
-     * 前の段のエッジから、左側や右側に変化する輪郭を追跡
-     */
-    _traceProfileByContrast(startX, startY, width, height, imageData, bgSample) {
-        const profile = [{ x: startX, y: startY }];
         
-        // 上方向 (眉間)
-        let currX = startX;
-        for (let y = startY - 2; y > height * 0.1; y -= 2) {
-            const nextX = this._findLocalMaxGradient(currX, y, width, imageData);
-            if (nextX === -1) break;
-            if (Math.abs(nextX - currX) > 30) break; // 30px以上の急激な横飛びは失敗
-            profile.unshift({ x: nextX, y: y });
-            currX = nextX;
-        }
-
-        // 下方向 (唇・顎)
-        currX = startX;
-        for (let y = startY + 2; y < height * 0.95; y += 2) {
-            const nextX = this._findLocalMaxGradient(currX, y, width, imageData);
-            if (nextX === -1) break;
-            if (Math.abs(nextX - currX) > 30) break;
-            profile.push({ x: nextX, y: y });
-            currX = nextX;
-        }
-        return profile;
-    },
-
-    _findLocalMaxGradient(prevX, y, width, imageData) {
-        let maxGrad = -1;
-        let bestX = -1;
-        const range = 25; // 前段のエ位置から左右25pxを探索範囲に
-
-        for (let x = prevX - range; x <= prevX + range; x++) {
-            if (x < 0 || x >= width - 2) continue;
-            const idx1 = (y * width + x) * 4;
-            const idx2 = (y * width + (x + 1)) * 4;
-            const diff = Math.abs(imageData[idx1] - imageData[idx2]) + 
-                         Math.abs(imageData[idx1+1] - imageData[idx2+1]) + 
-                         Math.abs(imageData[idx1+2] - imageData[idx2+2]);
-            
-            if (diff > maxGrad) {
-                maxGrad = diff;
-                bestX = x;
-            }
-        }
-        return maxGrad > 15 ? bestX : -1;
+        // グラディエントが弱すぎる場合はAIの推定値をそのまま使う
+        return maxGrad > 15 ? { x: edgeX, y: y } : { x: startX, y: y };
     },
 
     /**
-     * データのスムージング
+     * 特徴点間を補完して滑らかな輪郭線を生成 (描画用)
      */
-    _smoothProfile(profile) {
-        const result = [];
-        const windowSize = 3;
-        for (let i = 0; i < profile.length; i++) {
-            let sumX = 0, count = 0;
-            for (let j = i - windowSize; j <= i + windowSize; j++) {
-                if (profile[j]) { sumX += profile[j].x; count++; }
+    _generateProfileLine(pts) {
+        const order = ['g', 'prn', 'col', 'sn', 'ls', 'li', 'pg'];
+        const line = [];
+        for (let i = 0; i < order.length - 1; i++) {
+            const p1 = pts[order[i]];
+            const p2 = pts[order[i+1]];
+            if (!p1 || !p2) continue;
+            
+            // 直線補完 (簡易版)
+            const segments = 10;
+            for (let s = 0; s <= segments; s++) {
+                const t = s / segments;
+                line.push({
+                    x: p1.x * (1 - t) + p2.x * t,
+                    y: p1.y * (1 - t) + p2.y * t
+                });
             }
-            result.push({ x: sumX / count, y: profile[i].y });
         }
-        return result;
-    },
-
-    _getBackgroundColor(data, width, height) {
-        let r=0, g=0, b=0, count=0;
-        const samples = [{x:5,y:5}, {x:width-5,y:5}, {x:5,y:height-5}, {x:width-5,y:height-5}];
-        samples.forEach(s => {
-            const idx = (s.y * width + s.x) * 4;
-            if (idx < data.length) { r += data[idx]; g += data[idx+1]; b += data[idx+2]; count++; }
-        });
-        return count > 0 ? { r: r/count, g: g/count, b: b/count } : { r: 250, g: 250, b: 250 };
-    },
-
-    _extractLandmarksFromProfile(profile) {
-        try {
-            // 解析: 右向き(Nose=MaxX)
-            const prnIdx = this._findExtremeIndex(profile, true, 'x');
-            const prn = profile[prnIdx];
-
-            const gRange = profile.slice(0, prnIdx);
-            const gIdx = this._findExtremeIndex(gRange, false, 'x');
-            const g = gRange[gIdx] || profile[0];
-
-            const snSearchRange = profile.slice(prnIdx + 2);
-            const snSubRange = snSearchRange.slice(0, Math.floor(profile.length * 0.25));
-            const snIdx = this._findExtremeIndex(snSubRange, false, 'x');
-            const sn = snSubRange[snIdx];
-
-            const lsSearchRange = profile.slice(profile.indexOf(sn) + 1);
-            const lsSubRange = lsSearchRange.slice(0, Math.floor(profile.length * 0.15));
-            const lsIdx = this._findExtremeIndex(lsSubRange, true, 'x');
-            const ls = lsSubRange[lsIdx];
-
-            const liSearchRange = profile.slice(profile.indexOf(ls) + 5);
-            const liSubRange = liSearchRange.slice(0, Math.floor(profile.length * 0.22));
-            const liIdx = this._findExtremeIndex(liSubRange, true, 'x');
-            const li = liSubRange[liIdx];
-
-            const pgSearchRange = profile.slice(profile.indexOf(li) + 8);
-            const pgIdx = this._findExtremeIndex(pgSearchRange, true, 'x');
-            const pg = pgSearchRange[pgIdx];
-
-            const btwnPrnSn = profile.slice(profile.indexOf(prn), profile.indexOf(sn));
-            const col = btwnPrnSn[Math.floor(btwnPrnSn.length * 0.5)] || prn;
-
-            return { prn, sn, ls, li, pg, g, col, profileLine: profile };
-        } catch(e) { return null; }
-    },
-
-    _findExtremeIndex(points, findMax, axis) {
-        if (!points || points.length === 0) return 0;
-        let extIdx = 0, extVal = points[0][axis];
-        for (let i = 1; i < points.length; i++) {
-            const val = points[i][axis];
-            if (findMax ? (val > extVal) : (val < extVal)) { extVal = val; extIdx = i; }
-        }
-        return extIdx;
+        return line;
     }
 };

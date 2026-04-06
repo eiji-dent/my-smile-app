@@ -315,12 +315,6 @@ class AnalysisCard {
         if (!this.currentImage) return;
         const coords = this.getMouseCoords(e);
         
-        // 1クリック誘導AIのクリック待ち処理
-        if (this.isWaitingForAIClick) {
-            this.processGuidedLateralAI(coords);
-            return;
-        }
-
         if (e.button === 1 || e.button === 2 || e.shiftKey) {
             this.isPanning = true;
             this.lastPanPt = { x: e.clientX, y: e.clientY };
@@ -580,14 +574,7 @@ class AnalysisCard {
           this.prepareOffScreenCanvas();
           const canvas = AnalysisCard.offScreenCanvas;
 
-          if (this.phase === 'lateral') {
-              // --- Lateral Analysis (1-Click Guided) ---
-              this.isWaitingForAIClick = true;
-              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">鼻先をクリック...</span>';
-              this.showTooltip("画像上の【鼻先（一番高い所）】を1箇所クリックしてください。解析が始まります。");
-              return;
-          } else {
-              // --- Frontal / E-Midline (Face Landmarker) ---
+          if (true) { // All phases (Frontal/Lateral/E-Midline) now use FaceLandmarker
               const landmarker = await window.initFaceLandmarker();
               if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
               
@@ -600,10 +587,14 @@ class AnalysisCard {
               }
               
               if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
-                  alert("顔が検出されませんでした。正面を向いた鮮明な画像でお試しください。");
+                  alert("顔を正しく認識できませんでした。明るさや角度を調整してください。");
               } else {
-                  this.applyLandmarksToPlots(result.faceLandmarks[0], canvas.width, canvas.height);
-                  console.log("Frontal landmark detection successful.");
+                  if (this.phase === 'lateral') {
+                      this.processFaceMeshLateralAI(result);
+                  } else {
+                      this.applyAILandmarks(result);
+                  }
+                  console.log(`${this.phase} AI analysis successful.`);
               }
           }
       } catch (err) {
@@ -975,39 +966,18 @@ class AnalysisCard {
       this.updateStats(); this.drawCanvas();
   }
 
-  async processGuidedLateralAI(coords) {
-      this.isWaitingForAIClick = false;
-      const aiBtn = this.card.querySelector('.ai-analyze-btn');
-      const originalHTML = aiBtn.innerHTML;
-      aiBtn.disabled = true;
-      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">解析中...</span>';
+  async processFaceMeshLateralAI(result) {
+      this.prepareOffScreenCanvas();
+      const canvas = AnalysisCard.offScreenCanvas;
+      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      const landmarks = result.faceLandmarks[0];
 
-      try {
-          this.prepareOffScreenCanvas();
-          const canvas = AnalysisCard.offScreenCanvas;
-          
-          // セグメンテーション（補助用）
-          const segmenter = await window.initImageSegmenter();
-          const result = segmenter ? segmenter.segment(canvas) : null;
-          const mask = result ? result.categoryMask.getAsUint8Array() : null;
-          const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-
-          const pts = LateralAI.detectFromSeed(coords.realX, coords.realY, canvas.width, canvas.height, imageData.data, mask);
-          if (pts) {
-              this.applyLateralLandmarks(pts);
-              this.showTooltip("側貌解析が完了しました。必要に応じてプロットを微調整してください。");
-          } else {
-              alert("輪郭の特定に失敗しました。鼻の先端を正確にクリックしてください。");
-              this.showTooltip("解析失敗。再度『AI自動解析』を押して鼻先をクリックしてください。");
-          }
-      } catch (e) {
-          console.error(e);
-          alert("解析エラーが発生しました。");
-      } finally {
-          aiBtn.disabled = false;
-          aiBtn.innerHTML = originalHTML.replace('鼻先をクリック...', 'AI自動解析');
-          this.card.classList.remove('ai-scanning');
-          this.updateToolbarStatus();
+      const lateralPoints = LateralAI.detectFromLandmarks(landmarks, canvas.width, canvas.height, imageData.data);
+      if (lateralPoints) {
+          this.applyLateralLandmarks(lateralPoints);
+          this.showTooltip("側貌（横顔）の自動解析が完了しました。");
+      } else {
+          alert("側貌の輪郭を特定できませんでした。");
       }
   }
 }
