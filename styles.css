@@ -323,9 +323,33 @@ body {
 }
 
 .tool-radio:checked+.tool-label {
+  background-color: var(--primary);
+  color: #fff;
   border-color: var(--primary);
-  background-color: var(--primary-light);
-  color: var(--primary);
+  box-shadow: 0 4px 12px var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.tool-label.completed {
+  border-color: var(--success);
+  background-color: rgba(16, 185, 129, 0.08);
+  color: var(--success);
+}
+
+.tool-label.completed i {
+  color: var(--success) !important;
+}
+
+.tool-label.completed::after {
+  content: ' \2713';
+  font-weight: 800;
+  margin-left: 4px;
+}
+
+.tool-radio:checked+.tool-label.completed {
+  background-color: var(--success);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 /* Canvas Wrapper / Drop Zone */

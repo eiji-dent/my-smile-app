@@ -121,6 +121,7 @@ class AnalysisCard {
     this.toolRadios = this.card.querySelectorAll('.tool-radio');
     const checkedRadio = this.card.querySelector('.tool-radio:checked');
     if (checkedRadio) this.activeTool = checkedRadio.value;
+    this.updateToolbarStatus();
   }
 
   initUI() {
@@ -281,12 +282,11 @@ class AnalysisCard {
              this.drawState = 'idle'; this.showTooltip(this.STEPS.HBAR_REF[0]);
           } else if(this.activeTool === 'hbar-bar') {
              this.drawState = 'idle'; this.showTooltip(this.STEPS.HBAR_BAR[0]);
-          } else if(this.activeTool === 'calib') { 
-             this.drawState = 'idle'; this.showTooltip(this.STEPS.CALIB[0]); 
-          } else { 
-             this.drawState = 'idle'; this.hideTooltip(); 
-          }
-          this.drawCanvas(); this.updateStats();
+          } else if(this.activeTool === 'calib') {
+             this.drawState = 'idle'; this.showTooltip(this.STEPS.CALIB[0]);
+          } else { this.drawState = 'idle'; this.hideTooltip(); }
+          this.updateStats();
+          this.drawCanvas();
         });
       }
 
@@ -863,6 +863,39 @@ class AnalysisCard {
     if (['frontal', 'lateral', 'e-midline', 'e-sound', 'm-sound', 's-sound', 'fv-sound'].includes(this.phase)) FacialHandlers.updateStats(this);
     else if (this.phase === 'intraoral') DentalHandlers.updateStats(this);
     else if (this.phase === 'shade-take') ShadeHandlers.updateShadeStats(this);
+    this.updateToolbarStatus();
+  }
+
+  updateToolbarStatus() {
+    if (!this.toolRadios) return;
+    this.toolRadios.forEach(radio => {
+      const label = this.card.querySelector(`label[for="${radio.id}"]`);
+      if (!label) return;
+      const val = radio.value;
+      const L = this.lines;
+      let isDone = false;
+      switch(val) {
+        case 'interpupillary': isDone = !!L.interpupillary; break;
+        case 'midline': isDone = !!L.midline; break;
+        case 'commissural': isDone = !!L.commissural; break;
+        case 'vertical-proportions': isDone = (L.verticalProportions && L.verticalProportions.length === 6); break;
+        case 'eline': isDone = (L.eLine && L.eLine.length === 4); break;
+        case 'nla': isDone = (L.nla && L.nla.length === 3); break;
+        case 'convexity': isDone = (L.convexity && L.convexity.length === 3); break;
+        case 'f-midline': isDone = !!L['f-midline']; break;
+        case 'd-midline': isDone = !!L['d-midline']; break;
+        case 'interpupillary-e': isDone = !!L['interpupillary-e']; break;
+        case 'incisal-edge': isDone = !!L['incisal-edge']; break;
+        case 'smile-arc': isDone = (L.smileArc && L.smileArc.length === 6); break;
+        case 'corridor': isDone = (L.corridor && L.corridor.length === 4); break;
+        case 'gingival': isDone = (L.gingival && L.gingival.length === 4); break;
+        case 'shade-sample': isDone = !!L.shadeSample; break;
+        case 'shade-diff': isDone = !!(this.shadeDiffA && this.shadeDiffB); break;
+        case 'calib': isDone = this.pxToMm !== 0.075; break;
+      }
+      if (isDone) label.classList.add('completed');
+      else label.classList.remove('completed');
+    });
   }
 
   calibrateShade(rX, rY) {
