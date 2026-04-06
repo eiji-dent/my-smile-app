@@ -574,7 +574,25 @@ class AnalysisCard {
           this.prepareOffScreenCanvas();
           const canvas = AnalysisCard.offScreenCanvas;
 
-          if (true) { // All phases (Frontal/Lateral/E-Midline) now use FaceLandmarker
+          if (this.phase === 'lateral') {
+              // --- Lateral Analysis (Silhouette Scanning) ---
+              const segmenter = await window.initImageSegmenter();
+              if (!segmenter) throw new Error("セグメンテーションモデルの初期化に失敗しました。");
+              
+              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">シルエット解析中...</span>';
+              const result = segmenter.segment(canvas);
+              const mask = result.categoryMask.getAsUint8Array();
+              const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+              
+              const lateralPoints = LateralAI.detectFromMask(mask, canvas.width, canvas.height, imageData.data);
+              if (lateralPoints) {
+                  this.applyLateralLandmarks(lateralPoints);
+                  this.showTooltip("側貌（横顔）の自動解析が完了しました。");
+              } else {
+                  alert("側貌の輪郭を特定できませんでした。背景がシンプルな画像でお試しください。");
+              }
+          } else {
+              // --- Frontal / E-Midline (Face Landmarker) ---
               const landmarker = await window.initFaceLandmarker();
               if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
               
@@ -589,11 +607,7 @@ class AnalysisCard {
               if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
                   alert("顔を正しく認識できませんでした。明るさや角度を調整してください。");
               } else {
-                  if (this.phase === 'lateral') {
-                      this.processFaceMeshLateralAI(result);
-                  } else {
-                      this.applyAILandmarks(result);
-                  }
+                  this.applyAILandmarks(result);
                   console.log(`${this.phase} AI analysis successful.`);
               }
           }
@@ -966,19 +980,6 @@ class AnalysisCard {
       this.updateStats(); this.drawCanvas();
   }
 
-  async processFaceMeshLateralAI(result) {
-      this.prepareOffScreenCanvas();
-      const canvas = AnalysisCard.offScreenCanvas;
-      const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-      const landmarks = result.faceLandmarks[0];
-
-      const lateralPoints = LateralAI.detectFromLandmarks(landmarks, canvas.width, canvas.height, imageData.data);
-      if (lateralPoints) {
-          this.applyLateralLandmarks(lateralPoints);
-          this.showTooltip("側貌（横顔）の自動解析が完了しました。");
-      } else {
-          alert("側貌の輪郭を特定できませんでした。");
-      }
-  }
+  // Silhouette analysis logic is now embedded in runAIAnalysis for better flow control.
 }
 window.AnalysisCard = AnalysisCard;

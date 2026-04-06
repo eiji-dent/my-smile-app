@@ -1,92 +1,113 @@
 window.LateralAI = {
     /**
-     * FaceMeshのランドマークをベースにした自動側貌解析
-     * @param {Array} landmarks - MediaPipe FaceLandmarkerの468点
+     * AIシルエットマスクをベースにした自動側貌解析
+     * @param {Uint8Array} mask - MediaPipe ImageSegmenterのマスク
      */
-    detectFromLandmarks(landmarks, width, height, imageData) {
-        if (!landmarks || landmarks.length === 0) return null;
+    detectFromMask(mask, width, height, imageData) {
+        // --- 1. 右端スキャンによる輪郭線の抽出 ---
+        const rawProfile = this._scanRightEdge(mask, width, height);
+        if (rawProfile.length < 50) return null;
 
-        // --- 1. インデックスの定義 ---
-        // 8: Glabella(眉間), 4: Pronasale(鼻先), 164: Subnasale(鼻下), 
-        // 0: Upper Lip(上唇), 17: Lower Lip(下唇), 199: Pogonion(オトガイ前点), 152: Menton(オトガイ最下点)
-        const indices = {
-            g: 8, prn: 4, sn: 164, ls: 0, li: 17, pg: 199
-        };
+        // --- 2. スムージング (ノイズ除去) ---
+        const profile = this._smoothProfile(rawProfile);
 
-        const pts = {};
-        for (const [key, idx] of Object.entries(indices)) {
-            const lm = landmarks[idx];
-            if (!lm) continue;
-
-            // 2D画像座標に変換
-            let rx = lm.x * width;
-            let ry = lm.y * height;
-
-            // 輪郭（右端）へ吸着させる
-            pts[key] = this._snapToRightEdge(rx, ry, width, height, imageData);
-        }
-
-        // コルメラ(Col)は鼻先と鼻下の間
-        pts.col = { 
-            x: (pts.prn.x + pts.sn.x) / 2, 
-            y: (pts.prn.y + pts.sn.y) / 2 
-        };
-
-        // 簡易的なプロファイルラインの生成 (特徴点を繋ぐ)
-        pts.profileLine = this._generateProfileLine(pts);
-
-        return pts;
+        // --- 3. 形状解析による特徴点の特定 ---
+        return this._extractLandmarksByCurvature(profile, width, height);
     },
 
     /**
-     * AIの推定位置から右側へ最大30px走査し、最もコントラストが強い地点（輪郭）に吸着
+     * マスクデータを垂直に走査し、各行の人物の最も右の座標(X)を記録
      */
-    _snapToRightEdge(startX, y, width, height, imageData) {
-        let maxGrad = -1;
-        let edgeX = startX;
-        const searchRange = 50; // 最大50px右側を探す
-        const ry = Math.floor(y);
-
-        for (let x = Math.floor(startX - 10); x < Math.min(width - 2, startX + searchRange); x++) {
-            const idx1 = (ry * width + x) * 4;
-            const idx2 = (ry * width + (x + 1)) * 4;
-            
-            // 明度差（簡易勾配）を計算
-            const diff = Math.abs(imageData[idx1] - imageData[idx2]) + 
-                         Math.abs(imageData[idx1+1] - imageData[idx2+1]) + 
-                         Math.abs(imageData[idx1+2] - imageData[idx2+2]);
-            
-            if (diff > maxGrad) {
-                maxGrad = diff;
-                edgeX = x;
+    _scanRightEdge(mask, width, height) {
+        const points = [];
+        // 頭頂部(15%)から顎下(90%)の範囲をスキャン
+        for (let y = Math.floor(height * 0.15); y < Math.floor(height * 0.95); y++) {
+            let maxX = -1;
+            // 右から左へ向かって、最初に人物(mask > 128)が見つかった点
+            for (let x = width - 1; x >= width * 0.2; x--) {
+                if (mask[y * width + x] > 128) {
+                    maxX = x;
+                    break;
+                }
+            }
+            if (maxX !== -1) {
+                points.push({ x: maxX, y: y });
             }
         }
-        
-        // グラディエントが弱すぎる場合はAIの推定値をそのまま使う
-        return maxGrad > 15 ? { x: edgeX, y: y } : { x: startX, y: y };
+        return points;
+    },
+
+    _smoothProfile(points) {
+        const result = [];
+        const windowSize = 5; // 5ピクセルの移動平均
+        for (let i = 0; i < points.length; i++) {
+            let sumX = 0, count = 0;
+            for (let j = i - windowSize; j <= i + windowSize; j++) {
+                if (points[j]) { sumX += points[j].x; count++; }
+            }
+            result.push({ x: sumX / count, y: points[i].y });
+        }
+        return result;
     },
 
     /**
-     * 特徴点間を補完して滑らかな輪郭線を生成 (描画用)
+     * 垂直方向のプロファイルラインから、凹凸のピーク（特徴点）を特定
      */
-    _generateProfileLine(pts) {
-        const order = ['g', 'prn', 'col', 'sn', 'ls', 'li', 'pg'];
-        const line = [];
-        for (let i = 0; i < order.length - 1; i++) {
-            const p1 = pts[order[i]];
-            const p2 = pts[order[i+1]];
-            if (!p1 || !p2) continue;
+    _extractLandmarksByCurvature(profile, width, height) {
+        try {
+            // Pronasale (Prn): 全体の中で最も右に突き出ている点（鼻先）
+            const prnIdx = this._findExtremeIndex(profile, true, 'x');
+            const prn = profile[prnIdx];
+
+            // Glabella (G): 鼻先より上で、最も凹んでいる点（眉間）
+            const gRange = profile.slice(0, prnIdx);
+            const gIdx = this._findExtremeIndex(gRange, false, 'x');
+            const g = gRange[gIdx] || profile[0];
+
+            // Subnasale (Sn): 鼻先より下で、最初の深い凹み
+            // 鼻先から下方、全長の1/4程度の範囲で探す
+            const snSearchRange = profile.slice(prnIdx + 5);
+            const snSubRange = snSearchRange.slice(0, Math.floor(profile.length * 0.2));
+            const snIdx = this._findExtremeIndex(snSubRange, false, 'x');
+            const sn = snSubRange[snIdx];
+
+            // Lips & Chin: Snより下の山を探す
+            const lowerPart = profile.slice(profile.indexOf(sn) + 5);
             
-            // 直線補完 (簡易版)
-            const segments = 10;
-            for (let s = 0; s <= segments; s++) {
-                const t = s / segments;
-                line.push({
-                    x: p1.x * (1 - t) + p2.x * t,
-                    y: p1.y * (1 - t) + p2.y * t
-                });
-            }
+            // Labiale Superius (Ls): Snより下の最初の山（上唇）
+            const lsSubRange = lowerPart.slice(0, Math.floor(profile.length * 0.15));
+            const lsIdx = this._findExtremeIndex(lsSubRange, true, 'x');
+            const ls = lsSubRange[lsIdx];
+
+            // Labiale Inferius (Li): 上唇より下の次の山（下唇）
+            const liSearchRange = lowerPart.slice(lsSubRange.indexOf(ls) + 8);
+            const liSubRange = liSearchRange.slice(0, Math.floor(profile.length * 0.2));
+            const liIdx = this._findExtremeIndex(liSubRange, true, 'x');
+            const li = liSubRange[liIdx];
+
+            // Pogonion (Pg): 下唇より下の最も右に突き出した点（顎）
+            const pgSearchRange = lowerPart.slice(lowerPart.indexOf(li) + 10);
+            const pgIdx = this._findExtremeIndex(pgSearchRange, true, 'x');
+            const pg = pgSearchRange[pgIdx];
+
+            // Columella (Col): 鼻先と鼻下の中間点
+            const betweenPrnSn = profile.slice(profile.indexOf(prn), profile.indexOf(sn));
+            const col = betweenPrnSn[Math.floor(betweenPrnSn.length * 0.5)] || prn;
+
+            return { prn, sn, ls, li, pg, g, col, profileLine: profile };
+        } catch (e) {
+            console.error("Lateral profile analysis failed:", e);
+            return null;
         }
-        return line;
+    },
+
+    _findExtremeIndex(points, findMax, axis) {
+        if (!points || points.length === 0) return 0;
+        let extIdx = 0, extVal = points[0][axis];
+        for (let i = 1; i < points.length; i++) {
+            const val = points[i][axis];
+            if (findMax ? (val > extVal) : (val < extVal)) { extVal = val; extIdx = i; }
+        }
+        return extIdx;
     }
 };
