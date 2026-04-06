@@ -30,27 +30,33 @@ window.ShadeHandlers = {
 
     // --- Statistics and Update Logic ---
     updateShadeStats(card) {
-        if (card.phase === 'shade-calibration') {
+        if (card.phase === 'shade-take') {
+            // --- Calibration Display ---
             this.renderCalibPlotList(card);
-            const elOffset = card.card.querySelector('.offset-value');
-            if (elOffset) {
-                const off = card.shadeOffset;
-                elOffset.textContent = `L:${off.l.toFixed(1)} a:${off.a.toFixed(1)} b:${off.b.toFixed(1)}`;
+            const elStatus = card.card.querySelector('#shade-calib-status');
+            const elOffset = card.card.querySelector('#shade-offset-values');
+            
+            if (card.calibPoints && card.calibPoints.length > 0) {
+                if (elStatus) elStatus.classList.remove('hidden');
+                if (elOffset) {
+                    const off = card.shadeOffset;
+                    const format = (v) => (v > 0 ? '+' : '') + v.toFixed(1);
+                    elOffset.textContent = `(L:${format(off.l)}, a:${format(off.a)}, b:${format(off.b)})`;
+                }
+            } else {
+                if (elStatus) elStatus.classList.add('hidden');
             }
-        }
 
-        if (card.phase === 'shade-analysis') {
+            // --- Sampling/Analysis Display (Closest Shade ID) ---
             const elId = card.card.querySelector('.shade-id-value');
             const elL = card.card.querySelector('.shadeL');
             const elA = card.card.querySelector('.shadeA');
             const elB = card.card.querySelector('.shadeB');
             const elDelta = card.card.querySelector('.shadeDelta');
 
-            // Find closest Shade in current guide
             const currentGuide = window.SHADE_GUIDES[card.currentShadeGuideId];
             
-            // Logic for single point or Diff
-            if (card.activeTool === 'shade-picker' && card.lastSampledColor) {
+            if ((card.activeTool === 'shade-picker' || card.activeTool === 'shade-calibrator') && card.lastSampledColor) {
                 const s = card.lastSampledColor;
                 const lab = window.ColorSpace.rgbToLab(s.r, s.g, s.b);
                 
@@ -69,35 +75,37 @@ window.ShadeHandlers = {
                 if (elDelta) elDelta.textContent = minDE.toFixed(2);
             }
 
-            // Diff Panel Update
-            if (card.shadeDiffPanel) {
-                const panel = card.shadeDiffPanel;
-                const swatchA = panel.querySelector('#diff-swatch-a');
-                const swatchB = panel.querySelector('#diff-swatch-b');
-                const deltaEVal = panel.querySelector('#diff-delta-e-val');
-                const judgment = panel.querySelector('#diff-judgment');
-                const statusBadge = panel.querySelector('#diff-status-badge');
+            // --- Diff Panel Update ---
+            const diffPanel = card.card.querySelector('.shade-comparison-panel');
+            if (diffPanel) {
+                const swatchA = diffPanel.querySelector('#diff-swatch-a');
+                const swatchB = diffPanel.querySelector('#diff-swatch-b');
+                const deltaEVal = diffPanel.querySelector('#diff-delta-e-val');
+                const judgment = diffPanel.querySelector('#diff-judgment');
+                const statusBadge = diffPanel.querySelector('#diff-status-badge');
 
                 if (card.shadeDiffA) {
-                    swatchA.style.backgroundColor = `rgb(${card.shadeDiffA.r}, ${card.shadeDiffA.g}, ${card.shadeDiffA.b})`;
+                    if (swatchA) swatchA.style.backgroundColor = `rgb(${card.shadeDiffA.r}, ${card.shadeDiffA.g}, ${card.shadeDiffA.b})`;
                 }
-                if (card.shadeDiffB) {
-                    swatchB.style.backgroundColor = `rgb(${card.shadeDiffB.r}, ${card.shadeDiffB.g}, ${card.shadeDiffB.b})`;
+                if (card.shadeDiffA && card.shadeDiffB) {
+                    if (swatchB) swatchB.style.backgroundColor = `rgb(${card.shadeDiffB.r}, ${card.shadeDiffB.g}, ${card.shadeDiffB.b})`;
                     const labA = window.ColorSpace.rgbToLab(card.shadeDiffA.r, card.shadeDiffA.g, card.shadeDiffA.b);
                     const labB = window.ColorSpace.rgbToLab(card.shadeDiffB.r, card.shadeDiffB.g, card.shadeDiffB.b);
                     const de = window.ColorSpace.deltaE(labA, labB);
-                    deltaEVal.textContent = de.toFixed(2);
+                    if (deltaEVal) deltaEVal.textContent = de.toFixed(2);
                     
-                    statusBadge.classList.remove('status-blue', 'status-yellow', 'status-red');
-                    if (de < 1.8) {
-                        judgment.textContent = ' 適合良好 (Excellent)';
-                        statusBadge.classList.add('status-blue');
-                    } else if (de < 3.6) {
-                        judgment.textContent = ' 許容範囲 (Acceptable)';
-                        statusBadge.classList.add('status-yellow');
-                    } else {
-                        judgment.textContent = ' 不適合 (Mismatch)';
-                        statusBadge.classList.add('status-red');
+                    if (statusBadge) {
+                        statusBadge.classList.remove('status-blue', 'status-yellow', 'status-red');
+                        if (de < 1.8) {
+                            if (judgment) judgment.textContent = ' 適合良好 (Excellent)';
+                            statusBadge.classList.add('status-blue');
+                        } else if (de < 3.6) {
+                            if (judgment) judgment.textContent = ' 許容範囲 (Acceptable)';
+                            statusBadge.classList.add('status-yellow');
+                        } else {
+                            if (judgment) judgment.textContent = ' 不適合 (Mismatch)';
+                            statusBadge.classList.add('status-red');
+                        }
                     }
                 }
             }

@@ -120,8 +120,8 @@ class AnalysisCard {
       }
     }
     this.toolRadios = this.card.querySelectorAll('.tool-radio');
-    const checkedRadio = this.card.querySelector('.tool-radio:checked');
-    if (checkedRadio) this.activeTool = checkedRadio.value;
+    this.toolRadios.forEach(r => { r.checked = false; }); // 全解除（白の状態にする）
+    this.activeTool = null;
     this.updateToolbarStatus();
   }
 
@@ -144,10 +144,10 @@ class AnalysisCard {
   initShadeUI() {
     this.shadeSwatch = this.card.querySelector('#shade-color-swatch');
     this.shadeIdValue = this.card.querySelector('#shade-result-id');
-    this.dropZone = this.card.querySelector('.card-image-dropzone');
-    this.canvas = this.card.querySelector('.card-canvas');
-    this.imageLayer = this.card.querySelector('.card-image-layer');
-    this.fileInput = this.card.querySelector('.card-file-input');
+    // コンストラクタで設定済みの標準セレクタを使用
+    if (!this.dropZone) this.dropZone = this.card.querySelector('.drop-zone');
+    if (!this.canvas) this.canvas = this.card.querySelector('.analysis-canvas');
+    if (!this.fileInput) this.fileInput = this.card.querySelector('.file-input');
     
     this.isWaitingForAIClick = false; // 1クリック誘導AI用の状態
     this.currentImage = null;
@@ -876,8 +876,10 @@ class AnalysisCard {
   }
 
   updateStats() {
-    if (['frontal', 'lateral', 'e-midline', 'e-sound', 'm-sound', 's-sound', 'fv-sound'].includes(this.phase)) FacialHandlers.updateStats(this);
-    else if (this.phase === 'intraoral') DentalHandlers.updateStats(this);
+    const ph = this.phase || '';
+    if (['frontal', 'lateral', 'e-midline', 'e-sound', 'm-sound', 's-sound', 'fv-sound'].includes(ph) || ph.includes('horizontal-bar')) {
+        FacialHandlers.updateStats(this);
+    } else if (ph === 'intraoral') DentalHandlers.updateStats(this);
     else if (this.phase === 'shade-take') ShadeHandlers.updateShadeStats(this);
     this.updateToolbarStatus();
   }
@@ -908,6 +910,17 @@ class AnalysisCard {
         case 'shade-sample': isDone = !!L.shadeSample; break;
         case 'shade-diff': isDone = !!(this.shadeDiffA && this.shadeDiffB); break;
         case 'calib': isDone = this.pxToMm !== 0.075; break;
+        // 追加: 技工ツール & 各種計測ツール
+        case 'hbar-ref': isDone = !!L['hbar-ref']; break;
+        case 'hbar-bar': isDone = !!L['hbar-bar']; break;
+        case 'wl-ratio': isDone = (L.wlRatio && L.wlRatio.length === 8); break;
+        case 'red-prop': isDone = (L.redProp && L.redProp.length === 7); break;
+        case 'pink-esth': isDone = (L.pinkEsth && L.pinkEsth.length === 6); break;
+        case 'axial-incl': isDone = (L.axialIncl && L.axialIncl.length === 14); break;
+        case 'papilla': isDone = (L.papilla && L.papilla.length === 5); break;
+        case 'mmeasure': isDone = !!L.mmeasure; break;
+        case 'smeasure': isDone = !!L.smeasure; break;
+        case 'fvmeasure': isDone = !!L.fvmeasure; break;
       }
       if (isDone) label.classList.add('completed');
       else label.classList.remove('completed');

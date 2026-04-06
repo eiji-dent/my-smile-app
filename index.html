@@ -203,7 +203,7 @@
             <!-- Toolbar for Frontal -->
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-frontal" id="tool-interpupillary" value="interpupillary"
                   class="tool-radio">
                 <label for="tool-interpupillary" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線を引く</label>
@@ -289,7 +289,7 @@
             <!-- Toolbar for Lateral -->
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-lateral" id="tool-eline" value="eline" class="tool-radio">
                 <label for="tool-eline" class="tool-label"><i data-lucide="ruler"></i> E-line を引く (4点計測)</label>
 
@@ -385,7 +385,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-emidline" id="tool-fmidline" value="f-midline" class="tool-radio">
                 <label for="tool-fmidline" class="tool-label"><i data-lucide="move-vertical"></i> 顔面正中線</label>
 
@@ -474,7 +474,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-esound" id="tool-arc" value="smile-arc" class="tool-radio">
                 <label for="tool-arc" class="tool-label"><i data-lucide="smile-plus"></i> スマイルアーク (6点)</label>
 
@@ -594,7 +594,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-msound" id="tool-mmeasure" value="mmeasure" class="tool-radio">
                 <label for="tool-mmeasure" class="tool-label"><i data-lucide="ruler"></i> 安静時露出量を測る</label>
               </div>
@@ -651,7 +651,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-ssound" id="tool-smeasure" value="smeasure" class="tool-radio">
                 <label for="tool-smeasure" class="tool-label"><i data-lucide="ruler"></i> Sクリアランスを測る</label>
               </div>
@@ -708,7 +708,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-fvsound" id="tool-fvmeasure" value="fvmeasure" class="tool-radio">
                 <label for="tool-fvmeasure" class="tool-label"><i data-lucide="ruler"></i> D&Wラインとの距離</label>
               </div>
@@ -765,7 +765,7 @@
           <div class="card-content">
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector">
+              <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-retracted" id="tool-wl" value="wl-ratio" class="tool-radio">
                 <label for="tool-wl" class="tool-label"><i data-lucide="box-select"></i> W/L 比率 (4点)</label>
 
@@ -998,7 +998,7 @@
 
               <div class="horizontal-toolbar">
                 <span class="tool-caption">ツール：</span>
-                <div class="tool-selector">
+                <div class="tool-selector" autocomplete="off">
                   <input type="radio" name="tool-hbar-front" id="tool-hbar-ref-front" value="hbar-ref" class="tool-radio">
                   <label for="tool-hbar-ref-front" class="tool-label"><i data-lucide="minus"></i> 水平基準</label>
 
@@ -1020,21 +1020,14 @@
                   </div>
                 </div>
 
-                <div class="quick-stats lateral-stats" style="min-width: 200px;">
-                  <table class="analysis-table">
-                    <thead>
-                      <tr>
-                        <th>項目</th>
-                        <th>値</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>傾斜角</strong></td>
-                        <td class="hbar-cant-val">-- °</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div class="quick-stats hbar-stats hbar-stats-large">
+                  <div class="stat-item">
+                    <div class="stat-label">傾斜角</div>
+                    <div class="stat-value">
+                      <span class="value-label" style="font-weight: 500; color: var(--text-muted); margin-right: 8px;">実測値:</span>
+                      <span class="hbar-cant-val">-- °</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1054,7 +1047,7 @@
 
               <div class="horizontal-toolbar">
                 <span class="tool-caption">ツール：</span>
-                <div class="tool-selector">
+                <div class="tool-selector" autocomplete="off">
                   <input type="radio" name="tool-hbar-top" id="tool-hbar-ref-top" value="hbar-ref" class="tool-radio">
                   <label for="tool-hbar-ref-top" class="tool-label"><i data-lucide="minus"></i> 水平基準</label>
 
@@ -1076,21 +1069,14 @@
                   </div>
                 </div>
 
-                <div class="quick-stats lateral-stats" style="min-width: 200px;">
-                  <table class="analysis-table">
-                    <thead>
-                      <tr>
-                        <th>項目</th>
-                        <th>値</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td><strong>傾斜角</strong></td>
-                        <td class="hbar-cant-val">-- °</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div class="quick-stats hbar-stats hbar-stats-large">
+                  <div class="stat-item">
+                    <div class="stat-label">傾斜角</div>
+                    <div class="stat-value">
+                      <span class="value-label" style="font-weight: 500; color: var(--text-muted); margin-right: 8px;">実測値:</span>
+                      <span class="hbar-cant-val">-- °</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1110,11 +1096,11 @@
 
               <div class="horizontal-toolbar">
                 <span class="tool-caption">ツール：</span>
-                <div class="tool-selector">
+                <div class="tool-selector" autocomplete="off">
                   <input type="radio" name="tool-shade-take" id="tool-shade-calibrator" value="shade-calibrator" class="tool-radio">
                   <label for="tool-shade-calibrator" class="tool-label" style="margin-right: auto;"><i data-lucide="crosshair"></i> 色調補正</label>
 
-                  <input type="radio" name="tool-shade-take" id="tool-shade-picker" value="shade-picker" class="tool-radio" checked>
+                  <input type="radio" name="tool-shade-take" id="tool-shade-picker" value="shade-picker" class="tool-radio">
                   <label for="tool-shade-picker" class="tool-label"><i data-lucide="pipette"></i> シェードテイキング</label>
 
                   <input type="radio" name="tool-shade-take" id="tool-shade-diff" value="shade-diff" class="tool-radio">

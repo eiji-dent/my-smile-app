@@ -375,12 +375,28 @@ window.FacialHandlers = {
     },
 
     updateStats(card) {
-        const ph = card.phase;
+        const ph = card.phase || '';
         if (ph === 'frontal') this.updateFrontalStats(card);
         else if (ph === 'lateral') this.updateLateralStats(card);
         else if (ph === 'e-midline') this.updateEMidlineStats(card);
         else if (ph === 'e-sound') this.updateESoundStats(card);
-        // m-sound, s-sound, fv-sound don't have complex stats yet or use simple linear measures
+        else if (ph.includes('horizontal-bar')) this.updateHBarStats(card);
+    },
+
+    updateHBarStats(card) {
+        const elCant = card.card.querySelector('.hbar-cant-val');
+        if (card.lines['hbar-bar'] && card.lines['hbar-ref']) {
+            const b = card.lines['hbar-bar'];
+            const r = card.lines['hbar-ref'];
+            const bAng = Math.atan2(b.endY - b.startY, b.endX - b.startX) * 180 / Math.PI;
+            const rAng = Math.atan2(r.endY - r.startY, r.endX - r.startX) * 180 / Math.PI;
+            let diff = Math.abs(bAng - rAng);
+            if (diff > 90) diff = Math.abs(180 - diff);
+            if (elCant) {
+                elCant.textContent = diff.toFixed(1) + ' °';
+                elCant.style.color = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
+            }
+        } else if (elCant) elCant.textContent = '-- °';
     },
 
     updateEMidlineStats(card) {

@@ -451,6 +451,32 @@ body {
   color: var(--primary);
 }
 
+/* Lab Tool Specific Large Stats */
+.hbar-stats-large .stat-label {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+.hbar-stats-large .stat-value {
+  font-size: 2.8rem;
+  line-height: 1.2;
+}
+.hbar-stats-large .value-label {
+  font-size: 1.2rem;
+}
+
+/* Lab Tool Specific Large Stats */
+.hbar-stats-large .stat-label {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+.hbar-stats-large .stat-value {
+  font-size: 2.8rem;
+  line-height: 1.2;
+}
+.hbar-stats-large .value-label {
+  font-size: 1.2rem;
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
