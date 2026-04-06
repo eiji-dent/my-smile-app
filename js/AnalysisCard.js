@@ -306,23 +306,22 @@ class AnalysisCard {
 
       this.canvas.addEventListener('mousedown', (e) => {
         if (!this.currentImage) return;
-        if (this.guidedMode) {
-            const coords = this.getMouseCoords(e);
-            this.analyzeFromNoseClick(coords.realX, coords.realY);
-            return;
-        }
+        if (this.guidedMode) return; // Legacy safety
+
         if (e.button === 1 || e.button === 2 || e.shiftKey) {
             this.isPanning = true;
             this.lastPanPt = { x: e.clientX, y: e.clientY };
             this.canvas.style.cursor = 'grabbing';
             return;
         }
+
         if (!this.activeTool) return;
         const coords = this.getMouseCoords(e);
-        if (this.hoveredPoint) {
-           this.draggingPoint = this.hoveredPoint;
-           this.canvas.style.cursor = 'grabbing';
-           return;
+
+        if (this.drawState === 'idle' && this.hoveredPoint) {
+            this.draggingPoint = this.hoveredPoint;
+            if (this.canvas) this.canvas.style.cursor = 'grabbing';
+            return;
         }
         if (this.activeTool === 'calib') {
            if (this.drawState === 'idle') {
@@ -647,7 +646,7 @@ class AnalysisCard {
   }
 
   findHoverPoint(coords) {
-      if (this.drawState !== 'idle' && this.drawState !== 'multi-point') return null;
+      if (this.drawState !== 'idle') return null; // 作図中はホバー（吸着）を無効化
       const threshold = 20 / coords.scale; 
       for(let i=0; i<this.tempPoints.length; i++) if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
       for (const key in this.lines) {
