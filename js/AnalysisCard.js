@@ -729,8 +729,8 @@ class AnalysisCard {
                   getPt(10),   // 1. Hairline
                   getPt(168),  // 2. Glabella
                   { x: (lE.x+rE.x)/2, y: (lE.y+rE.y)/2 }, // 3. Pupil line level
-                  getPt(2),    // 4. Subnasale (Adjusted to nose tip area)
-                  getPt(0),    // 5. Stomion (Adjusted to upper lip top)
+                  getPt(2),    // 4. Subnasale (Nose bottom)
+                  getPt(13),   // 5. Stomion (Where lips meet)
                   getPt(152)   // 6. Menton (Chin bottom)
               ];
           } else if (this.phase === 'e-midline') {
