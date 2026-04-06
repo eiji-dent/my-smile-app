@@ -625,18 +625,11 @@ class AnalysisCard {
   }
 
   findHoverPoint(coords) {
-     if (this.drawState !== 'idle' && this.drawState !== 'multi-point') return null;
-     const threshold = 20 / coords.scale; 
-     const multiMap = {
-         'vertical-proportions': 'verticalProportions', 'eline': 'eLine', 'nla': 'nla', 'wl-ratio': 'wlRatio',
-         'red-prop': 'redProp', 'pink-esth': 'pinkEsth', 'smile-arc': 'smileArc', 'corridor': 'corridor',
-         'gingival': 'gingival', 'axial-incl': 'axialIncl', 'papilla': 'papilla', 'convexity': 'convexity'
-     };
-     let activeKey = this.activeTool && this.activeTool !== 'calib' ? (multiMap[this.activeTool] || this.activeTool) : null;
-     for(let i=0; i<this.tempPoints.length; i++) if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
-     for (const key in this.lines) {
-        if (activeKey && key !== activeKey) continue;
-        const v = this.lines[key];
+      if (this.drawState !== 'idle' && this.drawState !== 'multi-point') return null;
+      const threshold = 20 / coords.scale; 
+      for(let i=0; i<this.tempPoints.length; i++) if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
+      for (const key in this.lines) {
+         const v = this.lines[key];
         if (key === 'shadeSample' && v && this.activeTool === 'shade-picker' && Math.hypot(v.x - coords.realX, v.y - coords.realY) < threshold) return { key:'shadeSample', pt:v, mode:'shade' };
         if(Array.isArray(v)) {
            for(let i=0; i<v.length; i++) if(Math.hypot(v[i].x - coords.realX, v[i].y - coords.realY) < threshold) return { key, index:i, pt:v[i], mode:'array' };
