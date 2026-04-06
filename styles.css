@@ -1408,45 +1408,40 @@ body.is-exporting * {
 .shade-btn {
   flex: 0 0 50px;
   height: 64px;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #1e293b;
-  font-size: 0.75rem;
-  font-weight: 700;
+  border-radius: 7px;
+  border: 2px solid rgba(0, 0, 0, 0.10);
+  background-color: var(--shade-color, #f1f5f9);
+  color: rgba(0, 0, 0, 0.7);
+  font-size: 0.68rem;
+  font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 6px;
+  padding-bottom: 5px;
   transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.4);
+  text-shadow: 0 1px 2px rgba(255,255,255,0.7);
   text-transform: uppercase;
   position: relative;
 }
 
+/* No pseudo-element needed - color IS the button */
 .shade-btn::before {
-  content: "";
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  right: 4px;
-  height: 30px;
-  background-color: var(--shade-color, #f1f5f9);
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: none;
 }
 
 .shade-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+  border-color: rgba(0, 0, 0, 0.25);
 }
 
 .shade-btn.active {
   border-color: #2563eb;
-  border-width: 2px;
-  background-color: #eff6ff;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-width: 2.5px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
   z-index: 2;
 }
 
