@@ -202,13 +202,14 @@ window.ShadeHandlers = {
         if (rx >= imgW || ry >= imgH || rx + rw < 0 || ry + rh < 0) return;
 
         // Visual Display Size
-        const cw = zoomCanvas.width = 300; 
-        const ch = zoomCanvas.height = 300;
+        const GRID = 20; // 20x20 = 400 cells
+        const cw = zoomCanvas.width = 400; 
+        const ch = zoomCanvas.height = 400;
         const zCtx = zoomCanvas.getContext('2d', { willReadFrequently: true });
         zCtx.clearRect(0, 0, cw, ch);
 
-        const stepW = rw / 10;
-        const stepH = rh / 10;
+        const stepW = rw / GRID;
+        const stepH = rh / GRID;
 
         // Image boundary clamping for extraction
         const safeX = Math.max(0, Math.min(Math.floor(rx), imgW - 1));
@@ -221,8 +222,8 @@ window.ShadeHandlers = {
              imgData = srcCtx.getImageData(safeX, safeY, safeW, safeH);
         } catch(e) { return; }
         
-        const cellW = cw / 10;
-        const cellH = ch / 10;
+        const cellW = cw / GRID;
+        const cellH = ch / GRID;
         
         // Offset mapping - extracted image coordinates start from 0
         const offsetX = safeX - rx;
@@ -232,8 +233,8 @@ window.ShadeHandlers = {
         const currentGuide = window.SHADE_GUIDES && window.SHADE_GUIDES[card.currentShadeGuideId];
         const off = card.shadeOffset || { l: 0, a: 0, b: 0 };
 
-        for (let row = 0; row < 10; row++) {
-            for (let col = 0; col < 10; col++) {
+        for (let row = 0; row < GRID; row++) {
+            for (let col = 0; col < GRID; col++) {
                 const sX = Math.max(0, Math.floor(col * stepW + offsetX));
                 const sY = Math.max(0, Math.floor(row * stepH + offsetY));
                 let eX = Math.floor((col + 1) * stepW + offsetX);
@@ -283,8 +284,8 @@ window.ShadeHandlers = {
                         // Perceived brightness for contrast (W3C formula)
                         const lum = 0.299 * (sumR/count) + 0.587 * (sumG/count) + 0.114 * (sumB/count);
                         zCtx.fillStyle = lum > 128 ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.90)';
-                        // Auto-scale font to fit cell (target ~55% of cellW)
-                        const fontSize = Math.max(7, Math.min(11, cellW * 0.52));
+                        // Auto-scale font to fit smaller cell
+                        const fontSize = Math.max(5, Math.min(8, cellW * 0.55));
                         zCtx.font = `bold ${fontSize}px Inter, sans-serif`;
                         zCtx.textAlign = 'center';
                         zCtx.textBaseline = 'middle';
