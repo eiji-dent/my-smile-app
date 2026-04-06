@@ -1,9 +1,10 @@
 // --- AI (MediaPipe) Integration ---
 window.faceLandmarker = null;
+window.imageSegmenter = null;
+
 window.initFaceLandmarker = async () => {
     if (window.faceLandmarker) return window.faceLandmarker;
     try {
-        // MediaPipe Tasks Vision を動的インポート
         const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
         const { FaceLandmarker, FilesetResolver } = vision_module;
 
@@ -19,7 +20,7 @@ window.initFaceLandmarker = async () => {
             outputFaceBlendshapes: true,
             runningMode: "IMAGE",
             numFaces: 1,
-            minFaceDetectionConfidence: 0.1, // 側貌(真横)の検出を可能にするため大幅に緩和
+            minFaceDetectionConfidence: 0.1,
             minFacePresenceConfidence: 0.1,
             minTrackingConfidence: 0.1
         };
@@ -35,7 +36,42 @@ window.initFaceLandmarker = async () => {
         return window.faceLandmarker;
     } catch (err) {
         console.error("AI Initialization failed:", err);
-        throw new Error("MediaPipeの初期化に失敗しました。ネットワーク接続またはブラウザの対応状況を確認してください。\nDetails: " + err.message);
+        throw new Error("MediaPipeの初期化に失敗しました。");
+    }
+};
+
+window.initImageSegmenter = async () => {
+    if (window.imageSegmenter) return window.imageSegmenter;
+    try {
+        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+        const { ImageSegmenter, FilesetResolver } = vision_module;
+
+        const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+        );
+
+        const options = {
+            baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite`,
+                delegate: "GPU"
+            },
+            runningMode: "IMAGE",
+            outputCategoryMask: true,
+            outputConfidenceMasks: false
+        };
+
+        try {
+            window.imageSegmenter = await ImageSegmenter.createFromOptions(vision, options);
+        } catch (gpuErr) {
+            console.warn("GPU Segmenter initialization failed, falling back to CPU:", gpuErr);
+            options.baseOptions.delegate = "CPU";
+            window.imageSegmenter = await ImageSegmenter.createFromOptions(vision, options);
+        }
+
+        return window.imageSegmenter;
+    } catch (err) {
+        console.error("Segmenter Initialization failed:", err);
+        throw new Error("ImageSegmenterの初期化に失敗しました。");
     }
 };
 

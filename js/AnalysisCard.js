@@ -454,10 +454,10 @@ class AnalysisCard {
          }
          if (this.isPanning) {
              this.isPanning = false;
+             this.draggingPoint = null;
              if(this.canvas) this.canvas.style.cursor = 'crosshair';
          }
          if (this.draggingPoint) {
-            if (this.phase === 'lateral' && ['eLine', 'nla', 'convexity'].includes(this.draggingPoint.key)) this.saveProfilePattern();
             this.draggingPoint = null;
             if (this.canvas) this.canvas.style.cursor = this.hoveredPoint ? 'grab' : 'crosshair';
          }
@@ -559,37 +559,50 @@ class AnalysisCard {
       if (!this.currentImage) return alert("先に画像を読み込んでください。");
       const aiBtn = this.card.querySelector('.ai-analyze-btn');
       const originalHTML = aiBtn.innerHTML;
-      if (this.phase === 'lateral') {
-          if (this.guidedMode) {
-              this.guidedMode = false; aiBtn.innerHTML = originalHTML;
-              this.hideTooltip(); return;
-          }
-          this.guidedMode = true;
-          aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">鼻先をクリック...</span>';
-          this.showTooltip("画像上の「鼻の先端」を1回クリックしてください。AIが輪郭を自動抽出します。");
-          return;
-      }
       aiBtn.disabled = true;
       aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">AIモデル読込中...</span>';
       this.card.classList.add('ai-scanning');
+      
       try {
-          console.log("AI Analysis started...");
-          const landmarker = await window.initFaceLandmarker();
-          if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
-          
-          aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">特徴点検出中...</span>';
+          console.log(`AI Analysis started for phase: ${this.phase}`);
           this.prepareOffScreenCanvas();
-          const result = landmarker.detect(AnalysisCard.offScreenCanvas);
-          
-          if (this.phase !== 'frontal' && this.pxToMm === 0.075) {
-              const frontalCard = window.appCards.find(c => c.phase === 'frontal');
-              if (frontalCard && frontalCard.pxToMm !== 0.075) this.pxToMm = frontalCard.pxToMm;
-          }
-          if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
-              alert("顔が検出されませんでした。正面を向いた鮮明な画像でお試しください。");
+          const canvas = AnalysisCard.offScreenCanvas;
+
+          if (this.phase === 'lateral') {
+              // --- Lateral Analysis (Silhouette Segmentation) ---
+              const segmenter = await window.initImageSegmenter();
+              if (!segmenter) throw new Error("セグメンテーションモデルの初期化に失敗しました。");
+              
+              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">シルエット解析中...</span>';
+              const result = segmenter.segment(canvas);
+              const mask = result.categoryMask.getAsUint8Array();
+              
+              const lateralPoints = LateralAI.detectLandmarksFromMask(mask, canvas.width, canvas.height);
+              if (!lateralPoints) {
+                  alert("横顔のシルエットを正しく抽出できませんでした。背景がシンプルな画像でお試しください。");
+              } else {
+                  this.applyLateralLandmarks(lateralPoints);
+                  console.log("Lateral silhouette analysis successful.");
+              }
           } else {
-              this.applyLandmarksToPlots(result.faceLandmarks[0], AnalysisCard.offScreenCanvas.width, AnalysisCard.offScreenCanvas.height);
-              console.log("AI Landmark detection successful.");
+              // --- Frontal / E-Midline (Face Landmarker) ---
+              const landmarker = await window.initFaceLandmarker();
+              if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
+              
+              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">特徴点検出中...</span>';
+              const result = landmarker.detect(canvas);
+              
+              if (this.phase !== 'frontal' && this.pxToMm === 0.075) {
+                  const frontalCard = window.appCards.find(c => c.phase === 'frontal');
+                  if (frontalCard && frontalCard.pxToMm !== 0.075) this.pxToMm = frontalCard.pxToMm;
+              }
+              
+              if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
+                  alert("顔が検出されませんでした。正面を向いた鮮明な画像でお試しください。");
+              } else {
+                  this.applyLandmarksToPlots(result.faceLandmarks[0], canvas.width, canvas.height);
+                  console.log("Frontal landmark detection successful.");
+              }
           }
       } catch (err) {
           console.error("AI Error:", err); 
@@ -599,6 +612,15 @@ class AnalysisCard {
           this.card.classList.remove('ai-scanning');
           if (window.lucide) window.lucide.createIcons({ root: aiBtn });
       }
+  }
+
+  applyLateralLandmarks(pts) {
+      // LateralAI.js から得られた自動計測点を適用
+      this.lines.eLine = [pts.prn, pts.pg, pts.ls, pts.li];
+      this.lines.nla = [pts.col, pts.sn, pts.ls];
+      this.lines.convexity = [pts.g, pts.sn, pts.pg];
+      this.updateStats(); 
+      this.drawCanvas();
   }
 
   solveAutoCorrection() {
@@ -659,62 +681,6 @@ class AnalysisCard {
       return maxRightX > 0 ? { x: maxRightX, y: pt.y } : pt;
   }
 
-  saveProfilePattern() {
-     if (!this.lines.eLine || this.lines.eLine.length < 4) return;
-     const pn = this.lines.eLine[0];
-     const pattern = {
-        offsets: {
-           pg: { dx: this.lines.eLine[1].x - pn.x, dy: this.lines.eLine[1].y - pn.y },
-           ls: { dx: this.lines.eLine[2].x - pn.x, dy: this.lines.eLine[2].y - pn.y },
-           li: { dx: this.lines.eLine[3].x - pn.x, dy: this.lines.eLine[3].y - pn.y },
-           sn: (this.lines.nla && this.lines.nla[1]) ? { dx: this.lines.nla[1].x - pn.x, dy: this.lines.nla[1].y - pn.y } : null
-        },
-        imgH: this.currentImage.height
-     };
-     localStorage.setItem('aesthetic_profile_pattern', JSON.stringify(pattern));
-  }
-
-  loadProfilePattern() {
-     const saved = localStorage.getItem('aesthetic_profile_pattern'); return saved ? JSON.parse(saved) : null;
-  }
-
-  analyzeFromNoseClick(startX, startY) {
-      this.guidedMode = false;
-      const aiBtn = this.card.querySelector('.ai-analyze-btn');
-      if (aiBtn) { aiBtn.innerHTML = '<i data-lucide="sparkles"></i> AI自動解析'; if (window.lucide) window.lucide.createIcons({ root: aiBtn }); }
-      this.hideTooltip();
-      const canvas = document.createElement('canvas'); canvas.width = this.currentImage.width; canvas.height = this.currentImage.height;
-      const ctx = canvas.getContext('2d'); ctx.drawImage(this.currentImage, 0, 0);
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const getLum = (x, y) => { const idx = (Math.floor(y)*canvas.width + Math.floor(x))*4; return (data.data[idx]+data.data[idx+1]+data.data[idx+2])/3; };
-      let bgLum = 0; for(let i=0; i<10; i++) bgLum += getLum(canvas.width - 10 - i, 10 + i);
-      bgLum /= 10;
-      let pn = { x: startX, y: startY }; let maxRightX = startX;
-      for(let y = startY - 20; y < startY + 20; y += 2) {
-          if(y < 0 || y >= canvas.height) continue;
-          for(let x = Math.min(canvas.width - 1, startX + 100); x > startX - 20; x -= 2) {
-              if(Math.abs(getLum(x, y) - bgLum) > 30) { if(x > maxRightX) { maxRightX = x; pn = { x: x, y: y }; } break; }
-          }
-      }
-      const pattern = this.loadProfilePattern();
-      let pg, ls, li, sn;
-      if (pattern) {
-          const s = canvas.height / pattern.imgH;
-          pg = { x: pn.x + pattern.offsets.pg.dx*s, y: pn.y + pattern.offsets.pg.dy*s };
-          ls = { x: pn.x + pattern.offsets.ls.dx*s, y: pn.y + pattern.offsets.ls.dy*s };
-          li = { x: pn.x + pattern.offsets.li.dx*s, y: pn.y + pattern.offsets.li.dy*s };
-          sn = pattern.offsets.sn ? { x: pn.x+pattern.offsets.sn.dx*s, y: pn.y+pattern.offsets.sn.dy*s } : { x:(pn.x+ls.x)/2, y:(pn.y+ls.y)/2 };
-      } else {
-          pg = { x: pn.x - 20, y: pn.y + canvas.height*0.25 }; ls = { x: pn.x - 30, y: pn.y + canvas.height*0.08 };
-          li = { x: pn.x - 25, y: pn.y + canvas.height*0.16 }; sn = { x: (pn.x+ls.x)/2, y: (pn.y+ls.y)/2 };
-      }
-      pg = this.snapPointToEdge(pg, data, canvas.width, bgLum, 60); ls = this.snapPointToEdge(ls, data, canvas.width, bgLum, 30);
-      li = this.snapPointToEdge(li, data, canvas.width, bgLum, 30); sn = this.snapPointToEdge(sn, data, canvas.width, bgLum, 30);
-      this.lines.eLine = [pn, pg, ls, li]; this.lines.nla = [{x: pn.x, y: pn.y+15}, sn, ls]; this.lines.convexity = [{x: pn.x, y: pn.y-60}, sn, pg];
-      this.updateStats(); this.drawCanvas();
-      this.showTooltip("自動解析が完了しました。微調整が必要な場合は点をドラッグしてください。");
-  }
-
   applyLandmarksToPlots(landmarks, imgW, imgH) {
       const getPt = (idx) => ({ x: landmarks[idx].x * imgW, y: landmarks[idx].y * imgH });
       if (this.phase === 'frontal' || this.phase === 'e-midline') {
@@ -737,9 +703,6 @@ class AnalysisCard {
               this.lines['interpupillary-e'] = { startX: lE.x, startY: lE.y, endX: rE.x, endY: rE.y };
               this.lines['f-midline'] = { startX: mT.x, startY: mT.y, endX: mB.x, endY: mB.y };
           }
-      } else if (this.phase === 'lateral') {
-          const pn = getPt(1), sn = getPt(2), g = getPt(168), pg = getPt(152), ls = getPt(0), li = getPt(17), col = getPt(4);
-          this.lines.eLine = [pn, pg, ls, li]; this.lines.nla = [col, sn, ls]; this.lines.convexity = [g, sn, pg];
       } else if (this.phase === 'e-sound') {
           const lc = getPt(61), rc = getPt(291), ut = getPt(13), lt = getPt(14);
           this.lines.smileArc = [{x:(rc.x+ut.x)/2, y:(rc.y+ut.y)/2}, ut, {x:(lc.x+ut.x)/2, y:(lc.y+ut.y)/2}, {x:(rc.x+lt.x)/2, y:(rc.y+lt.y)/2+10}, lt, {x:(lc.x+lt.x)/2, y:(lc.y+lt.y)/2+10}];
