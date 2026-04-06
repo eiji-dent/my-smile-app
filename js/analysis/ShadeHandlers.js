@@ -228,6 +228,10 @@ window.ShadeHandlers = {
         const offsetX = safeX - rx;
         const offsetY = safeY - ry;
 
+        // Get current shade guide for matching
+        const currentGuide = window.SHADE_GUIDES && window.SHADE_GUIDES[card.currentShadeGuideId];
+        const off = card.shadeOffset || { l: 0, a: 0, b: 0 };
+
         for (let row = 0; row < 10; row++) {
             for (let col = 0; col < 10; col++) {
                 const sX = Math.max(0, Math.floor(col * stepW + offsetX));
@@ -250,19 +254,51 @@ window.ShadeHandlers = {
                     }
                 }
                 
+                const cx = col * cellW;
+                const cy = row * cellH;
+                
                 if (count > 0) {
                     const avgR = Math.round(sumR / count);
                     const avgG = Math.round(sumG / count);
                     const avgB = Math.round(sumB / count);
+
+                    // Fill cell with average color
                     zCtx.fillStyle = `rgb(${avgR}, ${avgG}, ${avgB})`;
+                    zCtx.fillRect(cx, cy, cellW, cellH);
+
+                    // Find closest shade ID with calibration offset applied
+                    let shadeLabel = '';
+                    if (currentGuide && window.ColorSpace) {
+                        const lab = window.ColorSpace.rgbToLab(avgR, avgG, avgB);
+                        const calLab = { l: lab.l + off.l, a: lab.a + off.a, b: lab.b + off.b };
+                        let minDE = Infinity;
+                        currentGuide.shades.forEach(ref => {
+                            const de = window.ColorSpace.deltaE(calLab, ref);
+                            if (de < minDE) { minDE = de; shadeLabel = ref.id; }
+                        });
+                    }
+
+                    // Draw shade ID text with contrast color
+                    if (shadeLabel) {
+                        // Perceived brightness for contrast (W3C formula)
+                        const lum = 0.299 * (sumR/count) + 0.587 * (sumG/count) + 0.114 * (sumB/count);
+                        zCtx.fillStyle = lum > 128 ? 'rgba(0,0,0,0.80)' : 'rgba(255,255,255,0.90)';
+                        // Auto-scale font to fit cell (target ~55% of cellW)
+                        const fontSize = Math.max(7, Math.min(11, cellW * 0.52));
+                        zCtx.font = `bold ${fontSize}px Inter, sans-serif`;
+                        zCtx.textAlign = 'center';
+                        zCtx.textBaseline = 'middle';
+                        zCtx.fillText(shadeLabel, cx + cellW / 2, cy + cellH / 2);
+                    }
                 } else {
                     zCtx.fillStyle = '#ccc';
+                    zCtx.fillRect(cx, cy, cellW, cellH);
                 }
-                
-                zCtx.fillRect(col * cellW, row * cellH, cellW, cellH);
-                zCtx.strokeStyle = 'rgba(255,255,255,0.3)';
-                zCtx.lineWidth = 1;
-                zCtx.strokeRect(col * cellW, row * cellH, cellW, cellH);
+
+                // Cell border
+                zCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+                zCtx.lineWidth = 0.5;
+                zCtx.strokeRect(cx, cy, cellW, cellH);
             }
         }
     },
