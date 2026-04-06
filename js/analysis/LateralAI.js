@@ -1,13 +1,13 @@
 window.LateralAI = {
     /**
-     * 1クリック誘導式・コントラスト追跡解析
+     * 1クリック誘導式・双方向コントラスト追跡解析
      */
     detectFromSeed(seedX, seedY, width, height, imageData, aiMask) {
-        const bgSample = this._getBackgroundColor(imageData, width, height);
-
-        // 1. 最もコントラストが強い「真のエッジ」を特定 (クリック点から右へ走査)
-        const noseEdgeX = this._findMaxGradientEdge(seedX, seedY, width, imageData);
+        // 1. 周辺範囲で「色の変化が最も激しい場所」を双方向に探す (クリック位置のズレ補完)
+        const noseEdgeX = this._findMaxGradientEdgeBidirectional(seedX, seedY, width, imageData);
         if (noseEdgeX === -1) return null;
+
+        const bgSample = this._getBackgroundColor(imageData, width, height);
 
         // 2. エッジフォロワー（輪郭追跡）
         let profile = this._traceProfileByContrast(noseEdgeX, seedY, width, height, imageData, bgSample);
@@ -21,18 +21,18 @@ window.LateralAI = {
     },
 
     /**
-     * クリック点から右へ向かって、色が最も大きく変化した地点（勾配最大値）を探す
+     * クリック地点から左右50pxの範囲で、最もコントラストが強い地点をエッジとして特定
      */
-    _findMaxGradientEdge(startX, y, width, imageData) {
+    _findMaxGradientEdgeBidirectional(startX, y, width, imageData) {
         let maxGrad = -1;
         let edgeX = -1;
-        const searchRange = 100; // クリック点から右に100pxまで探索
+        const radius = 60; // 左右60pxの範囲をスキャン
 
-        for (let x = startX; x < Math.min(width - 2, startX + searchRange); x++) {
+        for (let x = Math.max(0, startX - radius); x < Math.min(width - 2, startX + radius); x++) {
             const idx1 = (y * width + x) * 4;
             const idx2 = (y * width + (x + 1)) * 4;
             
-            // 隣接ピクセル間の色距離（グラディエント）を計算
+            // 色距離（勾配）の計算
             const diff = Math.abs(imageData[idx1] - imageData[idx2]) + 
                          Math.abs(imageData[idx1+1] - imageData[idx2+1]) + 
                          Math.abs(imageData[idx1+2] - imageData[idx2+2]);
@@ -42,12 +42,11 @@ window.LateralAI = {
                 edgeX = x;
             }
         }
-        // あまりに変化が小さい（背景にクリックしている等）場合は失敗
         return maxGrad > 20 ? edgeX : -1;
     },
 
     /**
-     * コントラストの変化を垂直に追跡するエッジフォロワー
+     * 前の段のエッジから、左側や右側に変化する輪郭を追跡
      */
     _traceProfileByContrast(startX, startY, width, height, imageData, bgSample) {
         const profile = [{ x: startX, y: startY }];
@@ -57,8 +56,7 @@ window.LateralAI = {
         for (let y = startY - 2; y > height * 0.1; y -= 2) {
             const nextX = this._findLocalMaxGradient(currX, y, width, imageData);
             if (nextX === -1) break;
-            // 極端な横飛びを防止 (25px以上のジャンプは無視)
-            if (Math.abs(nextX - currX) > 25) break; 
+            if (Math.abs(nextX - currX) > 30) break; // 30px以上の急激な横飛びは失敗
             profile.unshift({ x: nextX, y: y });
             currX = nextX;
         }
@@ -68,7 +66,7 @@ window.LateralAI = {
         for (let y = startY + 2; y < height * 0.95; y += 2) {
             const nextX = this._findLocalMaxGradient(currX, y, width, imageData);
             if (nextX === -1) break;
-            if (Math.abs(nextX - currX) > 25) break;
+            if (Math.abs(nextX - currX) > 30) break;
             profile.push({ x: nextX, y: y });
             currX = nextX;
         }
@@ -78,7 +76,7 @@ window.LateralAI = {
     _findLocalMaxGradient(prevX, y, width, imageData) {
         let maxGrad = -1;
         let bestX = -1;
-        const range = 20; // 前の位置の前後20pxを探索
+        const range = 25; // 前段のエ位置から左右25pxを探索範囲に
 
         for (let x = prevX - range; x <= prevX + range; x++) {
             if (x < 0 || x >= width - 2) continue;
@@ -97,7 +95,7 @@ window.LateralAI = {
     },
 
     /**
-     * 移動平均による輪郭線のスムージング
+     * データのスムージング
      */
     _smoothProfile(profile) {
         const result = [];
@@ -124,6 +122,7 @@ window.LateralAI = {
 
     _extractLandmarksFromProfile(profile) {
         try {
+            // 解析: 右向き(Nose=MaxX)
             const prnIdx = this._findExtremeIndex(profile, true, 'x');
             const prn = profile[prnIdx];
 
