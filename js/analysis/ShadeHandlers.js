@@ -86,6 +86,20 @@ window.ShadeHandlers = {
                 if (elA) elA.textContent = calA.toFixed(1);
                 if (elB) elB.textContent = calB.toFixed(1);
                 if (elDelta) elDelta.textContent = minDE.toFixed(2);
+
+                // --- Reference values for the matched shade ---
+                const elRefL = card.card.querySelector('#shade-ref-l');
+                const elRefA = card.card.querySelector('#shade-ref-a');
+                const elRefB = card.card.querySelector('#shade-ref-b');
+                if (bestMatch) {
+                    if (elRefL) elRefL.textContent = bestMatch.l.toFixed(1);
+                    if (elRefA) elRefA.textContent = bestMatch.a.toFixed(1);
+                    if (elRefB) elRefB.textContent = bestMatch.b.toFixed(1);
+                } else {
+                    if (elRefL) elRefL.textContent = '--';
+                    if (elRefA) elRefA.textContent = '--';
+                    if (elRefB) elRefB.textContent = '--';
+                }
             }
 
             // --- Diff Panel Update ---

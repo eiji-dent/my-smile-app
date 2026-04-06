@@ -1195,6 +1195,13 @@ body.is-exporting * {
   gap: 1.5rem;
 }
 
+/* Reference values column in shade results table */
+.shade-ref-val {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.88rem;
+}
+
 .shade-preview-box {
   display: flex;
   align-items: center;
