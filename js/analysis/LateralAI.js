@@ -1,18 +1,17 @@
 window.LateralAI = {
     /**
-     * AIシルエット ＋ 色彩ハイブリッド方式による解析
+     * AIシルエット ＋ 輝度補正ハイブリッド方式による解析 (最終ロバスト版)
      */
     detectFromMask(mask, width, height, imageData) {
-        // --- 1. 背景色のサンプリング ---
-        const bg = this._getBackgroundColor(imageData, width, height);
+        // --- 1. 背景色のサンプリング (上部優先) ---
+        const bg = this._getBackgroundColorSmart(imageData, width, height);
 
         // --- 2. グローバルな人物領域(Bounding Box)の特定 ---
-        // 色彩ガードを併用してノイズを除去
-        const bbox = this._getMaskBoundingBox(mask, width, height, imageData, bg);
+        const bbox = this._getMaskBoundingBoxRobust(mask, width, height, imageData, bg);
         if (!bbox || bbox.width < 50 || bbox.height < 100) return null;
 
         // --- 3. 領域内での「真の鼻先(Global Peak)」の特定 ---
-        const globalPeak = this._findGlobalNosePeak(mask, width, height, bbox, imageData, bg);
+        const globalPeak = this._findGlobalNosePeakRobust(mask, width, height, bbox, imageData, bg);
         if (!globalPeak) return null;
 
         // --- 4. ピークを基準としたロバストなプロファイル抽出 ---
@@ -25,17 +24,35 @@ window.LateralAI = {
     },
 
     /**
-     * AIマスクと「背景色との差」をダブルチェックして、真の人物領域を特定
+     * 上側の隅を優先的にサンプリングし、肩の服やエプロンの色を混入させない
      */
-    _getMaskBoundingBox(mask, width, height, data, bg) {
-        let minX = width, maxX = 0, minY = height, maxY = 0;
-        const margin = 30; // 四方のマージンを広めに（ノイズ回避）
+    _getBackgroundColorSmart(data, width, height) {
+        const samples = [];
+        // 上部3点 (左、中央、右) を優先。下部は髪や服が多いため除外
+        const coords = [[10, 10], [width - 11, 10], [Math.floor(width / 2), 10]];
         
-        for (let y = margin; y < height - margin; y++) {
-            for (let x = margin; x < width - margin; x++) {
+        coords.forEach(s => {
+            const idx = (s[1] * width + s[0]) * 4;
+            if (idx < data.length) {
+                samples.push({ r: data[idx], g: data[idx+1], b: data[idx+2], brightness: data[idx] + data[idx+1] + data[idx+2] });
+            }
+        });
+
+        // 最も明るい地点を背景色の基準とする (歯科背景は通常白いため)
+        samples.sort((a, b) => b.brightness - a.brightness);
+        return samples[0] || { r: 255, g: 255, b: 255 };
+    },
+
+    _getMaskBoundingBoxRobust(mask, width, height, data, bg) {
+        let minX = width, maxX = 0, minY = height, maxY = 0;
+        const marginX = 40; // 右端40pxを完全に除外 (ノイズ多発地帯)
+        const marginY = 20;
+        
+        for (let y = marginY; y < height - marginY; y++) {
+            for (let x = marginY; x < width - marginX; x++) {
                 const idx = (y * width + x) * 4;
-                // AIが「人」と言い、かつ「色が背景と違う」場合のみ採用
-                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 25)) {
+                // AI判定 且つ 背景色と明確に異なる (閾値を35にアップ)
+                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 35)) {
                     if (x < minX) minX = x;
                     if (x > maxX) maxX = x;
                     if (y < minY) minY = y;
@@ -47,24 +64,33 @@ window.LateralAI = {
         return { x: minX, y: minY, width: maxX - minX, height: maxY - minY, right: maxX };
     },
 
-    _findGlobalNosePeak(mask, width, height, bbox, data, bg) {
+    /**
+     * 単なる1ピクセルではなく、一定の「厚み」がある領域を鼻先とみなす
+     */
+    _findGlobalNosePeakRobust(mask, width, height, bbox, data, bg) {
         let maxReachX = -1;
         let peakY = -1;
+        const solidThreshold = 10; // 10ピクセル連続して「人体」である必要がある
         
-        // BBoxの中央付近〜上部をターゲット
-        const startY = Math.floor(bbox.y + bbox.height * 0.1);
-        const endY = Math.floor(bbox.y + bbox.height * 0.7);
+        const startY = Math.floor(bbox.y + bbox.height * 0.2);
+        const endY = Math.floor(bbox.y + bbox.height * 0.6);
         
         for (let y = startY; y < endY; y++) {
-            // 右端から左へ。ただしBBoxの右端よりもさらに内側から探すこともある
-            for (let x = bbox.right; x >= bbox.x; x--) {
+            for (let x = bbox.right; x >= bbox.x + solidThreshold; x--) {
                 const idx = (y * width + x) * 4;
-                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 30)) {
-                    if (x > maxReachX) {
-                        maxReachX = x;
-                        peakY = y;
+                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 40)) {
+                    // 厚みの確認 (連続性チェック)
+                    let isSolid = true;
+                    for (let cx = x - 1; cx >= x - solidThreshold; cx--) {
+                        const cidx = (y * width + cx) * 4;
+                        if (mask[y * width + cx] <= 128 || this._isColorSame(cidx, bg, data, 40)) {
+                            isSolid = false; break;
+                        }
                     }
-                    break; 
+                    if (isSolid) {
+                        if (x > maxReachX) { maxReachX = x; peakY = y; }
+                        break; 
+                    }
                 }
             }
         }
@@ -73,13 +99,14 @@ window.LateralAI = {
 
     _scanProfileNearPeak(mask, width, height, bbox, peak, data, bg) {
         const points = [];
-        const scanRangeX = 70; // 鼻先から左側70pxの範囲
+        const scanRangeX = 80;
         
         for (let y = bbox.y; y < bbox.y + bbox.height; y++) {
             let edgeX = -1;
-            for (let x = peak.x; x >= Math.max(0, peak.x - scanRangeX); x--) {
+            // 鼻先の少し右から左へスキャン
+            for (let x = Math.min(width - 41, peak.x + 5); x >= Math.max(0, peak.x - scanRangeX); x--) {
                 const idx = (y * width + x) * 4;
-                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 30)) {
+                if (mask[y * width + x] > 128 && !this._isColorSame(idx, bg, data, 40)) {
                     edgeX = x;
                     break;
                 }
@@ -95,19 +122,8 @@ window.LateralAI = {
         const dr = data[idx] - bg.r;
         const dg = data[idx+1] - bg.g;
         const db = data[idx+2] - bg.b;
-        // ユークリッド距離の自乗で比較（高速化のため）
+        // 色差（ユークリッド距離）
         return (dr*dr + dg*dg + db*db) < (threshold * threshold);
-    },
-
-    _getBackgroundColor(data, width, height) {
-        // 四隅からサンプリング
-        let r=0, g=0, b=0, c=0;
-        const samples = [[5,5], [width-5,5], [5,height-5], [width-5,height-5]];
-        samples.forEach(s => {
-            const idx = (s[1] * width + s[0]) * 4;
-            if (idx < data.length) { r += data[idx]; g += data[idx+1]; b += data[idx+2]; c++; }
-        });
-        return c > 0 ? { r: r/c, g: g/c, b: b/c } : { r: 255, g: 255, b: 255 };
     },
 
     _smoothProfile(points) {
@@ -141,8 +157,8 @@ window.LateralAI = {
             const lsIdx = this._findExtremeIndex(lsSubRange, true, 'x');
             const ls = lsSubRange[lsIdx] || lowerPart[0];
 
-            const liStartIdx = lowerPart.indexOf(ls) + 6;
-            const liSearchRange = lowerPart.slice(liStartIdx, liStartIdx + Math.floor(profile.length * 0.22));
+            const liStartIdx = lowerPart.indexOf(ls) + 8;
+            const liSearchRange = lowerPart.slice(liStartIdx, liStartIdx + Math.floor(profile.length * 0.25));
             const liIdx = this._findExtremeIndex(liSearchRange, true, 'x');
             const li = liSearchRange[liIdx] || lowerPart[liStartIdx + 2];
 
@@ -155,9 +171,7 @@ window.LateralAI = {
             const col = btwnPrnSn[Math.floor(btwnPrnSn.length * 0.5)] || prn;
 
             return { prn, sn, ls, li, pg, g, col, profileLine: profile };
-        } catch (e) {
-            return null;
-        }
+        } catch (e) { return null; }
     },
 
     _findExtremeIndex(points, findMax, axis) {
