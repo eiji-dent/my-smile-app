@@ -44,15 +44,24 @@ class AnalysisCard {
     this.hoveredPoint = null;
     this.draggingPoint = null;
     
-    this.zoomLevel = 1.0;
-    this.panX = 0;
-    this.panY = 0;
     this.isPanning = false;
+    this.lastPanPt = { x: 0, y: 0 };
+
+    // Shared offscreen canvas for processing (Static)
+    if (!AnalysisCard.offScreenCanvas) {
+      AnalysisCard.offScreenCanvas = document.createElement('canvas');
+      AnalysisCard.offScreenCtx = AnalysisCard.offScreenCanvas.getContext('2d', { willReadFrequently: true });
+    }
     this.lastPanPt = null;
     this.imgRotation = 0; 
 
     this.initUI();
     this.initEventListeners();
+    
+    // Cache Loupe elements for performance
+    this.loupeContainer = document.getElementById('loupe-container');
+    this.loupeCanvas = document.getElementById('loupe-canvas');
+    if (this.loupeCanvas) this.loupeCtx = this.loupeCanvas.getContext('2d', { alpha: false });
   }
 
   initIntraoralAuth() {
@@ -561,22 +570,30 @@ class AnalysisCard {
           return;
       }
       aiBtn.disabled = true;
-      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">AI解析中...</span>';
+      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">AIモデル読込中...</span>';
       this.card.classList.add('ai-scanning');
       try {
+          console.log("AI Analysis started...");
           const landmarker = await window.initFaceLandmarker();
           if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
-          const off = document.createElement('canvas'); off.width = this.currentImage.width; off.height = this.currentImage.height;
-          const oCtx = off.getContext('2d'); oCtx.drawImage(this.currentImage, 0, 0);
-          const result = landmarker.detect(off);
+          
+          aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">特徴点検出中...</span>';
+          this.prepareOffScreenCanvas();
+          const result = landmarker.detect(AnalysisCard.offScreenCanvas);
+          
           if (this.phase !== 'frontal' && this.pxToMm === 0.075) {
               const frontalCard = window.appCards.find(c => c.phase === 'frontal');
               if (frontalCard && frontalCard.pxToMm !== 0.075) this.pxToMm = frontalCard.pxToMm;
           }
-          if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) alert("顔が検出されませんでした。正面を向いた鮮明な画像でお試しください。");
-          else this.applyLandmarksToPlots(result.faceLandmarks[0], off.width, off.height);
+          if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
+              alert("顔が検出されませんでした。正面を向いた鮮明な画像でお試しください。");
+          } else {
+              this.applyLandmarksToPlots(result.faceLandmarks[0], AnalysisCard.offScreenCanvas.width, AnalysisCard.offScreenCanvas.height);
+              console.log("AI Landmark detection successful.");
+          }
       } catch (err) {
-          console.error("AI Error:", err); alert("解析中にエラーが発生しました：\n" + err.message);
+          console.error("AI Error:", err); 
+          alert("解析中にエラーが発生しました：\n" + (err.message || "不明なエラー"));
       } finally {
           aiBtn.disabled = false; aiBtn.innerHTML = originalHTML;
           this.card.classList.remove('ai-scanning');
@@ -713,6 +730,19 @@ class AnalysisCard {
               this.lines.interpupillary = { startX: lE.x, startY: lE.y, endX: rE.x, endY: rE.y };
               this.lines.midline = { startX: mT.x, startY: mT.y, endX: mB.x, endY: mB.y };
               this.lines.commissural = { startX: lM.x, startY: lM.y, endX: rM.x, endY: rM.y };
+              
+              // NEW: 6-point vertical proportions
+              this.lines.verticalProportions = [
+                  getPt(10),   // 1. Hairline
+                  getPt(168),  // 2. Glabella
+                  { x: (lE.x+rE.x)/2, y: (lE.y+rE.y)/2 }, // 3. Pupil line level
+                  getPt(2),    // 4. Subnasale (Adjusted to nose tip area)
+                  getPt(0),    // 5. Stomion (Adjusted to upper lip top)
+                  getPt(152)   // 6. Menton (Chin bottom)
+              ];
+          } else if (this.phase === 'e-midline') {
+              this.lines['interpupillary-e'] = { startX: lE.x, startY: lE.y, endX: rE.x, endY: rE.y };
+              this.lines['f-midline'] = { startX: mT.x, startY: mT.y, endX: mB.x, endY: mB.y };
           }
       } else if (this.phase === 'lateral') {
           const pn = getPt(1), sn = getPt(2), g = getPt(168), pg = getPt(152), ls = getPt(0), li = getPt(17), col = getPt(4);
@@ -732,7 +762,16 @@ class AnalysisCard {
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        this.currentImage = img; this.placeholder.style.display = 'none'; this.lines = {}; this.tempPoints = [];
+        // Clear previous image safely to free memory
+        if (this.currentImage) {
+            this.currentImage.onload = null;
+            this.currentImage.src = '';
+            this.currentImage = null;
+        }
+        this.currentImage = img; 
+        this.placeholder.style.display = 'none'; 
+        this.lines = {}; 
+        this.tempPoints = [];
         const multiHndls = ['vertical-proportions', 'eline', 'nla', 'wl-ratio', 'red-prop', 'pink-esth', 'smile-arc', 'corridor', 'gingival', 'axial-incl', 'papilla', 'convexity'];
         if (multiHndls.includes(this.activeTool)) {
             this.drawState = 'multi-point';
@@ -750,7 +789,14 @@ class AnalysisCard {
             else if(this.activeTool === 'axial-incl') this.showTooltip(s.AXIAL[0]);
             else if(this.activeTool === 'papilla') this.showTooltip(s.PAPILLA[0]);
         } else this.drawState = 'idle';
-        this.resizeCanvas(); this.updateStats();
+        
+        // Reset scale/pan for new image
+        this.zoomLevel = 1.0; this.panX = 0; this.panY = 0; this.imgRotation = 0;
+        
+        // Force redraw on main and clear shared cache
+        this.resizeCanvas(); 
+        this.updateStats();
+        AnalysisCard.lastRenderedImage = null;
       };
       img.src = e.target.result;
     };
@@ -776,17 +822,27 @@ class AnalysisCard {
   }
 
   updateMagnifier(e) {
-    const lc = document.getElementById('loupe-container');
-    const lCanvas = document.getElementById('loupe-canvas');
-    if(!lCanvas || !lCanvas.getContext) return;
-    const lCtx = lCanvas.getContext('2d');
+    if(!this.loupeCanvas || !this.loupeCtx) return;
     const coords = this.getMouseCoords(e);
     const S = this.LOUPE_SETTINGS;
-    lCtx.clearRect(0, 0, S.LOUPE_SIZE_W, S.LOUPE_SIZE_H);
-    lCtx.fillStyle = '#eef2f6'; lCtx.fillRect(0, 0, S.LOUPE_SIZE_W, S.LOUPE_SIZE_H);
-    const vW = (S.LOUPE_SIZE_W / 2) / S.MAGNIFICATION; const vH = (S.LOUPE_SIZE_H / 2) / S.MAGNIFICATION;
-    try { lCtx.drawImage(this.currentImage, coords.realX - vW, coords.realY - vH, vW * 2, vH * 2, 0, 0, S.LOUPE_SIZE_W, S.LOUPE_SIZE_H); } catch(err) {} 
-    if(lc) lc.classList.remove('hidden');
+    
+    // Performance: Only redraw if there is an actual image
+    if (!this.currentImage) {
+        if(this.loupeContainer) this.loupeContainer.classList.add('hidden');
+        return;
+    }
+
+    this.loupeCtx.fillStyle = '#eef2f6';
+    this.loupeCtx.fillRect(0, 0, S.LOUPE_SIZE_W, S.LOUPE_SIZE_H);
+    
+    const vW = (S.LOUPE_SIZE_W / 2) / S.MAGNIFICATION; 
+    const vH = (S.LOUPE_SIZE_H / 2) / S.MAGNIFICATION;
+    
+    try { 
+        this.loupeCtx.drawImage(this.currentImage, coords.realX - vW, coords.realY - vH, vW * 2, vH * 2, 0, 0, S.LOUPE_SIZE_W, S.LOUPE_SIZE_H); 
+    } catch(err) {} 
+    
+    if(this.loupeContainer) this.loupeContainer.classList.remove('hidden');
   }
 
   drawCanvas() {
@@ -899,10 +955,23 @@ class AnalysisCard {
       t.textContent = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2000);
   }
 
+  prepareOffScreenCanvas() {
+      if (!this.currentImage) return;
+      if (AnalysisCard.lastRenderedImage === this.currentImage) return;
+      
+      const canvas = AnalysisCard.offScreenCanvas;
+      const ctx = AnalysisCard.offScreenCtx;
+      canvas.width = this.currentImage.width;
+      canvas.height = this.currentImage.height;
+      ctx.drawImage(this.currentImage, 0, 0);
+      AnalysisCard.lastRenderedImage = this.currentImage;
+  }
+
   sampleColorAt(rX, rY) {
-      const off = document.createElement('canvas'); off.width = this.currentImage.width; off.height = this.currentImage.height;
-      const oCtx = off.getContext('2d'); oCtx.drawImage(this.currentImage, 0, 0);
-      const data = oCtx.getImageData(rX - 2, rY - 2, 5, 5).data;
+      if (!this.currentImage) return { r: 0, g: 0, b: 0 };
+      this.prepareOffScreenCanvas();
+      const ctx = AnalysisCard.offScreenCtx;
+      const data = ctx.getImageData(rX - 2, rY - 2, 5, 5).data;
       let r = 0, g = 0, b = 0; for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
       return { r: Math.round(r/25), g: Math.round(g/25), b: Math.round(b/25) };
   }

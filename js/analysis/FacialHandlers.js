@@ -324,7 +324,7 @@ window.FacialHandlers = {
         // Draw standard lines first
         const excludeTools = ['verticalProportions', 'eLine', 'nla', 'convexity', 'wlRatio', 'redProp', 'pinkEsth', 'smileArc', 'corridor', 'gingival', 'axialIncl', 'papilla'];
         for (const toolName in card.lines) {
-            if (excludeTools.includes(toolName)) {
+            if (!excludeTools.includes(toolName)) {
                const lineData = card.lines[toolName];
                if (lineData) card.drawLineSpec(lineData, toolName, mapC);
             }
@@ -371,9 +371,55 @@ window.FacialHandlers = {
                const tmps = [...card.tempPoints]; if(card.tempEnd) tmps.push({x:card.tempEnd.realX, y:card.tempEnd.realY});
                this.drawGingival(card, tmps, mapC, true);
             }
-        } else if (['m-sound', 's-sound', 'fv-sound'].includes(ph)) {
-            const tool = ph.split('-')[0] + 'measure';
-            if (card.lines[tool]) card.drawLineSpec(card.lines[tool], tool, mapC);
+        }
+    },
+
+    updateStats(card) {
+        const ph = card.phase;
+        if (ph === 'frontal') this.updateFrontalStats(card);
+        else if (ph === 'lateral') this.updateLateralStats(card);
+        else if (ph === 'e-midline') this.updateEMidlineStats(card);
+        else if (ph === 'e-sound') this.updateESoundStats(card);
+        // m-sound, s-sound, fv-sound don't have complex stats yet or use simple linear measures
+    },
+
+    updateEMidlineStats(card) {
+        const elDevMm = card.card.querySelector('#emid-dev-mm');
+        const elDevDeg = card.card.querySelector('#emid-dev-deg');
+        const elCantEdge = card.card.querySelector('#emid-cant-edge');
+
+        // 1. Midline Deviation & Cant
+        if (card.lines['f-midline'] && card.lines['d-midline']) {
+            const f = card.lines['f-midline'];
+            const d = card.lines['d-midline'];
+            
+            // Deviation in mm (horizontal diff at the top of dental midline)
+            const devPx = Math.abs(d.startX - f.startX);
+            if (elDevMm) elDevMm.textContent = (devPx * card.pxToMm).toFixed(1) + ' mm';
+
+            // Cant in degrees
+            const fAng = Math.atan2(f.endY - f.startY, f.endX - f.startX) * 180 / Math.PI;
+            const dAng = Math.atan2(d.endY - d.startY, d.endX - d.startX) * 180 / Math.PI;
+            let diff = Math.abs(fAng - dAng);
+            if (diff > 90) diff = Math.abs(180 - diff);
+            if (elDevDeg) {
+                elDevDeg.textContent = diff.toFixed(1) + '° ズレ';
+                elDevDeg.style.color = diff <= 2.0 ? 'var(--success)' : 'var(--danger)';
+            }
+        }
+
+        // 2. Incisal Plane Cant
+        if (card.lines['interpupillary-e'] && card.lines['incisal-edge']) {
+            const i = card.lines['interpupillary-e'];
+            const e = card.lines['incisal-edge'];
+            const iAng = Math.atan2(i.endY - i.startY, i.endX - i.startX) * 180 / Math.PI;
+            const eAng = Math.atan2(e.endY - e.startY, e.endX - e.startX) * 180 / Math.PI;
+            let diff = Math.abs(iAng - eAng);
+            if (diff > 90) diff = Math.abs(180 - diff);
+            if (elCantEdge) {
+                elCantEdge.textContent = diff.toFixed(1) + '° ズレ';
+                elCantEdge.style.color = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
+            }
         }
     }
 };

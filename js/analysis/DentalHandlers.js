@@ -179,35 +179,7 @@ window.DentalHandlers = {
         }
     },
 
-    drawIntraoral(card, mapC) {
-        // Draw standard lines first
-        const excludeTools = ['verticalProportions', 'eLine', 'nla', 'convexity', 'wlRatio', 'redProp', 'pinkEsth', 'smileArc', 'corridor', 'gingival', 'axialIncl', 'papilla'];
-        for (const toolName in card.lines) {
-            if (excludeTools.includes(toolName)) {
-               const lineData = card.lines[toolName];
-               if (lineData) card.drawLineSpec(lineData, toolName, mapC);
-            }
-        }
-
-        if (card.lines.wlRatio) this.drawWlRatio(card, card.lines.wlRatio, mapC, false);
-        if (card.activeTool === 'wl-ratio' && card.tempPoints.length < 8 && card.tempPoints.length > 0) this.drawWlRatio(card, card.tempPoints, mapC, true);
-
-        if (card.lines.redProp) this.drawRedProp(card, card.lines.redProp, mapC, false);
-        if (card.activeTool === 'red-prop' && card.tempPoints.length < 7 && card.tempPoints.length > 0) this.drawRedProp(card, card.tempPoints, mapC, true);
-
-        if (card.lines.pinkEsth) this.drawPinkEsth(card, card.lines.pinkEsth, mapC, false);
-        if (card.activeTool === 'pink-esth' && card.tempPoints.length < 6 && card.tempPoints.length > 0) this.drawPinkEsth(card, card.tempPoints, mapC, true);
-
-        if (card.lines.axialIncl) this.drawAxial(card, card.lines.axialIncl, mapC, false);
-        if (card.activeTool === 'axial-incl' && card.tempPoints.length < 14 && card.tempPoints.length > 0) {
-            const tmps = [...card.tempPoints]; if(card.tempEnd) tmps.push({x:card.tempEnd.realX, y:card.tempEnd.realY});
-            this.drawAxial(card, tmps, mapC, true);
-        }
-        
-        if (card.lines.papilla) this.drawPapilla(card, card.lines.papilla, mapC, false);
-        if (card.activeTool === 'papilla' && card.tempPoints.length < 5 && card.tempPoints.length > 0) {
-            const tmps = [...card.tempPoints]; if(card.tempEnd) tmps.push({x:card.tempEnd.realX, y:card.tempEnd.realY});
-            this.drawPapilla(card, tmps, mapC, true);
-        }
+    updateStats(card) {
+        if (card.phase === 'intraoral') this.updateIntraoralStats(card);
     }
 };

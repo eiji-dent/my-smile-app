@@ -435,17 +435,17 @@
                   <tbody>
                     <tr>
                       <td><strong>正中偏位（Midline Deviation）</strong></td>
-                      <td class="emid-dev-value">-- mm</td>
+                      <td id="emid-dev-mm">-- mm</td>
                       <td>0~2mm</td>
                     </tr>
                     <tr>
                       <td><strong>正中の傾斜</strong></td>
-                      <td class="emid-dev-value">-- °</td>
+                      <td id="emid-dev-deg">-- °</td>
                       <td>0〜4°</td>
                     </tr>
                     <tr>
                       <td><strong>切端平面の傾斜</strong></td>
-                      <td class="emid-cant-new-value">-- °</td>
+                      <td id="emid-cant-edge">-- °</td>
                       <td>0〜1°</td>
                     </tr>
                   </tbody>
@@ -1345,32 +1345,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 
-  <!-- Trial License Modal -->
-  <div id="trial-modal" class="modal-overlay" style="display: none;">
-    <div class="trial-card">
-      <div class="trial-header">
-        <i data-lucide="lock" class="lock-icon"></i>
-        <h2>ライセンス確認</h2>
-        <p>勉強会用・期間限定公開版</p>
-      </div>
-      <div id="trial-content">
-        <div class="input-group">
-          <label for="trial-passcode">合言葉を入力してください</label>
-          <input type="password" id="trial-passcode" placeholder="••••••••" class="input-field">
-        </div>
-        <button id="trial-submit-btn" class="btn btn-primary w-full">認証する</button>
-        <p class="trial-hint">※配布されたパスコードを入力してください</p>
-      </div>
-      <div id="trial-error-msg" class="error-msg" style="display: none;">
-        パスコードが正しくありません。
-      </div>
-      <div id="trial-expired-msg" class="expired-msg" style="display: none;">
-        <i data-lucide="calendar-off"></i>
-        <h3>試用期間が終了しました</h3>
-        <p>このツールの試用期間は終了いたしました。<br>継続的な利用については配布元（柴田）までお問い合わせください。</p>
-      </div>
-    </div>
-  </div>
+  <!-- Trial License Modal Removed -->
 
   <script src="js/constants.js"></script>
   <script src="js/ai-utils.js"></script>

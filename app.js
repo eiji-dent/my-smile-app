@@ -20,10 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  // Initialize TrialManager if available
-  if (window.TrialManager) {
-      new window.TrialManager();
-  }
+  // TrialManager initialization removed
 
   // Initialize all AnalysisCards
   const cardElements = document.querySelectorAll('.analysis-card:not(.lab-card), .analysis-unit'); 
