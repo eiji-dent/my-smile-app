@@ -1,71 +1,9 @@
-// Aesthetic Explanations
-const TOOL_EXPLANATIONS = {
-  'interpupillary': '顔貌の水平基準となる線です。咬合平面や前歯部切縁ラインがこの瞳孔間線と平行になることが、調和のとれたスマイルの基本となります。',
-  'interpupillary-e': '顔貌の水平基準となる線です。咬合平面や前歯部切縁ラインがこの瞳孔間線と平行になることが、調和のとれたスマイルの基本となります。',
-  'midline': '顔貌の垂直基準となる線です。上顎中切歯の正中（歯列正中）が、この顔貌正中線と一致していることが理想的です。',
-  'f-midline': '顔貌の垂直基準となる顔貌正中線です。上顎の中切歯の間（歯列正中）と一致することが理想です。',
-  'd-midline': '上顎中切歯の間に引かれる歯列正中線です。顔貌正中線からのズレ（平行移動）や傾き（Canting）を評価します。',
-  'commissural': '左右の口角を結ぶ線です。下顎位や口角周囲筋の不調和の確認に用います。瞳孔間線との非平行（ズレ）による咬合平面エラーを警戒します。',
-  'vertical-proportions': '顔面を上顔面・中顔面・下顔面に3等分し、そのバランスから顔全体の審美性と調和を評価します。',
-  'eline': 'エステティックライン（鼻尖とオトガイを結んだ線）。上下口唇がこの線上か、やや内側にあるのが理想的な横顔のプロファイリングです。',
-  'nla': '鼻下点から上口唇への角度（鼻唇角）。日本人の平均は80〜100°です。上顎前突や口唇の突出度の評価に用います。',
-  'convexity': '側貌凸型度（Angle of Convexity）。眉間(G)、鼻下点(Sn)、オトガイ(Pg\')を結ぶ角度で、側貌の突出感を凸型・直型・凹型に分類します。',
-  'incisal-edge': '前歯の切端ラインです。瞳孔間線などの水平基準との平行性を確認します。',
-  'smile-arc': '下口唇のカーブと上顎前歯切端のカーブの一致度。コンソナント（平行）だと若々しく、平坦や逆カーブだと加齢した印象を与えます。',
-  'corridor': 'スマイル時の口角と歯列の間の暗黒帯。小さすぎると（義歯様）不自然に見え、1〜14%の適度な空隙が立体的で自然なスマイルを生みます。',
-  'gingival': 'スマイル時の歯肉の露出量です。-2（被蓋）〜0mmが理想とされ、露出しすぎるとガミースマイルとして非審美的評価となります。',
-  'mmeasure': 'M音発音時の安静位露出量。上唇の下からのぞく前歯の長さ（1〜3mmが基準）を測り、若々しさの指標とします。',
-  'smeasure': 'S音発音時の上下歯牙のクリアランス（スピーキングスペース）。1〜1.5mmが基準で、発音障害や垂直的咬合径の評価に用います。',
-  'fvmeasure': 'F/V音発音時の、上顎切歯と下唇ドライウェットラインとの接触です。切端位置が長すぎないか、唇側に出すぎていないかの評価に使います。',
-  'wl-ratio': '中切歯の幅と長さの比。75〜85%（理想80%）が基準。セントラルドミナンス（前歯部の主役）の審美性を決定づけます。',
-  'red-prop': '歯冠幅径バランス。前歯部の見かけの幅が、黄金比（1.618 : 1 : 0.618）や白銀比（1.414 : 1 : 0.707）にどれだけ近いかで調和を評価します。',
-  'pink-esth': 'ジンジバル・ゼニス（歯肉縁の最深点）が描く「High-Low-High」のラインと、その左右対称性を評価します。',
-  'axial-incl': '歯冠の軸の傾き。正中から遠ざかるほど歯冠軸の傾きが強くなる（中切歯3°、側切歯5°、犬歯8°）のが美しい配列の条件です。',
-  'papilla': '歯間乳頭（ブラックトライアングル頂点部）の高さの左右差を評価します。2.0mm以内の左右対称性が理想とされます。'
-};
+// Aesthetic Explanations (Moved to js/constants.js)
+const TOOL_EXPLANATIONS = window.AESTHETIC_CONSTANTS.TOOL_EXPLANATIONS;
 
-// --- AI (MediaPipe) Integration ---
-let faceLandmarker = null;
-const initFaceLandmarker = async () => {
-    if (faceLandmarker) return faceLandmarker;
-    try {
-        // MediaPipe Tasks Vision を動的インポート
-        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
-        const { FaceLandmarker, FilesetResolver } = vision_module;
-
-        const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
-        );
-
-        const options = {
-            baseOptions: {
-                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-                delegate: "GPU"
-            },
-            outputFaceBlendshapes: true,
-            runningMode: "IMAGE",
-            numFaces: 1,
-            minFaceDetectionConfidence: 0.1, // 側貌(真横)の検出を可能にするため大幅に緩和
-            minFacePresenceConfidence: 0.1,
-            minTrackingConfidence: 0.1
-        };
-
-        try {
-            faceLandmarker = await FaceLandmarker.createFromOptions(vision, options);
-        } catch (gpuErr) {
-            console.warn("GPU initialization failed, falling back to CPU:", gpuErr);
-            options.baseOptions.delegate = "CPU";
-            faceLandmarker = await FaceLandmarker.createFromOptions(vision, options);
-        }
-
-        return faceLandmarker;
-    } catch (err) {
-        console.error("AI Initialization failed:", err);
-        throw new Error("MediaPipeの初期化に失敗しました。ネットワーク接続またはブラウザの対応状況を確認してください。\nDetails: " + err.message);
-    }
-};
-
-const absDist = (val, target) => Math.abs(val - target);
+// --- AI (MediaPipe) Integration --- (Logic moved to js/ai-utils.js)
+const initFaceLandmarker = window.initFaceLandmarker;
+const absDist = window.absDist;
 
 // Initialize Icons
 document.addEventListener('DOMContentLoaded', () => {
@@ -90,26 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const LOUPE_SIZE_W = 160;
   const LOUPE_SIZE_H = 160;
 
-  // Instruction Texts
-  const CALIB_STEPS = ["1点目: 基準オブジェクト(定規等)の始点","2点目: 基準オブジェクトの終点","完了：実測値を入力してください。"];
-  const PROPORTION_STEPS = ["1点目：ヘアライン","2点目：眉間","3点目：瞳孔ライン","4点目：鼻下","5点目：口唇","6点目：オトガイ","完了しました"];
-  const ELINE_STEPS = ["1点目：鼻先","2点目：オトガイ","3点目：上唇","4点目：下唇","完了しました"];
-  const NLA_STEPS = ["1点目：鼻柱","2点目：鼻下(頂点)","3点目：上唇","完了しました"];
-  const CONVEXITY_STEPS = ["1点目：眉間(G)","2点目：鼻下点(Sn)","3点目：オトガイ(Pg')","完了しました"];
-  const HBAR_REF_STEPS = ["1点目：水平基準の始点","2点目：水平基準の終点","水平基準が設定されました"];
-  const HBAR_BAR_STEPS = ["1点目：バーの始点","2点目：バーの終点","バーのプロットが完了しました"];
-  
-  // Intraoral Micro-esthetics
-  const WL_STEPS = ["右中切歯: 上端","右中切歯: 下端","右中切歯: 近心(左端)","右中切歯: 遠心(右端)","左中切歯: 上端","左中切歯: 下端","左中切歯: 近心(右端)","左中切歯: 遠心(左端)","完了しました。"];
-  const RED_STEPS = ["1点目：右犬歯の遠心端","2点目：右側切歯の遠心端","3点目：右中切歯の遠心端","4点目：正中","5点目：左中切歯の遠心端","6点目：左側切歯の遠心端","7点目：左犬歯の遠心端","完了しました。"];
-  const PINK_STEPS = ["1点目：右犬歯のゼニス","2点目：右側切歯のゼニス","3点目：右中切歯のゼニス","4点目：左中切歯のゼニス","5点目：左側切歯のゼニス","6点目：左犬歯のゼニス","完了しました。左右のGZPを判定しました。"];
-  const AXIAL_STEPS = ["1/14:正中の上部","2/14:正中の下部","3/14:右中切歯 歯頸部","4/14:右中切歯 切縁","5/14:右側切歯 歯頸部","6/14:右側切歯 切縁","7/14:右犬歯 歯頸部","8/14:右犬歯 切縁","9/14:左中切歯 歯頸部","10/14:左中切歯 切縁","11/14:左側切歯 歯頸部","12/14:左側切歯 切縁","13/14:左犬歯 歯頸部","14/14:左犬歯 切縁","完了しました。"];
-  const PAPILLA_STEPS = ["1点目:右乳頭(犬-側)","2点目:右乳頭(側-中)","3点目:正中乳頭","4点目:左乳頭(中-側)","5点目:左乳頭(側-犬)","完了しました。"];
-
-  // E-Sound Mini-esthetics
-  const ARC_STEPS = ["1点目: 上顎右側の切縁","2点目: 上顎中切歯の切縁","3点目: 上顎左側の切縁","4点目: 右側の下唇上縁","5点目: 中央の下唇上縁","6点目: 左側の下唇上縁","完了しました。スマイルアークを確認してください。"];
-  const CORRIDOR_STEPS = ["1点目: 右側の口角端","2点目: 右側の歯列最外周（小臼歯）","3点目: 左側の歯列最外周","4点目: 左側の口角端","完了しました。バッカルコリドー率をご確認ください。"];
-  const GINGIVAL_STEPS = ["1点目: 中切歯の最深部（ゼニス）","2点目: 上唇の下縁","3点目: 中切歯の切縁","4点目: 下唇の上縁","完了しました。歯肉露出とE位をご確認ください。"];
+  // Instruction Texts (Moved to js/constants.js)
+  const STEPS = window.AESTHETIC_CONSTANTS.STEPS;
+  const CALIB_STEPS = STEPS.CALIB;
+  const PROPORTION_STEPS = STEPS.PROPORTION;
+  const ELINE_STEPS = STEPS.ELINE;
+  const NLA_STEPS = STEPS.NLA;
+  const CONVEXITY_STEPS = STEPS.CONVEXITY;
+  const HBAR_REF_STEPS = STEPS.HBAR_REF;
+  const HBAR_BAR_STEPS = STEPS.HBAR_BAR;
+  const WL_STEPS = STEPS.WL;
+  const RED_STEPS = STEPS.RED;
+  const PINK_STEPS = STEPS.PINK;
+  const AXIAL_STEPS = STEPS.AXIAL;
+  const PAPILLA_STEPS = STEPS.PAPILLA;
+  const ARC_STEPS = STEPS.ARC;
+  const CORRIDOR_STEPS = STEPS.CORRIDOR;
+  const GINGIVAL_STEPS = STEPS.GINGIVAL;
 
   class AnalysisCard {
     constructor(cardElement) {
@@ -2918,220 +2853,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Color Space Conversion Utils
+ * Color Space Conversion Utils (Moved to js/ai-utils.js)
  */
-const ColorSpace = {
-    // RGB [0-255] -> CIE L*a*b*
-    rgbToLab: function(r, g, b) {
-        // Normalize
-        let _r = r / 255, _g = g / 255, _b = b / 255;
-
-        // sRGB to linear XYZ
-        _r = (_r > 0.04045) ? Math.pow((_r + 0.055) / 1.055, 2.4) : _r / 12.92;
-        _g = (_g > 0.04045) ? Math.pow((_g + 0.055) / 1.055, 2.4) : _g / 12.92;
-        _b = (_b > 0.04045) ? Math.pow((_b + 0.055) / 1.055, 2.4) : _b / 12.92;
-
-        let x = (_r * 0.4124 + _g * 0.3576 + _b * 0.1805) * 100;
-        let y = (_r * 0.2126 + _g * 0.7152 + _b * 0.0722) * 100;
-        let z = (_r * 0.0193 + _g * 0.1192 + _b * 0.9505) * 100;
-
-        // XYZ to Lab (Reference: D65)
-        const refX = 95.047, refY = 100.0, refZ = 108.883;
-        x /= refX; y /= refY; z /= refZ;
-
-        const f = (t) => (t > 0.008856) ? Math.pow(t, 1/3) : (7.787 * t) + (16/116);
-
-        x = f(x); y = f(y); z = f(z);
-
-        return {
-            l: (116 * y) - 16,
-            a: 500 * (x - y),
-            b: 200 * (y - z)
-        };
-    },
-
-    // CIE L*a*b* -> RGB [0-255]
-    labToRgb: function(l, a, b) {
-        // Lab to XYZ (Reference: D65)
-        let y = (l + 16) / 116;
-        let x = a / 500 + y;
-        let z = y - b / 200;
-
-        const f = (t) => (t > 0.206897) ? Math.pow(t, 3) : (t - 16/116) / 7.787;
-        x = f(x) * 95.047;
-        y = f(y) * 100.000;
-        z = f(z) * 108.883;
-
-        // XYZ to linear RGB
-        let _r = (x * 0.032406 - y * 0.015372 - z * 0.004986);
-        let _g = (x * -0.009689 + y * 0.018758 + z * 0.000415);
-        let _b = (x * 0.000557 - y * 0.002040 + z * 0.010570);
-
-        // Linear RGB to sRGB
-        const comp = (c) => {
-            const clamped = Math.max(0, c); // Avoid NaN with negative values for out-of-gamut Lab
-            const srgb = (clamped > 0.0031308) ? (1.055 * Math.pow(clamped, 1 / 2.4) - 0.055) : (12.92 * clamped);
-            return Math.max(0, Math.min(255, Math.round(srgb * 255)));
-        };
-
-        return { r: comp(_r), g: comp(_g), b: comp(_b) };
-    },
-
-    // Calculate Delta E (Color Difference)
-    deltaE: function(lab1, lab2) {
-        return Math.sqrt(
-            Math.pow(lab1.l - lab2.l, 2) +
-            Math.pow(lab1.a - lab2.a, 2) +
-            Math.pow(lab1.b - lab2.b, 2)
-        );
-    }
-};
+const ColorSpace = window.ColorSpace;
 
 /**
- * Comprehensive Shade Guide Data (Vita Classical, 3D Master, Chromascop, Vintage)
+ * Comprehensive Shade Guide Data (Moved to js/ai-utils.js)
  */
-const SHADE_GUIDES = {
-    "vita-classical": {
-        "name": "Vita Classical",
-        "description": "スタンダード16色。ホワイトニングには通常OM1〜OM3（または3Dマスターの0M1〜0M3）が併用されます。",
-        "shades": [
-            { "id": "OM1", "l": 82.5, "a": -1.2, "b": 6.5 },
-            { "id": "OM2", "l": 81.3, "a": -1.0, "b": 8.0 },
-            { "id": "OM3", "l": 80.1, "a": -0.8, "b": 10.1 },
-            { "id": "A1", "l": 73.1, "a": -0.3, "b": 12.0 },
-            { "id": "A2", "l": 71.0, "a": 0.8, "b": 14.8 },
-            { "id": "A3", "l": 69.8, "a": 1.5, "b": 16.5 },
-            { "id": "A3.5", "l": 66.8, "a": 2.1, "b": 18.2 },
-            { "id": "A4", "l": 64.9, "a": 2.7, "b": 19.3 },
-            { "id": "B1", "l": 74.6, "a": -0.8, "b": 11.2 },
-            { "id": "B2", "l": 72.8, "a": -0.1, "b": 14.2 },
-            { "id": "B3", "l": 70.8, "a": 0.9, "b": 17.5 },
-            { "id": "B4", "l": 68.6, "a": 1.6, "b": 19.6 },
-            { "id": "C1", "l": 70.9, "a": -0.5, "b": 11.9 },
-            { "id": "C2", "l": 68.5, "a": 0.1, "b": 14.4 },
-            { "id": "C3", "l": 66.2, "a": 0.8, "b": 16.5 },
-            { "id": "C4", "l": 63.6, "a": 1.4, "b": 18.2 },
-            { "id": "D2", "l": 70.4, "a": -0.1, "b": 12.8 },
-            { "id": "D3", "l": 68.5, "a": 0.4, "b": 14.5 },
-            { "id": "D4", "l": 66.9, "a": 0.9, "b": 16.7 }
-        ]
-    },
-    "vita-3d-master": {
-        "name": "Vita 3D Master",
-        "description": "明度ベースの体系的システム。0グループがブリーチングシェードに該当します。",
-        "shades": [
-            { "id": "0M1", "l": 84.3, "a": -1.4, "b": 6.7 },
-            { "id": "0M2", "l": 83.0, "a": -1.2, "b": 8.8 },
-            { "id": "0M3", "l": 81.6, "a": -1.0, "b": 11.2 },
-            { "id": "1M1", "l": 78.5, "a": -0.5, "b": 12.0 },
-            { "id": "1M2", "l": 77.0, "a": -0.2, "b": 14.5 },
-            { "id": "2M1", "l": 74.0, "a": -0.1, "b": 14.0 },
-            { "id": "2M2", "l": 72.5, "a": 0.5, "b": 16.5 },
-            { "id": "2M3", "l": 71.0, "a": 1.2, "b": 19.5 },
-            { "id": "3M1", "l": 69.5, "a": 0.3, "b": 15.5 },
-            { "id": "3M2", "l": 68.0, "a": 0.8, "b": 18.0 },
-            { "id": "3M3", "l": 66.5, "a": 1.5, "b": 20.5 },
-            { "id": "4M1", "l": 65.0, "a": 0.6, "b": 17.0 },
-            { "id": "4M2", "l": 63.5, "a": 1.2, "b": 19.5 },
-            { "id": "4M3", "l": 62.0, "a": 1.8, "b": 22.0 },
-            { "id": "5M1", "l": 60.5, "a": 1.0, "b": 18.5 },
-            { "id": "5M2", "l": 59.0, "a": 1.5, "b": 21.0 },
-            { "id": "5M3", "l": 57.5, "a": 2.2, "b": 23.5 }
-        ]
-    },
-    "chromascop": {
-        "name": "Chromascop",
-        "description": "Ivoclarのシェードガイド。010〜040がブリーチングシェードとして設定されています。",
-        "shades": [
-            { "id": "010", "l": 83.0, "a": -1.0, "b": 6.5 },
-            { "id": "020", "l": 81.5, "a": -0.8, "b": 8.0 },
-            { "id": "030", "l": 80.0, "a": -0.6, "b": 9.5 },
-            { "id": "040", "l": 78.5, "a": -0.4, "b": 11.0 },
-            { "id": "110", "l": 79.7, "a": -0.6, "b": 14.6 },
-            { "id": "120", "l": 78.5, "a": -0.3, "b": 16.1 },
-            { "id": "130", "l": 76.6, "a": -0.7, "b": 17.0 },
-            { "id": "140", "l": 77.0, "a": 0.2, "b": 19.4 },
-            { "id": "210", "l": 75.4, "a": 0.1, "b": 20.9 },
-            { "id": "220", "l": 74.9, "a": 1.5, "b": 19.1 },
-            { "id": "230", "l": 73.0, "a": 1.7, "b": 21.2 },
-            { "id": "240", "l": 72.5, "a": 2.9, "b": 22.9 },
-            { "id": "310", "l": 73.1, "a": -0.1, "b": 23.1 },
-            { "id": "320", "l": 70.8, "a": 0.7, "b": 23.8 },
-            { "id": "330", "l": 71.9, "a": 1.3, "b": 27.7 },
-            { "id": "340", "l": 68.6, "a": 2.4, "b": 26.2 },
-            { "id": "410", "l": 72.2, "a": 0.7, "b": 16.8 },
-            { "id": "420", "l": 73.1, "a": 0.7, "b": 18.9 },
-            { "id": "430", "l": 72.8, "a": -0.0, "b": 19.5 },
-            { "id": "440", "l": 71.0, "a": -0.1, "b": 18.6 },
-            { "id": "510", "l": 70.1, "a": 0.5, "b": 20.2 },
-            { "id": "520", "l": 68.7, "a": 1.3, "b": 22.5 },
-            { "id": "530", "l": 68.8, "a": 1.6, "b": 24.8 },
-            { "id": "540", "l": 65.6, "a": 3.9, "b": 23.0 }
-        ]
-    },
-    "vintage": {
-        "name": "Vintage Color Indicator",
-        "description": "松風ヴィンテージシステム。ホワイトニングシェードはW1、W2、W3等で定義されます。C・Dグループも含めたフルセットです。",
-        "shades": [
-            { "id": "W1", "l": 82.0, "a": -1.0, "b": 7.0 },
-            { "id": "W2", "l": 80.5, "a": -0.8, "b": 8.5 },
-            { "id": "W3", "l": 79.0, "a": -0.5, "b": 10.0 },
-            { "id": "A1", "l": 73.5, "a": -0.2, "b": 12.5 },
-            { "id": "A2", "l": 71.5, "a": 0.7, "b": 15.0 },
-            { "id": "A3", "l": 70.0, "a": 1.4, "b": 17.0 },
-            { "id": "A3.5", "l": 67.5, "a": 2.0, "b": 18.5 },
-            { "id": "A4", "l": 65.5, "a": 2.5, "b": 19.5 },
-            { "id": "B1", "l": 75.0, "a": -0.7, "b": 11.5 },
-            { "id": "B2", "l": 73.0, "a": 0.0, "b": 14.5 },
-            { "id": "B3", "l": 71.0, "a": 0.8, "b": 18.0 },
-            { "id": "B4", "l": 69.0, "a": 1.5, "b": 20.0 },
-            { "id": "C1", "l": 71.2, "a": -0.4, "b": 12.0 },
-            { "id": "C2", "l": 69.0, "a": 0.2, "b": 14.5 },
-            { "id": "C3", "l": 66.5, "a": 0.9, "b": 16.8 },
-            { "id": "C4", "l": 64.0, "a": 1.5, "b": 18.5 },
-            { "id": "D2", "l": 70.8, "a": 0.0, "b": 13.0 },
-            { "id": "D3", "l": 68.8, "a": 0.5, "b": 14.8 },
-            { "id": "D4", "l": 67.2, "a": 1.0, "b": 17.0 }
-        ]
-    }
-};
+const SHADE_GUIDES = window.SHADE_GUIDES;
 
 /**
- * Handle image upload for the free supplemental image slots in Lab Tools.
- * @param {HTMLInputElement} input 
+ * Handle image upload (Moved to js/ai-utils.js)
  */
-window.handleFreeImageUpload = function(input) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = e.target.result;
-    const slot = input.parentElement;
-    
-    // Remove existing image if any
-    const existingImg = slot.querySelector('img');
-    if (existingImg) existingImg.remove();
-    
-    // Create new image element
-    const img = document.createElement('img');
-    img.src = dataUrl;
-    img.className = 'preview-img';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'cover';
-    img.style.position = 'absolute';
-    img.style.top = '0';
-    img.style.left = '0';
-    slot.appendChild(img);
-    
-    // Hide icon and label
-    const icon = slot.querySelector('.slot-icon');
-    const label = slot.querySelector('.slot-label');
-    if (icon) icon.style.opacity = '0';
-    if (label) label.style.opacity = '0';
-  };
-  reader.readAsDataURL(file);
-};
+window.handleFreeImageUpload = window.handleFreeImageUpload;
 
 
