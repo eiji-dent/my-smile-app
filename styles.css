@@ -780,7 +780,45 @@ body {
 .horizontal-card-layout .canvas-wrapper {
   width: 100%;
   min-height: 350px;
-  max-height: 50vh;
+  max-height: 60vh;
+}
+
+/* Portrait Phase Optimization (Phase 1, 2, 3) */
+.portrait-layout {
+  align-items: stretch;
+}
+
+.portrait-layout > .canvas-wrapper {
+  flex: 0 0 420px; /* Keep photo area consistent and portrait */
+  height: 560px;   /* 3:4 ratio */
+  max-height: 70vh;
+}
+
+.portrait-layout .quick-stats {
+  flex: 1;
+  min-width: 350px;
+  margin-top: 0;
+  border-top: none;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center stats vertically if needed */
+}
+
+@media (max-width: 900px) {
+  .portrait-layout {
+    flex-direction: column;
+  }
+  .portrait-layout > .canvas-wrapper {
+    flex: 1;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+  }
+  .portrait-layout .quick-stats {
+    border-left: none;
+    border-top: 1px solid var(--border-light);
+  }
 }
 
 .horizontal-card-layout .quick-stats {
