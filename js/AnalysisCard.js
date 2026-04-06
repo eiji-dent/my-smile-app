@@ -25,6 +25,7 @@ class AnalysisCard {
     this.currentImage = null;
     this.activeTool = null;
     this.drawState = 'idle'; 
+    this.isWaitingForAIClick = false; // 1クリック誘導AI待ち状態
     this.tempStart = null;
     this.tempEnd = null;
     this.tempPoints = []; 
@@ -143,6 +144,13 @@ class AnalysisCard {
   initShadeUI() {
     this.shadeSwatch = this.card.querySelector('#shade-color-swatch');
     this.shadeIdValue = this.card.querySelector('#shade-result-id');
+    this.dropZone = this.card.querySelector('.card-image-dropzone');
+    this.canvas = this.card.querySelector('.card-canvas');
+    this.imageLayer = this.card.querySelector('.card-image-layer');
+    this.fileInput = this.card.querySelector('.card-file-input');
+    
+    this.isWaitingForAIClick = false; // 1クリック誘導AI用の状態
+    this.currentImage = null;
     this.shadeL = this.card.querySelector('#shade-lab-l');
     this.shadeA = this.card.querySelector('#shade-lab-a');
     this.shadeB = this.card.querySelector('#shade-lab-b');
@@ -303,26 +311,31 @@ class AnalysisCard {
         if (e.target.files && e.target.files.length > 0) this.handleImage(e.target.files[0]);
       });
       window.addEventListener('resize', () => { if (this.currentImage) this.resizeCanvas(); });
-
       this.canvas.addEventListener('mousedown', (e) => {
         if (!this.currentImage) return;
-        if (this.guidedMode) return; // Legacy safety
+        const coords = this.getMouseCoords(e);
+        
+        // 1クリック誘導AIのクリック待ち処理
+        if (this.isWaitingForAIClick) {
+            this.processGuidedLateralAI(coords);
+            return;
+        }
 
         if (e.button === 1 || e.button === 2 || e.shiftKey) {
             this.isPanning = true;
             this.lastPanPt = { x: e.clientX, y: e.clientY };
-            this.canvas.style.cursor = 'grabbing';
+            if (this.canvas) this.canvas.style.cursor = 'grabbing';
             return;
         }
 
         if (!this.activeTool) return;
-        const coords = this.getMouseCoords(e);
 
         if (this.drawState === 'idle' && this.hoveredPoint) {
             this.draggingPoint = this.hoveredPoint;
             if (this.canvas) this.canvas.style.cursor = 'grabbing';
             return;
         }
+
         if (this.activeTool === 'calib') {
            if (this.drawState === 'idle') {
              this.drawState = 'pt1-placed'; this.tempStart = coords; this.tempEnd = coords;
@@ -568,22 +581,11 @@ class AnalysisCard {
           const canvas = AnalysisCard.offScreenCanvas;
 
           if (this.phase === 'lateral') {
-              // --- Lateral Analysis (Silhouette Segmentation) ---
-              const segmenter = await window.initImageSegmenter();
-              if (!segmenter) throw new Error("セグメンテーションモデルの初期化に失敗しました。");
-              
-              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">シルエット解析中...</span>';
-              const result = segmenter.segment(canvas);
-              const mask = result.categoryMask.getAsUint8Array();
-              const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-              
-              const lateralPoints = LateralAI.detectLandmarksFromMask(mask, canvas.width, canvas.height, imageData.data);
-              if (!lateralPoints) {
-                  alert("横顔のシルエットを正しく抽出できませんでした。背景がシンプルな画像でお試しください。");
-              } else {
-                  this.applyLateralLandmarks(lateralPoints);
-                  console.log("Lateral silhouette analysis successful.");
-              }
+              // --- Lateral Analysis (1-Click Guided) ---
+              this.isWaitingForAIClick = true;
+              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">鼻先をクリック...</span>';
+              this.showTooltip("画像上の【鼻先（一番高い所）】を1箇所クリックしてください。解析が始まります。");
+              return;
           } else {
               // --- Frontal / E-Midline (Face Landmarker) ---
               const landmarker = await window.initFaceLandmarker();
@@ -964,7 +966,6 @@ class AnalysisCard {
       let r = 0, g = 0, b = 0; for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
       return { r: Math.round(r/25), g: Math.round(g/25), b: Math.round(b/25) };
   }
-
   updateShade(rX, rY) {
       const c = this.sampleColorAt(rX, rY);
       if (this.activeTool === 'shade-diff') {
@@ -972,6 +973,42 @@ class AnalysisCard {
           else this.shadeDiffB = { x: rX, y: rY, ...c };
       } else this.lines['shadeSample'] = { x: rX, y: rY, ...c };
       this.updateStats(); this.drawCanvas();
+  }
+
+  async processGuidedLateralAI(coords) {
+      this.isWaitingForAIClick = false;
+      const aiBtn = this.card.querySelector('.ai-analyze-btn');
+      const originalHTML = aiBtn.innerHTML;
+      aiBtn.disabled = true;
+      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">解析中...</span>';
+
+      try {
+          this.prepareOffScreenCanvas();
+          const canvas = AnalysisCard.offScreenCanvas;
+          
+          // セグメンテーション（補助用）
+          const segmenter = await window.initImageSegmenter();
+          const result = segmenter ? segmenter.segment(canvas) : null;
+          const mask = result ? result.categoryMask.getAsUint8Array() : null;
+          const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+
+          const pts = LateralAI.detectFromSeed(coords.realX, coords.realY, canvas.width, canvas.height, imageData.data, mask);
+          if (pts) {
+              this.applyLateralLandmarks(pts);
+              this.showTooltip("側貌解析が完了しました。必要に応じてプロットを微調整してください。");
+          } else {
+              alert("輪郭の特定に失敗しました。鼻の先端を正確にクリックしてください。");
+              this.showTooltip("解析失敗。再度『AI自動解析』を押して鼻先をクリックしてください。");
+          }
+      } catch (e) {
+          console.error(e);
+          alert("解析エラーが発生しました。");
+      } finally {
+          aiBtn.disabled = false;
+          aiBtn.innerHTML = originalHTML.replace('鼻先をクリック...', 'AI自動解析');
+          this.card.classList.remove('ai-scanning');
+          this.updateToolbarStatus();
+      }
   }
 }
 window.AnalysisCard = AnalysisCard;
