@@ -248,45 +248,42 @@ window.SHADE_GUIDES = {
             { "id": "D3", "l": 68.8, "a": 0.5, "b": 14.8 },
             { "id": "D4", "l": 67.2, "a": 1.0, "b": 17.0 }
         ]
-    }
-};
-
-window.CALIBRATION_TARGETS = {
+    },
     "gray-card": {
-        name: "グレーカード (18%)",
-        description: "標準18%反射率グレーカード。ホワイトバランス・露出の絶対基準 (L=50)。",
-        patches: [
-            { id: "Gray 18%", label: "グレー18%", l: 50.0, a: 0.0, b: 0.0 }
+        "name": "グレーカード (18%)",
+        "description": "標準18%反射率グレーカード。ホワイトバランス・露出補正の絶対基準 (L=50, a=0, b=0)。",
+        "shades": [
+            { "id": "Gray18%", "label": "グレー 18%", "l": 50.0, "a": 0.0, "b": 0.0 }
         ]
     },
     "color-checker": {
-        name: "ColorChecker Classic 24",
-        description: "X-Rite ColorChecker Classic 24パッチ (D50 CIELAB値, 2014年以降現行仕様)。",
-        patches: [
-            { id: "01", label: "Dark Skin",     l: 37.54, a: 14.37, b: 14.92 },
-            { id: "02", label: "Light Skin",    l: 64.66, a: 19.27, b: 17.50 },
-            { id: "03", label: "Blue Sky",      l: 49.32, a: -3.82, b: -22.54 },
-            { id: "04", label: "Foliage",       l: 43.46, a: -12.74, b: 22.72 },
-            { id: "05", label: "Blue Flower",   l: 54.94, a: 9.61,  b: -24.79 },
-            { id: "06", label: "Bluish Green",  l: 70.48, a: -32.26, b: -0.37 },
-            { id: "07", label: "Orange",        l: 62.73, a: 35.83, b: 56.50 },
-            { id: "08", label: "Purplish Blue", l: 39.43, a: 10.75, b: -45.17 },
-            { id: "09", label: "Moderate Red",  l: 50.57, a: 48.64, b: 16.67 },
-            { id: "10", label: "Purple",        l: 30.10, a: 22.54, b: -20.87 },
-            { id: "11", label: "Yellow Green",  l: 71.77, a: -24.13, b: 58.19 },
-            { id: "12", label: "Orange Yellow", l: 71.51, a: 18.24, b: 67.37 },
-            { id: "13", label: "Blue",          l: 28.37, a: 15.42, b: -49.80 },
-            { id: "14", label: "Green",         l: 54.38, a: -39.72, b: 32.27 },
-            { id: "15", label: "Red",           l: 42.43, a: 51.05, b: 28.62 },
-            { id: "16", label: "Yellow",        l: 81.80, a: 2.67,  b: 80.41 },
-            { id: "17", label: "Magenta",       l: 50.63, a: 51.28, b: -14.12 },
-            { id: "18", label: "Cyan",          l: 49.57, a: -29.71, b: -28.32 },
-            { id: "19", label: "White 95%",     l: 95.19, a: -1.03, b: 2.93, neutral: true },
-            { id: "20", label: "Neutral 8",     l: 81.29, a: -0.57, b: 0.44, neutral: true },
-            { id: "21", label: "Neutral 6.5",   l: 66.89, a: -0.75, b: -0.06, neutral: true },
-            { id: "22", label: "Neutral 5",     l: 50.76, a: -0.13, b: 0.14, neutral: true },
-            { id: "23", label: "Neutral 3.5",   l: 35.63, a: -0.46, b: -0.48, neutral: true },
-            { id: "24", label: "Black 2%",      l: 20.64, a: 0.07,  b: -0.46, neutral: true }
+        "name": "ColorChecker Classic 24",
+        "description": "X-Rite ColorChecker Classic 24パッチ (D50 CIELAB値, 2014年以降現行仕様)。ニュートラルパッチ(19〜24)が最も補正に有効です。",
+        "shades": [
+            { "id": "01", "label": "Dark Skin",     "l": 37.54, "a": 14.37, "b": 14.92 },
+            { "id": "02", "label": "Light Skin",    "l": 64.66, "a": 19.27, "b": 17.50 },
+            { "id": "03", "label": "Blue Sky",      "l": 49.32, "a": -3.82, "b": -22.54 },
+            { "id": "04", "label": "Foliage",       "l": 43.46, "a": -12.74, "b": 22.72 },
+            { "id": "05", "label": "Blue Flower",   "l": 54.94, "a":  9.61, "b": -24.79 },
+            { "id": "06", "label": "Bluish Green",  "l": 70.48, "a": -32.26, "b": -0.37 },
+            { "id": "07", "label": "Orange",        "l": 62.73, "a": 35.83, "b": 56.50 },
+            { "id": "08", "label": "Purplish Blue", "l": 39.43, "a": 10.75, "b": -45.17 },
+            { "id": "09", "label": "Moderate Red",  "l": 50.57, "a": 48.64, "b": 16.67 },
+            { "id": "10", "label": "Purple",        "l": 30.10, "a": 22.54, "b": -20.87 },
+            { "id": "11", "label": "Yellow Green",  "l": 71.77, "a": -24.13, "b": 58.19 },
+            { "id": "12", "label": "Orange Yellow", "l": 71.51, "a": 18.24, "b": 67.37 },
+            { "id": "13", "label": "Blue",          "l": 28.37, "a": 15.42, "b": -49.80 },
+            { "id": "14", "label": "Green",         "l": 54.38, "a": -39.72, "b": 32.27 },
+            { "id": "15", "label": "Red",           "l": 42.43, "a": 51.05, "b": 28.62 },
+            { "id": "16", "label": "Yellow",        "l": 81.80, "a":  2.67, "b": 80.41 },
+            { "id": "17", "label": "Magenta",       "l": 50.63, "a": 51.28, "b": -14.12 },
+            { "id": "18", "label": "Cyan",          "l": 49.57, "a": -29.71, "b": -28.32 },
+            { "id": "19", "label": "White 95%",     "l": 95.19, "a": -1.03, "b": 2.93 },
+            { "id": "20", "label": "Neutral 8",     "l": 81.29, "a": -0.57, "b": 0.44 },
+            { "id": "21", "label": "Neutral 6.5",   "l": 66.89, "a": -0.75, "b": -0.06 },
+            { "id": "22", "label": "Neutral 5",     "l": 50.76, "a": -0.13, "b": 0.14 },
+            { "id": "23", "label": "Neutral 3.5",   "l": 35.63, "a": -0.46, "b": -0.48 },
+            { "id": "24", "label": "Black 2%",      "l": 20.64, "a":  0.07, "b": -0.46 }
         ]
     }
 };

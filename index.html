@@ -185,6 +185,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>① 正面顔貌の分析 (Frontal Macro-esthetics)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -271,6 +272,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>② 側方顔貌の分析 (Lateral Macro-esthetics)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -368,6 +370,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>③ E音 発音時 (正中・傾斜パラメーター)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -457,13 +460,14 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>④ E音 / フルスマイル の分析 (Mini-esthetics)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn-ai-enhance ai-analyze-btn btn-under-dev" title="現在開発中につきご利用いただけません" disabled><i data-lucide="wrench"></i> AI自動解析 (準備中)</button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -578,6 +582,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>⑤ M音 安静位の分析 (Rest position)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -635,6 +640,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>⑥ S音 発音時の分析 (Speaking clearance)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -692,6 +698,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>⑦ F/V音 発音時の分析 (Fricatives)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -749,6 +756,7 @@
           <div class="card-header">
             <div class="card-title-group">
               <h3>⑧ 圧排時の分析 (Intraoral Micro-esthetics)</h3>
+              <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
                 <span>基準点・基準線を表示</span>
@@ -766,19 +774,19 @@
             <div class="horizontal-toolbar">
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
-                <input type="radio" name="tool-retracted" id="tool-wl" value="wl-ratio" class="tool-radio">
-                <label for="tool-wl" class="tool-label"><i data-lucide="box-select"></i> W/L 比率 (4点)</label>
+                <input type="radio" name="tool-intraoral" id="tool-wl" value="wl-ratio" class="tool-radio">
+                <label for="tool-wl" class="tool-label"><i data-lucide="box-select"></i> W/L 比率 (8点)</label>
 
-                <input type="radio" name="tool-retracted" id="tool-red" value="red-prop" class="tool-radio">
+                <input type="radio" name="tool-intraoral" id="tool-red" value="red-prop" class="tool-radio">
                 <label for="tool-red" class="tool-label"><i data-lucide="bar-chart"></i> 幅径バランス (7点)</label>
 
-                <input type="radio" name="tool-retracted" id="tool-pink" value="pink-esth" class="tool-radio">
+                <input type="radio" name="tool-intraoral" id="tool-pink" value="pink-esth" class="tool-radio">
                 <label for="tool-pink" class="tool-label"><i data-lucide="heart"></i> ピンク・エステティック (6点)</label>
 
-                <input type="radio" name="tool-retracted" id="tool-axial" value="axial-incl" class="tool-radio">
+                <input type="radio" name="tool-intraoral" id="tool-axial" value="axial-incl" class="tool-radio">
                 <label for="tool-axial" class="tool-label"><i data-lucide="scissors"></i> 歯冠傾斜度 (14点)</label>
 
-                <input type="radio" name="tool-retracted" id="tool-papilla" value="papilla" class="tool-radio">
+                <input type="radio" name="tool-intraoral" id="tool-papilla" value="papilla" class="tool-radio">
                 <label for="tool-papilla" class="tool-label"><i data-lucide="align-horizontal-distribute-center"></i>
                   歯間乳頭の左右差 (5点)</label>
               </div>
@@ -1113,68 +1121,40 @@
 
               <div class="shade-calibration-controls">
                 <div class="calibration-settings">
-                  <!-- Calibration Target Type Switcher -->
-                  <div class="calib-type-switcher">
-                    <span class="label" style="font-size:0.8rem;font-weight:600;color:var(--text-muted);">補正基準：</span>
-                    <div class="calib-type-btns">
-                      <button class="calib-type-btn active" data-calib-type="shade-guide">シェードガイド</button>
-                      <button class="calib-type-btn" data-calib-type="gray-card">グレーカード</button>
-                      <button class="calib-type-btn" data-calib-type="color-checker">カラーチェッカー</button>
-                    </div>
-                  </div>
-
-                  <!-- Shade Guide Panel (default) -->
-                  <div id="calib-panel-shade-guide" class="calib-panel active">
-                    <div class="palette-container">
-                      <div class="palette-main">
-                        <div class="guide-selector-area" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
-                          <span class="label">シェードガイド：</span>
-                          <select id="shade-guide-select" class="form-select" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; background: white; cursor: pointer;">
+                  <div class="palette-container">
+                    <div class="palette-main">
+                      <div class="guide-selector-area" style="margin-bottom: 8px; display: flex; align-items: center; gap: 10px;">
+                        <span class="label">補正基準選択：</span>
+                        <select id="shade-guide-select" class="form-select" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.85rem; background: white; cursor: pointer;">
+                          <optgroup label="シェードガイド">
                             <option value="vita-classical" selected>Vita Classical</option>
                             <option value="vita-3d-master">Vita 3D Master</option>
                             <option value="chromascop">Chromascop</option>
                             <option value="vintage">Vintage Color Indicator</option>
-                          </select>
-                        </div>
-                        <div id="shade-guide-description" class="note-text" style="margin-bottom: 12px; font-size: 0.75rem; color: var(--text-muted); padding-left: 4px; border-left: 2px solid var(--primary-color);">
-                          スタンダード16色。ホワイトニングには通常OM1〜OM3が併用されます。
-                        </div>
-                        <span class="label">基準を選択してプロット：</span>
-                        <div id="shade-palette" class="shade-palette single-row"></div>
+                          </optgroup>
+                          <optgroup label="キャリブレーションツール">
+                            <option value="gray-card">グレーカード (18%)</option>
+                            <option value="color-checker">ColorChecker Classic 24</option>
+                          </optgroup>
+                        </select>
                       </div>
-                      <div class="palette-actions">
-                        <div class="action-item">
-                          <button id="btn-ai-enhance" class="btn-ai-enhance" type="button">
-                            <i data-lucide="sparkles"></i>
-                            <span>AI画像補正</span>
-                          </button>
-                        </div>
-                        <button id="shade-calib-reset-btn" class="btn btn-ghost btn-xs">
-                          <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> リセット
+                      <div id="shade-guide-description" class="note-text" style="margin-bottom: 12px; font-size: 0.75rem; color: var(--text-muted); padding-left: 4px; border-left: 2px solid var(--primary-color);">
+                        スタンダード16色。ホワイトニングには通常OM1〜OM3が併用されます。
+                      </div>
+                      <span class="label">基準を選択してプロット：</span>
+                      <div id="shade-palette" class="shade-palette"></div>
+                    </div>
+                    <div class="palette-actions">
+                      <div class="action-item">
+                        <button id="btn-ai-enhance" class="btn-ai-enhance" type="button">
+                          <i data-lucide="sparkles"></i>
+                          <span>AI画像補正</span>
                         </button>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- Gray Card Panel -->
-                  <div id="calib-panel-gray-card" class="calib-panel">
-                    <div class="gray-card-panel">
-                      <div class="gray-card-desc">
-                        <i data-lucide="square" style="width:14px;height:14px;color:var(--text-muted);"></i>
-                        <span>標準18%グレーカード (L=50, a=0, b=0) をクリックして補正基準を設定します。</span>
-                      </div>
-                      <button class="calib-type-btn active" id="gray-card-select-btn" style="margin-top:8px; cursor:default;">
-                        グレー18% &nbsp;<span style="font-size:0.75rem;opacity:0.7;">(L 50.0 / a 0.0 / b 0.0)</span>
+                      <button id="shade-calib-reset-btn" class="btn btn-ghost btn-xs">
+                        <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> リセット
                       </button>
                     </div>
-                  </div>
-
-                  <!-- ColorChecker Panel -->
-                  <div id="calib-panel-color-checker" class="calib-panel">
-                    <div class="color-checker-desc note-text" style="margin-bottom:8px;">
-                      X-Rite ColorChecker Classic 24パッチを選択→画像内の対応パッチをクリック
-                    </div>
-                    <div id="cc-patch-grid" class="cc-patch-grid"></div>
                   </div>
                 </div>
 

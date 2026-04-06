@@ -146,25 +146,6 @@ window.ShadeHandlers = {
         }
     },
 
-    // --- Helper Methods ---
-    renderShadePalette(card) {
-        if (!card.shadePalette) return;
-        const guide = window.SHADE_GUIDES[card.currentShadeGuideId];
-        if (!guide) return;
-        
-        card.shadePalette.innerHTML = '';
-        guide.shades.forEach(s => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'shade-btn';
-            if (s.id === card.currentCalibId) btn.classList.add('active');
-            btn.dataset.shade = s.id;
-            btn.textContent = s.id;
-            const rgb = window.ColorSpace.labToRgb(s.l, s.a, s.b);
-            btn.style.setProperty('--shade-color', `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
-            card.shadePalette.appendChild(btn);
-        });
-    },
 
     renderCalibPlotList(card) {
         if (!card.shadePlotList) return;

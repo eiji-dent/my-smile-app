@@ -1389,38 +1389,37 @@ body.is-exporting * {
   flex-direction: column;
 }
 
-.shade-palette.single-row {
+.shade-palette {
   display: flex;
   flex-flow: row nowrap;
-  /* Force single row */
   gap: 0.5rem;
   overflow-x: auto;
-  /* Horizontal scroll */
   overflow-y: hidden;
   padding: 0.5rem 0.2rem;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  min-height: 80px;
 }
 
-.shade-palette.single-row::-webkit-scrollbar {
+.shade-palette::-webkit-scrollbar {
   height: 6px;
-  /* Horizontal scrollbar height */
 }
 
-.shade-palette.single-row::-webkit-scrollbar-thumb {
+.shade-palette::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
 .shade-btn {
-  flex: 0 0 50px;
+  flex: 0 0 62px;
+  min-width: 62px;
   height: 64px;
   border-radius: 7px;
   border: 2px solid rgba(0, 0, 0, 0.10);
   background-color: var(--shade-color, #f1f5f9);
-  color: rgba(0, 0, 0, 0.7);
-  font-size: 0.68rem;
-  font-weight: 800;
+  color: rgba(0, 0, 0, 0.8);
+  font-size: 0.65rem;
+  font-weight: 900;
   cursor: pointer;
   display: flex;
   align-items: flex-end;
@@ -1979,124 +1978,6 @@ body.is-exporting * {
     width: 10px;
     height: 10px;
     border-radius: 2px;
-}
-
-/* Shade Magnifier / Digital Loupe */
-/* ==========================================================================
-   Calibration Target Switcher
-   ========================================================================== */
-
-.calib-type-switcher {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.calib-type-btns {
-  display: flex;
-  gap: 6px;
-}
-
-.calib-type-btn {
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: white;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.calib-type-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.calib-type-btn.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-/* Calibration Panels (show/hide) */
-.calib-panel {
-  display: none;
-}
-
-.calib-panel.active {
-  display: block;
-}
-
-/* Gray Card Panel */
-.gray-card-panel {
-  padding: 12px;
-  background: var(--bg-sidebar);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-}
-
-.gray-card-desc {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  color: var(--text-muted);
-}
-
-/* ColorChecker 6x4 Patch Grid */
-.cc-patch-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-}
-
-.cc-patch-btn {
-  aspect-ratio: 1;
-  border-radius: 5px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 2px;
-  transition: all 0.15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-}
-
-.cc-patch-btn:hover {
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-  transform: translateY(-1px) scale(1.08);
-  z-index: 2;
-}
-
-.cc-patch-btn.active {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(37,99,235,0.4);
-}
-
-.cc-patch-btn.cc-neutral {
-  border-style: dashed;
-  border-color: rgba(100,116,139,0.4);
-}
-
-.cc-patch-btn.cc-neutral.active {
-  border-style: solid;
-  border-color: var(--primary);
-}
-
-.cc-patch-id {
-  font-size: 0.55rem;
-  font-weight: 800;
-  line-height: 1;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 0 4px rgba(255,255,255,0.4);
-  color: white;
-  letter-spacing: 0.02em;
 }
 
 /* Shade Magnifier */

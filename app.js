@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.lucide.createIcons();
   }
 
+  // Ensure the page starts at the top on load/refresh
+  window.scrollTo(0, 0);
+
   window.showAllPlots = true;
   const togglePlots = document.getElementById('toggle-all-plots');
   if (togglePlots) {

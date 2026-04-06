@@ -33,6 +33,7 @@ class AnalysisCard {
     this.lines = {}; 
     this.guidedMode = false;
     this.pxToMm = 0.075; 
+    this.calibBadge = cardElement.querySelector('.calibration-status-badge');
 
     // Constants from window.AESTHETIC_CONSTANTS
     const C = window.AESTHETIC_CONSTANTS;
@@ -167,8 +168,6 @@ class AnalysisCard {
     this.shadeDiffA = null;
     this.shadeDiffB = null;
     this.shadeMapRect = null;
-    this.calibTargetType = 'shade-guide'; // 'shade-guide' | 'gray-card' | 'color-checker'
-    this.currentCalibPatchId = '22'; // Default: Neutral 5 (≈18% gray)
     
     this.currentShadeGuideId = 'vita-classical'; 
     this.currentCalibId = 'A2';
@@ -179,7 +178,6 @@ class AnalysisCard {
     
     this.renderShadePalette();
     this.initShadeGuide();
-    this.initCalibTargetSwitcher();
 
     if (this.shadeCalibResetBtn) {
         this.shadeCalibResetBtn.addEventListener('click', () => {
@@ -201,50 +199,7 @@ class AnalysisCard {
     }
   }
 
-  initCalibTargetSwitcher() {
-    const typeBtns = this.card.querySelectorAll('.calib-type-btn[data-calib-type]');
-    typeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            typeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            this.calibTargetType = btn.dataset.calibType;
-            ['shade-guide','gray-card','color-checker'].forEach(type => {
-                const panel = this.card.querySelector(`#calib-panel-${type}`);
-                if (panel) panel.classList.toggle('active', type === this.calibTargetType);
-            });
-        });
-    });
 
-    // Build ColorChecker patch grid
-    const grid = this.card.querySelector('#cc-patch-grid');
-    if (grid && window.CALIBRATION_TARGETS && window.CALIBRATION_TARGETS['color-checker']) {
-        const patches = window.CALIBRATION_TARGETS['color-checker'].patches;
-        patches.forEach(patch => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'cc-patch-btn' + (patch.neutral ? ' cc-neutral' : '');
-            btn.dataset.patchId = patch.id;
-            btn.title = `${patch.id}: ${patch.label} (L${patch.l} / a${patch.a} / b${patch.b})`;
-            if (window.ColorSpace) {
-                const rgb = window.ColorSpace.labToRgb(patch.l, patch.a, patch.b);
-                btn.style.backgroundColor = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
-            }
-            const idLabel = document.createElement('span');
-            idLabel.className = 'cc-patch-id';
-            idLabel.textContent = patch.id;
-            btn.appendChild(idLabel);
-            btn.addEventListener('click', () => {
-                grid.querySelectorAll('.cc-patch-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                this.currentCalibPatchId = patch.id;
-            });
-            grid.appendChild(btn);
-        });
-        // Default select patch 22 (Neutral 5)
-        const defaultBtn = grid.querySelector('[data-patch-id="22"]');
-        if (defaultBtn) defaultBtn.classList.add('active');
-    }
-  }
 
   checkPrivacyModal(privacyModal) {
       const agreeBtn = document.getElementById('agree-button');
@@ -391,10 +346,10 @@ class AnalysisCard {
              requestAnimationFrame(() => {
                 const actualMm = window.prompt("この2点間の実際の長さ(mm)を入力してください：\n※キャンセルか空欄でリセット(0.075mm/px)されます。", "10.0");
                 if (actualMm && !isNaN(parseFloat(actualMm))) {
-                   this.pxToMm = parseFloat(actualMm) / distPx;
+                   this.updatePxToMm(parseFloat(actualMm) / distPx);
                    this.showTooltip(`キャリブレーション完了（1px = ${this.pxToMm.toFixed(4)} mm）。他のツールを選択してください。`);
                 } else {
-                   this.pxToMm = 0.075;
+                   this.updatePxToMm(0.075);
                    this.showTooltip(`キャリブレーションをリセットしました（1px = 0.075 mm）。`);
                 }
                 const statusEl = this.card.querySelector('.calib-status');
@@ -622,6 +577,13 @@ class AnalysisCard {
       
       try {
           console.log(`AI Analysis started for phase: ${this.phase}`);
+          
+          // Phase 4 (E-sound / Mini-esthetics) is currently under development
+          if (this.phase === 'e-sound') {
+              alert("E音/フルスマイルの自動解析機能は現在開発中です。近日アップデート予定です。");
+              return;
+          }
+
           this.prepareOffScreenCanvas();
           const canvas = AnalysisCard.offScreenCanvas;
 
@@ -651,8 +613,10 @@ class AnalysisCard {
               const result = landmarker.detect(canvas);
               
               if (this.phase !== 'frontal' && this.pxToMm === 0.075) {
-                  const frontalCard = window.appCards.find(c => c.phase === 'frontal');
-                  if (frontalCard && frontalCard.pxToMm !== 0.075) this.pxToMm = frontalCard.pxToMm;
+                  const frontalCard = window.appCards?.find(c => c.phase === 'frontal');
+                  if (frontalCard && frontalCard.pxToMm !== 0.075) {
+                      this.updatePxToMm(frontalCard.pxToMm); // Sync but badges only update locally
+                  }
               }
               
               if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
@@ -935,6 +899,41 @@ class AnalysisCard {
     this.updateToolbarStatus();
   }
 
+  /**
+   * Updates the pixel-to-mm scale and synchronizes it with other cards 
+   * IF their scale is currently at the default value.
+   */
+  updatePxToMm(val, skipSync = false) {
+    this.pxToMm = val;
+    
+    // Update visual badge in card header
+    if (this.calibBadge) {
+      if (val === 0.075) {
+        this.calibBadge.textContent = '';
+        this.calibBadge.classList.add('hidden');
+      } else {
+        this.calibBadge.textContent = `1mm = ${(1/val).toFixed(1)}px`;
+        this.calibBadge.classList.remove('hidden');
+      }
+    }
+
+    // Update any individual tool status text
+    const statusEl = this.card.querySelector('.calib-status');
+    if (statusEl) statusEl.textContent = `[1px = ${this.pxToMm.toFixed(4)}mm]`;
+
+    // Automatically sync with other cards if they're still at default
+    if (!skipSync && val !== 0.075 && window.appCards) {
+      window.appCards.forEach(otherCard => {
+        if (otherCard !== this && (otherCard.pxToMm === 0.075 || !otherCard.pxToMm)) {
+          otherCard.updatePxToMm(val, true); // Use true to prevent infinite recursion
+        }
+      });
+    }
+    
+    // Trigger redraw for current measurements
+    this.updateStats();
+  }
+
   updateToolbarStatus() {
     if (!this.toolRadios) return;
     this.toolRadios.forEach(radio => {
@@ -979,29 +978,15 @@ class AnalysisCard {
   }
 
   calibrateShade(rX, rY) {
-      if (!this.currentImage) return;
+      if (!this.currentImage || !window.ColorSpace || !window.SHADE_GUIDES) return;
       const c = this.sampleColorAt(rX, rY);
-      // lastSampledColor drives the L*a*b* stats display (but does NOT draw the shade-picker crosshair)
       this.lastSampledColor = c;
-      const sLab = ColorSpace.rgbToLab(c.r, c.g, c.b);
+      const sLab = window.ColorSpace.rgbToLab(c.r, c.g, c.b);
 
-      // Determine target Lab from the active calibration type
-      let tId = null, tLab = null;
-
-      if (this.calibTargetType === 'gray-card') {
-          tId = 'Gray 18%';
-          tLab = { l: 50.0, a: 0.0, b: 0.0 };
-      } else if (this.calibTargetType === 'color-checker') {
-          const ccTarget = window.CALIBRATION_TARGETS && window.CALIBRATION_TARGETS['color-checker'];
-          const patch = ccTarget ? ccTarget.patches.find(p => p.id === this.currentCalibPatchId) : null;
-          if (patch) { tId = `CC-${patch.id} ${patch.label}`; tLab = { l: patch.l, a: patch.a, b: patch.b }; }
-      } else {
-          // shade-guide (default)
-          tId = this.currentCalibId || 'A2';
-          const g = SHADE_GUIDES[this.currentShadeGuideId];
-          const tS = g ? g.shades.find(sh => sh.id === tId) : null;
-          if (tS) tLab = { l: tS.l, a: tS.a, b: tS.b };
-      }
+      const tId = this.currentCalibId || 'A2';
+      const g = window.SHADE_GUIDES[this.currentShadeGuideId];
+      const tS = g ? g.shades.find(sh => sh.id === tId) : null;
+      let tLab = tS ? { l: tS.l, a: tS.a, b: tS.b } : null;
 
       if (tId && tLab) {
           const off = { l: tLab.l - sLab.l, a: tLab.a - sLab.a, b: tLab.b - sLab.b };
@@ -1015,23 +1000,64 @@ class AnalysisCard {
   }
 
   initShadeGuide() {
-      if (this.shadeGuideSelect) this.shadeGuideSelect.addEventListener('change', (e) => { this.currentShadeGuideId = e.target.value; this.renderShadePalette(); this.updateStats(); });
-      if (this.shadePalette) this.shadePalette.addEventListener('click', (e) => {
-          const btn = e.target.closest('.shade-btn'); if (!btn) return;
-          this.shadePalette.querySelectorAll('.shade-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
-          this.currentCalibId = btn.dataset.shade;
-          const cal = this.card.querySelector('#tool-shade-calibrator');
-          if (cal) { cal.checked = true; this.activeTool = 'shade-calibrator'; const con = this.shadePalette.closest('.palette-container'); if (con) con.classList.add('open'); }
-      });
+      const select = this.card.querySelector('#shade-guide-select');
+      if (select) {
+          select.addEventListener('change', (e) => { 
+              const newId = e.target.value;
+              this.currentShadeGuideId = newId; 
+              
+              const g = window.SHADE_GUIDES[newId];
+              if (g) {
+                  // Update description
+                  if (this.shadeGuideDescription) {
+                      this.shadeGuideDescription.textContent = g.description;
+                  }
+                  // Reset active patch to the first one in the new guide
+                  if (g.shades && g.shades.length > 0) {
+                      this.currentCalibId = g.shades[0].id;
+                  }
+                  // Re-render palette
+                  this.renderShadePalette(); 
+                  // Update stats to sync magnifier/labels
+                  this.updateStats(); 
+              }
+          });
+      }
+      
+      if (this.shadePalette) {
+          this.shadePalette.addEventListener('click', (e) => {
+              const btn = e.target.closest('.shade-btn'); if (!btn) return;
+              this.shadePalette.querySelectorAll('.shade-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
+              this.currentCalibId = btn.dataset.shade;
+              const cal = this.card.querySelector('#tool-shade-calibrator');
+              if (cal) { cal.checked = true; this.activeTool = 'shade-calibrator'; const con = this.shadePalette.closest('.palette-container'); if (con) con.classList.add('open'); }
+          });
+      }
   }
 
   renderShadePalette() {
-      if (!this.shadePalette) return; const g = SHADE_GUIDES[this.currentShadeGuideId]; if (!g) return;
+      if (!this.shadePalette || !window.SHADE_GUIDES || !window.ColorSpace) return; 
+      const g = window.SHADE_GUIDES[this.currentShadeGuideId]; 
+      if (!g) return;
+      
       this.shadePalette.innerHTML = '';
+      
+      // Safety: Auto-select first shade if current selection is invalid for this guide
+      if (!g.shades.find(s => s.id === this.currentCalibId)) {
+          if (g.shades.length > 0) this.currentCalibId = g.shades[0].id;
+      }
+
       g.shades.forEach(s => {
-          const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'shade-btn'; if (s.id === this.currentCalibId) btn.classList.add('active');
-          btn.dataset.shade = s.id; btn.textContent = s.id;
-          const rgb = ColorSpace.labToRgb(s.l, s.a, s.b); btn.style.setProperty('--shade-color', `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
+          const btn = document.createElement('button'); 
+          btn.type = 'button'; 
+          btn.className = 'shade-btn'; 
+          if (s.id === this.currentCalibId) btn.classList.add('active');
+          btn.dataset.shade = s.id; 
+          btn.textContent = s.id;
+          if (s.label) btn.title = s.label; // For ColorChecker patch names
+          
+          const rgb = window.ColorSpace.labToRgb(s.l, s.a, s.b); 
+          btn.style.setProperty('--shade-color', `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
           this.shadePalette.appendChild(btn);
       });
   }
