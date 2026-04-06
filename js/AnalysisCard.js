@@ -575,8 +575,9 @@ class AnalysisCard {
               aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">シルエット解析中...</span>';
               const result = segmenter.segment(canvas);
               const mask = result.categoryMask.getAsUint8Array();
+              const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
               
-              const lateralPoints = LateralAI.detectLandmarksFromMask(mask, canvas.width, canvas.height);
+              const lateralPoints = LateralAI.detectLandmarksFromMask(mask, canvas.width, canvas.height, imageData.data);
               if (!lateralPoints) {
                   alert("横顔のシルエットを正しく抽出できませんでした。背景がシンプルな画像でお試しください。");
               } else {
