@@ -1,0 +1,29 @@
+/* ==========================================================================
+   Clinical Phase Styles (Phase 1-10)
+   ========================================================================== */
+
+/* Frontal Phase Specifics */
+.frontal-stats .stat-item {
+  flex-direction: column;
+}
+
+.frontal-stats .stat-value {
+  color: var(--accent);
+  /* Light blue for proportion values */
+}
+
+
+/* Portrait Layout Specifics for Phases 1-3 */
+
+/* Portrait Layout Specifics for Phases 1-3 */
+.portrait-layout > .canvas-wrapper {
+  flex: 0 0 420px;
+  height: 560px;
+  max-height: 70vh;
+}
+
+.portrait-layout .quick-stats {
+  flex: 1; min-width: 350px; margin-top: 0; border-top: none;
+  border-left: 1px solid var(--border-light);
+  display: flex; flex-direction: column; justify-content: center;
+}
