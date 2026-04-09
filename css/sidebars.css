@@ -1,0 +1,156 @@
+/* Collapsible Sidebars & Layout Styling */
+
+/* --- Left Sidebar --- */
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  z-index: 105; /* Above main content when overlay */
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.3s ease, 
+              opacity 0.2s ease;
+  overflow-x: hidden;
+}
+
+/* Collapsed State for Left Sidebar */
+.sidebar-collapsed .sidebar {
+  width: 0 !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-right-width: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Right Panel --- */
+.right-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background-color: var(--bg-card);
+  border-left: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  z-index: 102;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.03);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              padding 0.3s ease, 
+              opacity 0.2s ease;
+  overflow-x: hidden;
+}
+
+/* Collapsed State for Right Panel */
+.right-panel-collapsed .right-panel {
+  width: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-left-width: 0 !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Toggles & Icons --- */
+.sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+}
+
+.sidebar-toggle:hover {
+  color: var(--primary);
+  background-color: var(--primary-light);
+}
+
+.sidebar-toggle i {
+  width: 20px;
+  height: 20px;
+}
+
+/* --- Overlay --- */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 104;
+  transition: opacity 0.3s ease, visibility 0.3s;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* --- Responsive Behavior --- */
+
+/* Desktop Specific: Content Push */
+@media (min-width: 1025px) {
+  .sidebar-collapsed .sidebar-overlay {
+    display: none;
+  }
+}
+
+/* Tablet/Mobile Specific: Drawer/Overlay */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    margin-left: -260px; /* Initially hidden */
+    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+  }
+
+  .app-container:not(.sidebar-collapsed) .sidebar {
+    margin-left: 0 !important;
+    width: 260px !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+
+  .app-container:not(.sidebar-collapsed) .sidebar-overlay {
+    pointer-events: auto;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Right Panel on small screens is usually hidden or drawer */
+  .right-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin-right: -280px;
+    z-index: 106;
+  }
+
+  .app-container:not(.right-panel-collapsed) .right-panel {
+    margin-right: 0 !important;
+    width: 280px !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+}
+
+/* Auto-hide right panel slightly earlier on narrow desktops if not collapsed */
+@media (max-width: 1200px) {
+  .app-container:not(.right-panel-collapsed) .right-panel {
+    /* Optional: can be empty or add specific iPad landscape behavior */
+  }
+}

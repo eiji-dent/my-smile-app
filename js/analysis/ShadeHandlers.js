@@ -139,8 +139,18 @@ window.ShadeHandlers = {
 
             // --- Shade Map Update (100-Division) --- always visible
             const shadeZoomCanvas = card.card.querySelector('#shade-zoom-canvas');
-            
-            if (card.shadeMapRect && (card.shadeMapRect.active || card.shadeMapRect.finalized) && card.currentImage && shadeZoomCanvas) {
+            if (card.currentImage && shadeZoomCanvas) {
+                // If no user selection, default to a 420px-based square in the center
+                if (!card.shadeMapRect) {
+                    const side = Math.min(card.currentImage.width, card.currentImage.height) * 0.25;
+                    const cx = card.currentImage.width / 2;
+                    const cy = card.currentImage.height / 2;
+                    card.shadeMapRect = { 
+                        x1: cx - side/2, y1: cy - side/2, 
+                        x2: cx + side/2, y2: cy + side/2, 
+                        active: false, finalized: true 
+                    };
+                }
                 this.updateShadeMapZoom(card, shadeZoomCanvas);
             }
         }
@@ -243,7 +253,8 @@ window.ShadeHandlers = {
                 
                 for(let y = sY; y < eY; y++) {
                     for(let x = sX; x < eX; x++) {
-                        const idx = (y * safeW + x) * 4;
+                        const idx = Math.floor(y * safeW + x) * 4;
+                        if (idx < 0 || idx >= imgData.data.length - 3) continue;
                         sumR += imgData.data[idx];
                         sumG += imgData.data[idx + 1];
                         sumB += imgData.data[idx + 2];
@@ -288,7 +299,7 @@ window.ShadeHandlers = {
                         zCtx.fillText(shadeLabel, cx + cellW / 2, cy + cellH / 2);
                     }
                 } else {
-                    zCtx.fillStyle = '#ccc';
+                    zCtx.fillStyle = '#000';
                     zCtx.fillRect(cx, cy, cellW, cellH);
                 }
 

@@ -686,34 +686,6 @@ body.is-exporting * {
   border: 1px solid rgba(37, 99, 235, 0.2);
 }
 
-/* Horizontal Card Layout for Portrait Phases */
-.horizontal-card-layout {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-}
-
-/* Portrait Phase Optimization (Phase 1, 2, 3) */
-.portrait-layout {
-  align-items: stretch;
-}
-
-.portrait-layout > .canvas-wrapper {
-  flex: 0 0 420px; /* Keep photo area consistent and portrait */
-  height: 560px;   /* 3:4 ratio */
-  max-height: 70vh;
-}
-
-.portrait-layout .quick-stats {
-  flex: 1;
-  min-width: 350px;
-  margin-top: 0;
-  border-top: none;
-  border-left: 1px solid var(--border-light);
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* Center stats vertically if needed */
-}
 
 /* Vertical Zoom Slider */
 .vertical-zoom-slider {

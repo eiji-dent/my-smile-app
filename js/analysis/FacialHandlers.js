@@ -285,13 +285,31 @@ window.FacialHandlers = {
     },
 
     updateESoundStats(card) {
-        const elArc = card.card.querySelector('.arc-value');
-        const elCorridor = card.card.querySelector('.corridor-value');
+        const elArc = card.card.querySelector('.arc-val');
+        const elCorridor = card.card.querySelector('.corridor-val');
         const elGingival = card.card.querySelector('.gingival-val');
         const elIncisalEb = card.card.querySelector('.incisal-eb-val');
 
         if (card.lines.smileArc && card.lines.smileArc.length === 6 && elArc) {
-            elArc.textContent = '計測完了（目視評価）';
+            const p = card.lines.smileArc;
+            // 歯のカーブの深さ (中心点と端点の中点の差)
+            // Y軸は下方向がプラスなので、(中心Y - 端点平均Y) がプラスなら「笑顔のカーブ」
+            const teethSag = p[1].y - (p[0].y + p[2].y) / 2;
+            const lipSag = p[4].y - (p[3].y + p[5].y) / 2;
+            
+            let result = 'Consonant (調和)';
+            let color = 'var(--success)';
+            
+            if (teethSag < -2) {
+                result = 'Reverse (逆カーブ)'; 
+                color = 'var(--danger)';
+            } else if (teethSag < 12 || (lipSag > 10 && teethSag < lipSag * 0.7)) {
+                result = 'Flat (平坦)'; 
+                color = '#f59e0b';
+            }
+
+            elArc.textContent = result;
+            elArc.style.color = color;
         }
         if (card.lines.corridor && card.lines.corridor.length === 4 && elCorridor) {
             const pts = card.lines.corridor;
@@ -346,7 +364,7 @@ window.FacialHandlers = {
 
     drawPhase(card, mapC) {
         const ph = card.phase;
-        if (ph === 'frontal') {
+        if (['frontal', 'm-sound', 's-sound', 'fv-sound'].includes(ph)) {
             this.drawFrontal(card, mapC);
         } else if (ph === 'lateral') {
             this.drawLateral(card, mapC);
@@ -380,6 +398,9 @@ window.FacialHandlers = {
         else if (ph === 'lateral') this.updateLateralStats(card);
         else if (ph === 'e-midline') this.updateEMidlineStats(card);
         else if (ph === 'e-sound') this.updateESoundStats(card);
+        else if (ph === 'm-sound') this.updateMSoundStats(card);
+        else if (ph === 's-sound') this.updateSSoundStats(card);
+        else if (ph === 'fv-sound') this.updateFVSoundStats(card);
         else if (ph.includes('horizontal-bar')) this.updateHBarStats(card);
     },
 
@@ -437,5 +458,32 @@ window.FacialHandlers = {
                 elCantEdge.style.color = diff <= 1.0 ? 'var(--success)' : 'var(--danger)';
             }
         }
+    },
+
+    updateMSoundStats(card) {
+        const el = card.card.querySelector('.mmeasure-val');
+        if (el && card.lines.mmeasure) {
+            const mm = card.getLineLengthMm('mmeasure');
+            el.textContent = mm + ' mm';
+            el.style.color = (mm >= 1.0 && mm <= 3.0) ? 'var(--success)' : 'var(--danger)';
+        } else if (el) el.textContent = '-- mm';
+    },
+
+    updateSSoundStats(card) {
+        const el = card.card.querySelector('.smeasure-val');
+        if (el && card.lines.smeasure) {
+            const mm = card.getLineLengthMm('smeasure');
+            el.textContent = mm + ' mm';
+            el.style.color = (mm >= 1.0 && mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
+        } else if (el) el.textContent = '-- mm';
+    },
+
+    updateFVSoundStats(card) {
+        const el = card.card.querySelector('.fvmeasure-val');
+        if (el && card.lines.fvmeasure) {
+            const mm = card.getLineLengthMm('fvmeasure');
+            el.textContent = mm + ' mm';
+            el.style.color = (mm <= 1.5) ? 'var(--success)' : 'var(--danger)';
+        } else if (el) el.textContent = '-- mm';
     }
 };

@@ -12,18 +12,56 @@
   /* Light blue for proportion values */
 }
 
-
 /* Portrait Layout Specifics for Phases 1-3 */
+.horizontal-card-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
 
-/* Portrait Layout Specifics for Phases 1-3 */
+.portrait-layout {
+  align-items: stretch;
+}
+
 .portrait-layout > .canvas-wrapper {
-  flex: 0 0 420px;
-  height: 560px;
+  flex: 0 0 420px; /* Keep photo area consistent and portrait */
+  aspect-ratio: 3 / 4;
+  height: auto;
   max-height: 70vh;
 }
 
 .portrait-layout .quick-stats {
-  flex: 1; min-width: 350px; margin-top: 0; border-top: none;
+  flex: 1;
+  min-width: 350px;
+  margin-top: 0;
+  border-top: none;
   border-left: 1px solid var(--border-light);
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center stats vertically if needed */
+}
+
+/* Result groups for Phase 4, 8 etc. */
+.stats-table-group {
+  width: 100%;
+}
+
+/* Landscape Layout Specifics (e.g. for Phase 9) */
+.landscape-layout > .canvas-wrapper {
+  flex: 0 0 560px; /* Landscape width */
+  width: 560px;
+  height: 420px;
+  aspect-ratio: 4 / 3;
+  max-height: 420px;
+}
+
+.landscape-layout .quick-stats {
+  flex: 1;
+  min-width: 300px;
+  margin-top: 0;
+  border-top: none;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }

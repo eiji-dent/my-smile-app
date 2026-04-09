@@ -326,13 +326,15 @@ class AnalysisCard {
             return;
         }
 
-        if (!this.activeTool) return;
-
-        if (this.drawState === 'idle' && this.hoveredPoint) {
+        // --- Dragging existing points (High Priority) ---
+        // 作図中の誤操作を防ぐため、待機状態 (idle) または作図開始前 (multi-point かつ 0点) の時のみドラッグを許可
+        if ((this.drawState === 'idle' || this.drawState === 'multi-point') && this.tempPoints.length === 0 && this.hoveredPoint) {
             this.draggingPoint = this.hoveredPoint;
             if (this.canvas) this.canvas.style.cursor = 'grabbing';
             return;
         }
+
+        if (!this.activeTool) return;
 
         if (this.activeTool === 'calib') {
            if (this.drawState === 'idle') {
@@ -384,7 +386,7 @@ class AnalysisCard {
                'corridor': { limits: 4, texts: s.CORRIDOR, key: 'corridor' },
                'gingival': { limits: 4, texts: s.GINGIVAL, key: 'gingival' },
                'axial-incl': { limits: 14, texts: s.AXIAL, key: 'axialIncl' },
-               'papilla': { limits: 5, texts: s.PAPILLA, key: 'papilla' }
+               'papilla': { limits: 10, texts: s.PAPILLA, key: 'papilla' }
            };
            const cfg = map[this.activeTool];
            if(!cfg) return;
@@ -393,9 +395,9 @@ class AnalysisCard {
               if (this.tempPoints.length < cfg.limits) this.showTooltip(cfg.texts[this.tempPoints.length]);
               else {
                  this.lines[cfg.key] = [...this.tempPoints];
+                 this.tempPoints = [];
                  this.drawState = 'idle';
-                 this.hideTooltip();
-                 this.showTooltip(cfg.texts[cfg.limits]);
+                 this.showTooltip(cfg.texts[cfg.limits] || "完了しました");
                  setTimeout(() => this.hideTooltip(), 3000);
                  this.updateStats();
               }
@@ -426,6 +428,7 @@ class AnalysisCard {
             this.panX += e.clientX - this.lastPanPt.x;
             this.panY += e.clientY - this.lastPanPt.y;
             this.lastPanPt = { x: e.clientX, y: e.clientY };
+            this.constrainPan(); // 追加: 移動制限を適用
             this.drawCanvas();
             return;
         }
@@ -441,11 +444,15 @@ class AnalysisCard {
                 const newColor = this.sampleColorAt(coords.realX, coords.realY);
                 dp.pt.r = newColor.r; dp.pt.g = newColor.g; dp.pt.b = newColor.b;
             }
-            this.drawCanvas(); this.updateStats();
+            this.drawCanvas(); 
+            this.updateStats();
+            this.updateDragGuidance(); // ドラッグ中にガイドを更新
             return;
         }
         this.hoveredPoint = this.findHoverPoint(coords);
-        this.canvas.style.cursor = this.hoveredPoint ? 'grab' : 'crosshair';
+        // ドラッグが許可されている状態 (+ ホバーしている点がある) の時だけ手のマークにする
+        const canDrag = (this.drawState === 'idle' || this.drawState === 'multi-point') && this.tempPoints.length === 0;
+        this.canvas.style.cursor = (this.hoveredPoint && canDrag) ? 'grab' : 'crosshair';
         if (this.activeTool === 'shade-map' && this.shadeMapRect && this.shadeMapRect.active) {
             const dx = coords.realX - this.shadeMapRect.x1;
             const dy = coords.realY - this.shadeMapRect.y1;
@@ -471,6 +478,7 @@ class AnalysisCard {
          }
          if (this.draggingPoint) {
             this.draggingPoint = null;
+            this.hideTooltip(); // ドラッグ終了時にガイドを隠す
             if (this.canvas) this.canvas.style.cursor = this.hoveredPoint ? 'grab' : 'crosshair';
          }
       });
@@ -480,8 +488,11 @@ class AnalysisCard {
           if (!this.currentImage) return;
           e.preventDefault();
           this.panX -= e.deltaX; this.panY -= e.deltaY;
+          this.constrainPan(); // 移動制限を適用
           this.drawCanvas();
-      });
+      }, { passive: false });
+
+      this.constrainPan(); // 初期状態でも制限を適用
       
       const vSlider = this.card.querySelector('.vertical-zoom-slider');
       if (vSlider) {
@@ -554,6 +565,23 @@ class AnalysisCard {
              } else alert("基準となる水平基準プロットが引かれていません。");
           });
        }
+  }
+
+  constrainPan() {
+    if (!this.currentImage) return;
+    const scale = Math.min(this.canvas.width / this.currentImage.width, this.canvas.height / this.currentImage.height) * this.zoomLevel;
+    const imgW = this.currentImage.width * scale;
+    const imgH = this.currentImage.height * scale;
+    
+    // キャンバス内に最低限残すマージン (ピクセル)
+    const margin = 100;
+    
+    // 画像の端が反対側のマージンを超えないように制限
+    const limitX = (this.canvas.width / 2) + (imgW / 2) - margin;
+    const limitY = (this.canvas.height / 2) + (imgH / 2) - margin;
+    
+    this.panX = Math.max(-limitX, Math.min(this.panX, limitX));
+    this.panY = Math.max(-limitY, Math.min(this.panY, limitY));
   }
 
   showTooltip(text) { 
@@ -632,6 +660,7 @@ class AnalysisCard {
       } finally {
           aiBtn.disabled = false; aiBtn.innerHTML = originalHTML;
           this.card.classList.remove('ai-scanning');
+          this.drawState = 'idle'; // Reset state after AI
           if (window.lucide) window.lucide.createIcons({ root: aiBtn });
       }
   }
@@ -678,24 +707,98 @@ class AnalysisCard {
   }
 
   findHoverPoint(coords) {
-      if (this.drawState !== 'idle') return null; // 作図中はホバー（吸着）を無効化
-      const threshold = 20 / coords.scale; 
-      for(let i=0; i<this.tempPoints.length; i++) if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
+      const threshold = 15 / coords.scale; 
+      for(let i=0; i<this.tempPoints.length; i++) {
+          if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) {
+              return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
+          }
+      }
       for (const key in this.lines) {
-         const v = this.lines[key];
-        if (key === 'shadeSample' && v && this.activeTool === 'shade-picker' && Math.hypot(v.x - coords.realX, v.y - coords.realY) < threshold) return { key:'shadeSample', pt:v, mode:'shade' };
-        if(Array.isArray(v)) {
-           for(let i=0; i<v.length; i++) if(Math.hypot(v[i].x - coords.realX, v[i].y - coords.realY) < threshold) return { key, index:i, pt:v[i], mode:'array' };
-        } else if (v && v.startX !== undefined) {
-           if(Math.hypot(v.startX - coords.realX, v.startY - coords.realY) < threshold) return { key, index:'start', pt:v, mode:'start' };
-           if(Math.hypot(v.endX - coords.realX, v.endY - coords.realY) < threshold) return { key, index:'end', pt:v, mode:'end' };
+          const v = this.lines[key];
+          if (key === 'shadeSample' && v && this.activeTool === 'shade-picker' && Math.hypot(v.x - coords.realX, v.y - coords.realY) < threshold) {
+              return { key:'shadeSample', pt:v, mode:'shade' };
+          }
+          if(Array.isArray(v)) {
+              for(let i=0; i<v.length; i++) {
+                  if(Math.hypot(v[i].x - coords.realX, v[i].y - coords.realY) < threshold) return { key, index:i, pt:v[i], mode:'array' };
+              }
+          } else if (v && v.startX !== undefined) {
+              if(Math.hypot(v.startX - coords.realX, v.startY - coords.realY) < threshold) return { key, index:'start', pt:v, mode:'start' };
+              if(Math.hypot(v.endX - coords.realX, v.endY - coords.realY) < threshold) return { key, index:'end', pt:v, mode:'end' };
+          }
+      }
+      if (this.phase === 'shade-take' && this.activeTool === 'shade-diff') {
+          if (this.shadeDiffA && Math.hypot(this.shadeDiffA.x - coords.realX, this.shadeDiffA.y - coords.realY) < threshold) return { key: 'shadeDiffA', pt: this.shadeDiffA, mode: 'shade-diff' };
+          if (this.shadeDiffB && Math.hypot(this.shadeDiffB.x - coords.realX, this.shadeDiffB.y - coords.realY) < threshold) return { key: 'shadeDiffB', pt: this.shadeDiffB, mode: 'shade-diff' };
+      }
+      return null;
+  }
+
+  /**
+   * ドラッグ中のプロットに応じたガイダンスを表示
+   */
+  updateDragGuidance() {
+    if (!this.draggingPoint) return;
+    const dp = this.draggingPoint;
+    const s = window.AESTHETIC_CONSTANTS.STEPS;
+    
+    // ツール名とステップ配列の紐付け
+    const toolStepMap = {
+        'verticalProportions': s.PROPORTION,
+        'eLine': s.ELINE,
+        'nla': s.NLA,
+        'convexity': s.CONVEXITY,
+        'wlRatio': s.WL,
+        'redProp': s.RED,
+        'pinkEsth': s.PINK,
+        'smileArc': s.ARC,
+        'corridor': s.CORRIDOR,
+        'gingival': s.GINGIVAL,
+        'axialIncl': s.AXIAL,
+        'papilla': s.PAPILLA,
+        'interpupillary': ['1点目: 左瞳孔', '2点目: 右瞳孔'],
+        'midline': ['1点目: 眉間', '2点目: 頤'],
+        'commissural': ['1点目: 左口角', '2点目: 右口角'],
+        'f-midline': ['1点目: 眉間', '2点目: 頤'],
+        'd-midline': ['1点目: 上顎歯列正中上端', '2点目: 下端'],
+        'interpupillary-e': ['1点目: 左瞳孔', '2点目: 右瞳孔']
+    };
+
+    const steps = toolStepMap[dp.key];
+    if (steps) {
+        let idx = dp.index;
+        if (idx === 'start') idx = 0;
+        if (idx === 'end') idx = 1;
+        if (steps[idx]) {
+            this.showTooltip(steps[idx]);
+            return;
         }
-     }
-     if (this.phase === 'shade-take' && this.activeTool === 'shade-diff') {
-         if (this.shadeDiffA && Math.hypot(this.shadeDiffA.x - coords.realX, this.shadeDiffA.y - coords.realY) < threshold) return { key: 'shadeDiffA', pt: this.shadeDiffA, mode: 'shade-diff' };
-         if (this.shadeDiffB && Math.hypot(this.shadeDiffB.x - coords.realX, this.shadeDiffB.y - coords.realY) < threshold) return { key: 'shadeDiffB', pt: this.shadeDiffB, mode: 'shade-diff' };
-     }
-     return null;
+    }
+
+    // ステップ固有の説明がない場合の汎用名
+    const nameMap = {
+        'verticalProportions': '垂直バランス',
+        'eLine': 'E-Line',
+        'nla': '鼻唇角',
+        'convexity': '側貌凸型度',
+        'wlRatio': 'W/L比',
+        'redProp': 'RED Proportions',
+        'pinkEsth': 'Pink Esthetic',
+        'smileArc': 'Smile Arc',
+        'corridor': 'バッカルコリドー',
+        'gingival': 'ガミースマイル/E位',
+        'axialIncl': '歯軸傾斜',
+        'papilla': '歯間乳頭',
+        'interpupillary': '瞳孔間線',
+        'midline': '顔貌正中線',
+        'f-midline': '顔貌正中線',
+        'd-midline': '歯列正中線',
+        'commissural': '口角間線',
+        'interpupillary-e': '瞳孔間線'
+    };
+
+    const toolName = nameMap[dp.key] || 'プロット';
+    this.showTooltip(toolName);
   }
 
   snapPointToEdge(pt, data, imgW, bgLum, radius = 40) {
@@ -713,22 +816,33 @@ class AnalysisCard {
   }
 
   applyLandmarksToPlots(landmarks, imgW, imgH) {
-      const getPt = (idx) => ({ x: landmarks[idx].x * imgW, y: landmarks[idx].y * imgH });
+      const getPt = (idx) => {
+          if (!landmarks[idx]) return { x: 0, y: 0 };
+          return { x: landmarks[idx].x * imgW, y: landmarks[idx].y * imgH };
+      };
+
       if (this.phase === 'frontal' || this.phase === 'e-midline') {
-          const rE = getPt(468), lE = getPt(473), mT = getPt(168), mB = getPt(152), lM = getPt(61), rM = getPt(291);
+          // 虹彩(468, 473)が取得できない場合のフォールバックとして目の中央付近を使用
+          const rE = landmarks[468] ? getPt(468) : getPt(386); // 右瞳
+          const lE = landmarks[473] ? getPt(473) : getPt(159); // 左瞳
+          const mT = getPt(9);   // 眉間 (Midline Top) - インデックス 9番(眉の間)に変更
+          const mB = getPt(152); // 頤 (Midline Bottom)
+          const lM = getPt(61);  // 左口角
+          const rM = getPt(291); // 右口角
+
           if (this.phase === 'frontal') {
               this.lines.interpupillary = { startX: lE.x, startY: lE.y, endX: rE.x, endY: rE.y };
               this.lines.midline = { startX: mT.x, startY: mT.y, endX: mB.x, endY: mB.y };
               this.lines.commissural = { startX: lM.x, startY: lM.y, endX: rM.x, endY: rM.y };
               
-              // NEW: 6-point vertical proportions
+              // 垂直6点分析 (Vertical Proportions)
               this.lines.verticalProportions = [
-                  getPt(10),   // 1. Hairline
-                  getPt(168),  // 2. Glabella
-                  { x: (lE.x+rE.x)/2, y: (lE.y+rE.y)/2 }, // 3. Pupil line level
-                  getPt(2),    // 4. Subnasale (Nose bottom)
-                  getPt(13),   // 5. Stomion (Where lips meet)
-                  getPt(152)   // 6. Menton (Chin bottom)
+                  getPt(10),   // 1. 髪際 (Hairline)
+                  getPt(9),    // 2. 眉間 (Glabella) - より高い眉の位置に変更
+                  { x: (lE.x + rE.x) / 2, y: (lE.y + rE.y) / 2 }, // 3. 瞳孔間線レベル
+                  getPt(2),    // 4. 鼻下点 (Subnasale)
+                  getPt(13),   // 5. 口裂点 (Stomion)
+                  getPt(152)   // 6. 頤下点 (Menton)
               ];
           } else if (this.phase === 'e-midline') {
               this.lines['interpupillary-e'] = { startX: lE.x, startY: lE.y, endX: rE.x, endY: rE.y };
@@ -740,7 +854,9 @@ class AnalysisCard {
           this.lines.corridor = [rc, {x:rc.x-20, y:rc.y}, {x:lc.x+20, y:lc.y}, lc];
           this.lines.gingival = [getPt(164), {x:ut.x, y:ut.y-5}, ut, lt];
       } 
-      this.updateStats(); this.drawCanvas();
+      this.updateStats(); 
+      this.drawState = 'idle'; // AI実行後も既存プロットを動かせるようにする
+      this.drawCanvas();
   }
 
   handleImage(file) {
@@ -921,14 +1037,7 @@ class AnalysisCard {
     const statusEl = this.card.querySelector('.calib-status');
     if (statusEl) statusEl.textContent = `[1px = ${this.pxToMm.toFixed(4)}mm]`;
 
-    // Automatically sync with other cards if they're still at default
-    if (!skipSync && val !== 0.075 && window.appCards) {
-      window.appCards.forEach(otherCard => {
-        if (otherCard !== this && (otherCard.pxToMm === 0.075 || !otherCard.pxToMm)) {
-          otherCard.updatePxToMm(val, true); // Use true to prevent infinite recursion
-        }
-      });
-    }
+    // Synchronization removed: Each card now manages its own scale independently
     
     // Trigger redraw for current measurements
     this.updateStats();
@@ -967,7 +1076,7 @@ class AnalysisCard {
         case 'red-prop': isDone = (L.redProp && L.redProp.length === 7); break;
         case 'pink-esth': isDone = (L.pinkEsth && L.pinkEsth.length === 6); break;
         case 'axial-incl': isDone = (L.axialIncl && L.axialIncl.length === 14); break;
-        case 'papilla': isDone = (L.papilla && L.papilla.length === 5); break;
+        case 'papilla': isDone = (L.papilla && L.papilla.length === 10); break;
         case 'mmeasure': isDone = !!L.mmeasure; break;
         case 'smeasure': isDone = !!L.smeasure; break;
         case 'fvmeasure': isDone = !!L.fvmeasure; break;
