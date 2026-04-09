@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Clinical Phase Styles (Phase 1-10)
+   ========================================================================== */
+
+/* Frontal Phase Specifics */
+.frontal-stats .stat-item {
+  flex-direction: column;
+}
+
+.frontal-stats .stat-value {
+  color: var(--accent);
+  /* Light blue for proportion values */
+}
+
+/* Portrait Layout Specifics for Phases 1-3 */
+.horizontal-card-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.portrait-layout {
+  align-items: stretch;
+}
+
+.portrait-layout > .canvas-wrapper {
+  flex: 0 0 420px; /* Keep photo area consistent and portrait */
+  aspect-ratio: 3 / 4;
+  height: auto;
+  max-height: 70vh;
+}
+
+.portrait-layout .quick-stats {
+  flex: 1;
+  min-width: 350px;
+  margin-top: 0;
+  border-top: none;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Center stats vertically if needed */
+}
+
+/* Result groups for Phase 4, 8 etc. */
+.stats-table-group {
+  width: 100%;
+}
+
+/* Landscape Layout Specifics (e.g. for Phase 9) */
+.landscape-layout > .canvas-wrapper {
+  flex: 0 0 560px; /* Landscape width */
+  aspect-ratio: 4 / 3;
+  height: auto;    /* Allow aspect-ratio to control height */
+  max-height: 70vh;
+}
+
+.landscape-layout .quick-stats {
+  flex: 1;
+  min-width: 300px;
+  margin-top: 0;
+  border-top: none;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
