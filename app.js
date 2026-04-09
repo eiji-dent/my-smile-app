@@ -23,12 +23,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+
+
   // TrialManager initialization removed
 
   // Initialize all AnalysisCards
   const cardElements = document.querySelectorAll('.analysis-card:not(.lab-card), .analysis-unit'); 
   window.appCards = [];
-  cardElements.forEach(el => window.appCards.push(new window.AnalysisCard(el)));
+  cardElements.forEach(el => {
+    const card = new window.AnalysisCard(el);
+    window.appCards.push(card);
+    // iPad/タッチデバイス向けハンドラの初期化
+    if (window.TouchHandler) {
+      new window.TouchHandler(card);
+    }
+  });
 
   // Global Zoom Slider Sync
   const zSlider = document.getElementById('global-zoom-slider');

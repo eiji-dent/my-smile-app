@@ -39,6 +39,10 @@
     #auth-modal.hidden { display: none; }
   </style>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/sidebars.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/phases-main.css">
+  <link rel="stylesheet" href="css/phases-lab.css">
 </head>
 
 <body>
@@ -172,10 +176,16 @@
     <!-- Main Content Area (Scrollable) -->
     <main class="main-content" id="main-scroll-area">
       <header class="topbar">
+        <button id="sidebar-toggle" class="btn btn-ghost sidebar-toggle" title="サイドバーを開閉">
+          <i data-lucide="menu"></i>
+        </button>
         <div class="patient-info">
           <h2>患者ケース (包括的分析)</h2>
           <span class="badge">フルスクロールビュー</span>
         </div>
+        <button id="right-panel-toggle" class="btn btn-ghost sidebar-toggle" title="右パネルを開閉">
+          <i data-lucide="panel-right"></i>
+        </button>
       </header>
 
       <div class="workspace-scroll">
@@ -563,7 +573,7 @@
                       <td>-2〜0 mm</td>
                     </tr>
                     <tr>
-                      <td><strong>切縁位置 (E音 上下唇の中間比)</strong></td>
+                      <td><strong>切縁位置 (上下唇に対する切縁の位置)</strong></td>
                       <td class="incisal-eb-val">-- %</td>
                       <td>50% (ちょうど中間)</td>
                     </tr>
@@ -787,8 +797,8 @@
                 <label for="tool-axial" class="tool-label"><i data-lucide="scissors"></i> 歯冠傾斜度 (14点)</label>
 
                 <input type="radio" name="tool-intraoral" id="tool-papilla" value="papilla" class="tool-radio">
-                <label for="tool-papilla" class="tool-label"><i data-lucide="align-horizontal-distribute-center"></i>
-                  歯間乳頭の左右差 (5点)</label>
+                <label for="tool-papilla" class="tool-label"><i data-lucide="triangle"></i>
+                  ブラックトライアングル (10点)</label>
               </div>
               <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
                 <button class="btn btn-primary apply-p3-mid-btn" title="Phase3の顔貌正中に合わせる"><i
@@ -884,35 +894,37 @@
                 <div class="note-text">※正面から見た「見かけの幅」の比率です。左右の対称性も同時に確認します。</div>
               </div>
 
-              <!-- Table: Pink Esthetics (Expanded 6-points) -->
+              <!-- Table: Pink Esthetics (Refactored to 4-column) -->
               <div id="table-pink" class="stats-table-group">
                 <table class="analysis-table">
                   <thead>
                     <tr>
                       <th>評価項目</th>
-                      <th>測定値</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
                       <th>基準値</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
                       <td><strong>左右中切歯 GZPの高低差</strong></td>
-                      <td class="pz-asym-val">-- mm</td>
+                      <td colspan="2" class="pz-asym-val" style="text-align: center;">-- mm</td>
                       <td>1mm以下</td>
                     </tr>
                     <tr>
                       <td><strong>左右犬歯 GZPの高低差</strong></td>
-                      <td class="pz-canine-val">-- mm</td>
+                      <td colspan="2" class="pz-canine-val" style="text-align: center;">-- mm</td>
                       <td>2mm以下</td>
                     </tr>
                     <tr>
                       <td><strong>側切歯 GZL (垂直レベル)</strong></td>
-                      <td class="pz-level-val">-- (平均) mm</td>
-                      <td>中+犬ラインより約1.0mm 歯冠側</td>
+                      <td class="pz-level-r-val">-- mm</td>
+                      <td class="pz-level-l-val">-- mm</td>
+                      <td>中+犬ラインより約1.0mm 冠側</td>
                     </tr>
                   </tbody>
                 </table>
-                <div class="note-text">※中・側・犬のゼニス（歯肉最深点）が描くHigh-Low-Highラインと左右対称性を診査します。</div>
+                <div class="note-text">※中・側・犬のゼニス（歯肉最深点）が描くHigh-Low-Highラインと左右の対称性を診査します。</div>
               </div>
 
               <!-- Table: Axial Inclination (NEW) -->
@@ -928,19 +940,19 @@
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>中切歯の傾斜度 (Axial tilt 1)</strong></td>
+                      <td><strong>中切歯の傾斜度</strong></td>
                       <td class="ax1-r-val">-- °</td>
                       <td class="ax1-l-val">-- °</td>
                       <td>約 3° の倒れ込み</td>
                     </tr>
                     <tr>
-                      <td><strong>側切歯の傾斜度 (Axial tilt 2)</strong></td>
+                      <td><strong>側切歯の傾斜度</strong></td>
                       <td class="ax2-r-val">-- °</td>
                       <td class="ax2-l-val">-- °</td>
                       <td>約 5° の倒れ込み</td>
                     </tr>
                     <tr>
-                      <td><strong>犬歯の傾斜度 (Axial tilt 3)</strong></td>
+                      <td><strong>犬歯の傾斜度</strong></td>
                       <td class="ax3-r-val">-- °</td>
                       <td class="ax3-l-val">-- °</td>
                       <td>約 8° の倒れ込み</td>
@@ -950,27 +962,48 @@
                 <div class="note-text">※正中から遠ざかるほど歯冠軸の傾きが強くなるのが美しい配列の条件です。</div>
               </div>
 
-              <!-- Table: Papilla (NEW) -->
+              <!-- Table: Black Triangle (Matrix Style) -->
               <div id="table-papilla" class="stats-table-group">
-                <table class="analysis-table">
+                <table class="analysis-table bt-matrix-table">
+                  <colgroup>
+                    <col style="width: 35%;">
+                    <col style="width: 20%;">
+                    <col style="width: 20%;">
+                    <col style="width: 25%;">
+                  </colgroup>
                   <thead>
                     <tr>
-                      <th>評価項目</th>
-                      <th>測定値 (遠心)</th>
-                      <th>測定値 (近心)</th>
-                      <th>基準値</th>
+                      <th>部位</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
+                      <th>左右差 (Diff)</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>Papilla Proportion</strong></td>
-                      <td class="pap-dist-val">-- mm</td>
-                      <td class="pap-prox-val">-- mm</td>
-                      <td>1.5 〜 2.0 mm (黒い三角形の回避)</td>
+                      <td><strong>側-犬 間 ブラックトライアングル</strong></td>
+                      <td class="bt-val-1">-- mm</td>
+                      <td class="bt-val-5">-- mm</td>
+                      <td class="bt-diff-lc">-- mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中-側 間 ブラックトライアングル</strong></td>
+                      <td class="bt-val-2">-- mm</td>
+                      <td class="bt-val-4">-- mm</td>
+                      <td class="bt-diff-cl">-- mm</td>
+                    </tr>
+                    <tr class="midline-row">
+                      <td><strong>正中 ブラックトライアングル</strong></td>
+                      <td colspan="2" class="bt-val-3" style="text-align: center; font-weight: bold; font-size: 1.1em;">-- mm</td>
+                      <td class="text-muted" style="text-align: center;">-</td>
                     </tr>
                   </tbody>
                 </table>
-                <div class="note-text">※歯間乳頭の高さと位置を評価します。低すぎる（または欠落している）場合は、補綴的な対策が必要です。</div>
+                <div class="note-text" style="margin-top: 10px;">
+                  <span style="color: var(--success)">●</span> 2mm未満: 正常 
+                  <span style="color: #f59e0b; margin-left: 10px;">●</span> 2mm以上: 警告 (左右差含)
+                  <span style="color: var(--danger); margin-left: 10px;">●</span> 3mm以上: 危険
+                </div>
               </div>
 
             </div> <!-- end retracted-stats-container -->
@@ -1334,7 +1367,8 @@
       <div class="loading-progress" style="margin-top: 10px; font-size: 0.9rem; opacity: 0.8;">Phase <span
           id="pdf-progress-step">0</span> / 10</div>
     </div>
-  </div> <!-- end .app-container -->
+      <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
+    </div> <!-- end .app-container -->
   <!-- PDF Generation Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1350,6 +1384,8 @@
   <script src="js/analysis/ShadeHandlers.js"></script>
   <script src="js/AnalysisCard.js"></script>
   <script src="js/TrialManager.js"></script>
+  <script src="js/LayoutHandler.js"></script>
+  <script src="js/TouchHandler.js"></script>
   <script src="app.js"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->

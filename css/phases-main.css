@@ -49,9 +49,10 @@
 /* Landscape Layout Specifics (e.g. for Phase 9) */
 .landscape-layout > .canvas-wrapper {
   flex: 0 0 560px; /* Landscape width */
+  width: 560px;
+  height: 420px;
   aspect-ratio: 4 / 3;
-  height: auto;    /* Allow aspect-ratio to control height */
-  max-height: 70vh;
+  max-height: 420px;
 }
 
 .landscape-layout .quick-stats {

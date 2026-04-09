@@ -130,20 +130,31 @@ window.DentalHandlers = {
     
     drawPapilla(card, pts, mapC, isPre) {
         const ctx = card.ctx;
-        ctx.setLineDash(isPre?[5,5]:[]); ctx.lineWidth = 1; ctx.strokeStyle = '#8b5cf6';
-        pts.forEach((pt)=>{ const m=mapC(pt.x,pt.y); ctx.fillStyle='#8b5cf6'; ctx.beginPath(); ctx.arc(m.x,m.y,5,0,7); ctx.fill(); });
-        if(pts.length > 0) {
-            pts.forEach((pt) => {
-               const m = mapC(pt.x, pt.y);
-               ctx.beginPath(); ctx.moveTo(m.x - 30, m.y); ctx.lineTo(m.x + 30, m.y); ctx.stroke();
-            });
-        }
-        if(pts.length === 5) {
-            const p1 = mapC(pts[0].x, pts[0].y); const p5 = mapC(pts[4].x, pts[4].y);
-            const p2 = mapC(pts[1].x, pts[1].y); const p4 = mapC(pts[3].x, pts[3].y);
-            ctx.setLineDash([2,4]); ctx.strokeStyle = 'rgba(139, 92, 246, 0.5)';
-            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p5.x, p5.y); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(p2.x, p2.y); ctx.lineTo(p4.x, p4.y); ctx.stroke();
+        ctx.lineWidth = 1;
+        
+        // 2点ずつのペアで描画 (接点-乳頭頂)
+        for(let i=0; i<pts.length; i+=2) {
+            const cp = mapC(pts[i].x, pts[i].y);
+            // 接点プロット
+            ctx.fillStyle = '#3b82f6'; // Blue
+            ctx.beginPath(); ctx.arc(cp.x, cp.y, 4, 0, 7); ctx.fill();
+            
+            if(pts[i+1]) {
+                const pt = mapC(pts[i+1].x, pts[i+1].y);
+                // 乳頭頂プロット
+                ctx.fillStyle = '#8b5cf6'; // Purple
+                ctx.beginPath(); ctx.arc(pt.x, pt.y, 4, 0, 7); ctx.fill();
+                
+                // 距離を示すガイドライン
+                ctx.setLineDash(isPre ? [2, 2] : []);
+                ctx.strokeStyle = 'rgba(139, 92, 246, 0.6)';
+                ctx.beginPath(); ctx.moveTo(cp.x, cp.y); ctx.lineTo(cp.x, pt.y); ctx.stroke();
+                
+                // 垂直補助線 (水平)
+                ctx.setLineDash([]);
+                ctx.beginPath(); ctx.moveTo(cp.x-10, cp.y); ctx.lineTo(cp.x+10, cp.y); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cp.x-10, pt.y); ctx.lineTo(cp.x+10, pt.y); ctx.stroke();
+            }
         }
     },
 
@@ -170,6 +181,7 @@ window.DentalHandlers = {
                 if (h > 0 && elWlR) {
                     const ratio = (w / h) * 100;
                     elWlR.textContent = ratio.toFixed(1) + ' %';
+                    elWlR.style.color = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
                     if (elWlRProf) elWlRProf.textContent = getProfile(ratio);
                 }
             }
@@ -178,6 +190,7 @@ window.DentalHandlers = {
                 if (h > 0 && elWlL) {
                     const ratio = (w / h) * 100;
                     elWlL.textContent = ratio.toFixed(1) + ' %';
+                    elWlL.style.color = (ratio >= 75 && ratio <= 85) ? 'var(--success)' : 'var(--danger)';
                     if (elWlLProf) elWlLProf.textContent = getProfile(ratio);
                 }
             }
@@ -224,8 +237,14 @@ window.DentalHandlers = {
             const diff2 = Math.abs(ws[1] - ws[4]) * mm;
             const elD1 = card.card.querySelector('.red-diff1-val');
             const elD2 = card.card.querySelector('.red-diff2-val');
-            if (elD1) elD1.textContent = diff1.toFixed(1) + ' mm';
-            if (elD2) elD2.textContent = diff2.toFixed(1) + ' mm';
+            if (elD1) {
+                elD1.textContent = diff1.toFixed(1) + ' mm';
+                elD1.style.color = diff1 <= 0.5 ? 'var(--success)' : (diff1 <= 1.0 ? '#f59e0b' : 'var(--danger)');
+            }
+            if (elD2) {
+                elD2.textContent = diff2.toFixed(1) + ' mm';
+                elD2.style.color = diff2 <= 1.0 ? 'var(--success)' : 'var(--danger)';
+            }
         }
 
         // Pink Esth
@@ -235,43 +254,127 @@ window.DentalHandlers = {
             const diffK = Math.abs(pts[0].y - pts[5].y) * mm;
             const elAsym = card.card.querySelector('.pz-asym-val');
             const elCanine = card.card.querySelector('.pz-canine-val');
-            if (elAsym) elAsym.textContent = diffC.toFixed(1) + ' mm';
-            if (elCanine) elCanine.textContent = diffK.toFixed(1) + ' mm';
+            if (elAsym) {
+                elAsym.textContent = diffC.toFixed(1) + ' mm';
+                elAsym.style.color = diffC <= 1.0 ? 'var(--success)' : 'var(--danger)';
+            }
+            if (elCanine) {
+                elCanine.textContent = diffK.toFixed(1) + ' mm';
+                elCanine.style.color = diffK <= 2.0 ? 'var(--success)' : 'var(--danger)';
+            }
 
             // GZL Level (Side tooth relative to C-K line)
-            const cY = (pts[2].y + pts[3].y) / 2;
-            const kY = (pts[0].y + pts[5].y) / 2;
-            const sY = (pts[1].y + pts[4].y) / 2;
-            const level = (sY - (cY + kY) / 2) * mm;
-            const elLevel = card.card.querySelector('.pz-level-val');
-            if (elLevel) elLevel.textContent = level.toFixed(1) + ' mm';
+            const levelR = (pts[1].y - (pts[0].y + pts[2].y) / 2) * mm;
+            const levelL = (pts[4].y - (pts[3].y + pts[5].y) / 2) * mm;
+
+            const elLevelR = card.card.querySelector('.pz-level-r-val');
+            const elLevelL = card.card.querySelector('.pz-level-l-val');
+
+            const validateLevel = (el, val) => {
+                if (el) {
+                    el.textContent = val.toFixed(1) + ' mm';
+                    // 基準値: 0.5mm 〜 1.5mm 程度歯冠側にあるのが理想的
+                    el.style.color = (val >= 0.5 && val <= 1.5) ? 'var(--success)' : '#f59e0b';
+                }
+            };
+            validateLevel(elLevelR, levelR);
+            validateLevel(elLevelL, levelL);
         }
 
         // Axial
         if (card.lines.axialIncl && card.lines.axialIncl.length === 14) {
             const p = card.lines.axialIncl;
             const gMid = Math.atan2(p[1].y - p[0].y, p[1].x - p[0].x);
-            const getAngle = (t, b) => {
+            const getAngle = (t, b, isRight) => {
                 const ang = Math.atan2(b.y - t.y, b.x - t.x);
                 let diff = (ang - gMid) * 180 / Math.PI;
                 if (diff > 90) diff -= 180; if (diff < -90) diff += 180;
-                return Math.abs(diff).toFixed(1);
+                // 右側なら逆転、左側ならそのまま (近心+, 遠心-)
+                return (isRight ? -diff : diff).toFixed(1);
             };
             const selectors = ['.ax1-r-val','.ax1-l-val','.ax2-r-val','.ax2-l-val','.ax3-r-val','.ax3-l-val'];
             const pairs = [[2,3],[8,9],[4,5],[10,11],[6,7],[12,13]];
-            pairs.forEach((pair, i) => {
-                const el = card.card.querySelector(selectors[i]);
-                if (el) el.textContent = getAngle(p[pair[0]], p[pair[1]]) + ' °';
-            });
+            const angles = pairs.map((pair, i) => parseFloat(getAngle(p[pair[0]], p[pair[1]], i % 2 === 0)));
+            
+            const validateSide = (idxC, idxL, idxK) => {
+                const angC = angles[idxC];
+                const angL = angles[idxL];
+                const angK = angles[idxK];
+
+                const results = [
+                    { idx: idxC, val: angC, ideal: 3.0, color: 'var(--success)' },
+                    { idx: idxL, val: angL, ideal: 5.0, color: 'var(--success)' },
+                    { idx: idxK, val: angK, ideal: 8.0, color: 'var(--success)' }
+                ];
+
+                // --- 1. 最優先: 赤判定 (方向・順序の誤り) ---
+                if (angC < 0) results[0].color = 'var(--danger)'; 
+                if (angL <= angC) results[1].color = 'var(--danger)';
+                if (angK <= angL) results[2].color = 'var(--danger)';
+
+                // --- 2. 次点: 黄色・緑判定 (基準値からのズレ) ---
+                results.forEach(res => {
+                    // 赤判定が確定している場合はスキップ
+                    if (res.color === 'var(--danger)') return;
+                    
+                    const diff = Math.abs(res.val - res.ideal);
+                    if (diff >= 2.0) {
+                        res.color = '#f59e0b'; // 黄色
+                    } else {
+                        res.color = 'var(--success)'; // 緑
+                    }
+                });
+                
+                results.forEach(res => {
+                    const el = card.card.querySelector(selectors[res.idx]);
+                    if (el) {
+                        el.textContent = res.val.toFixed(1) + ' °';
+                        el.style.color = res.color;
+                    }
+                });
+            };
+
+            validateSide(0, 2, 4); // 右側
+            validateSide(1, 3, 5); // 左側
         }
 
-        // Papilla
-        if (card.lines.papilla && card.lines.papilla.length === 5) {
+        // Black Triangle (Refactored Papilla)
+        if (card.lines.papilla && card.lines.papilla.length >= 2) {
             const pts = card.lines.papilla;
-            const elDist = card.card.querySelector('.pap-dist-val');
-            const elProx = card.card.querySelector('.pap-prox-val');
-            if (elDist) elDist.textContent = (Math.abs(pts[0].y - pts[4].y) * mm).toFixed(1) + ' mm';
-            if (elProx) elProx.textContent = (Math.abs(pts[1].y - pts[3].y) * mm).toFixed(1) + ' mm';
+            const selectors = ['.bt-val-1', '.bt-val-2', '.bt-val-3', '.bt-val-4', '.bt-val-5'];
+            const values = [];
+            
+            for(let i=0; i<5; i++) {
+                const el = card.card.querySelector(selectors[i]);
+                if(el && pts[i*2] && pts[i*2+1]) {
+                    const dist = Math.abs(pts[i*2+1].y - pts[i*2].y) * mm;
+                    values[i] = dist; // 後の左右差計算用に保存
+                    el.textContent = dist.toFixed(1) + ' mm';
+                    
+                    // 閾値判定: 2mm以上でオレンジ、3mm以上で赤
+                    if (dist >= 3.0) {
+                        el.style.color = 'var(--danger)';
+                    } else if (dist >= 2.0) {
+                        el.style.color = '#f59e0b';
+                    } else {
+                        el.style.color = 'var(--success)';
+                    }
+                }
+            }
+
+            // 左右差 (Asymmetry) の判定
+            const updateDiff = (idx1, idx2, selector) => {
+                const el = card.card.querySelector(selector);
+                if (el && values[idx1] !== undefined && values[idx2] !== undefined) {
+                    const diff = Math.abs(values[idx1] - values[idx2]);
+                    el.textContent = diff.toFixed(1) + ' mm';
+                    // 左右差が2mm以上で警告 (オレンジ)
+                    el.style.color = diff >= 2.0 ? '#f59e0b' : 'var(--success)';
+                }
+            };
+
+            updateDiff(1, 3, '.bt-diff-cl'); // 中-側 (部2 vs 部4)
+            updateDiff(0, 4, '.bt-diff-lc'); // 側-犬 (部1 vs 部5)
         }
     },
 

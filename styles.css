@@ -63,17 +63,6 @@ body {
   width: 100vw;
 }
 
-/* Sidebar */
-.sidebar {
-  width: 260px;
-  flex-shrink: 0;
-  background-color: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  padding: 1.5rem 1rem;
-  z-index: 10;
-}
 
 .logo-area {
   display: flex;
@@ -167,12 +156,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* Added to push actions to the right */
   padding: 0 2rem;
   position: sticky;
   top: 0;
   z-index: 20;
 }
+
+
 
 .patient-info {
   display: flex;
@@ -685,21 +675,7 @@ body {
   margin-top: 0.5rem;
 }
 
-/* --- Right Side Panel --- */
-.right-panel {
-  width: 280px;
-  flex-shrink: 0;
-  background-color: var(--bg-card);
-  border-left: 1px solid var(--border);
-  padding: 1.5rem 1rem;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.03);
-}
+
 
 .panel-section {
   margin-bottom: 2rem;
