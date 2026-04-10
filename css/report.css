@@ -1,0 +1,154 @@
+/**
+ * report.css
+ * レポート出力時専用のスタイル設定をここに記述します。
+ */
+
+/* Cover Page Template Styles */
+#pdf-cover-template {
+    position: fixed;
+    top: -5000px; /* Hide from viewport but allow rendering */
+    left: -5000px;
+    width: 210mm;
+    height: 297mm;
+    background: #ffffff;
+    padding: 30mm 20mm;
+    box-sizing: border-box;
+    display: flex !important; /* Force displays during capture */
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+    color: #0f172a;
+    border: none;
+}
+
+.cover-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid #e2e8f0;
+    padding: 20mm;
+    border-radius: 4px;
+}
+
+.cover-header {
+    text-align: center;
+}
+
+.app-logo {
+    margin-bottom: 20px;
+}
+
+.app-logo i {
+    width: 60px;
+    height: 60px;
+    color: #2563eb;
+}
+
+.cover-header h1 {
+    font-size: 28pt;
+    font-weight: 700;
+    margin: 10px 0;
+    color: #1e293b;
+}
+
+.cover-header .subtitle {
+    font-size: 14pt;
+    color: #64748b;
+    letter-spacing: 2px;
+}
+
+.cover-main {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.report-title {
+    font-size: 20pt;
+    color: #334155;
+    margin-bottom: 60px;
+    text-decoration: underline;
+    text-underline-offset: 10px;
+}
+
+.case-info {
+    display: inline-block;
+    text-align: left;
+    background: #f8fafc;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+}
+
+.info-row {
+    margin: 15px 0;
+    font-size: 14pt;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #64748b;
+    margin-right: 20px;
+}
+
+.info-value {
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.cover-footer {
+    text-align: center;
+    font-size: 10pt;
+    color: #94a3b8;
+}
+
+/* Sidebar Input Group Styles */
+.report-input-group {
+    background: #f1f5f9;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.input-item {
+    margin-bottom: 0.75rem;
+}
+
+.input-item:last-child {
+    margin-bottom: 0;
+}
+
+.input-item label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.input-item input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-item input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.input-item input::placeholder {
+    color: #94a3b8;
+}

@@ -327,8 +327,12 @@ class AnalysisCard {
         }
 
         // --- Dragging existing points (High Priority) ---
-        // 作図中の誤操作を防ぐため、待機状態 (idle) または作図開始前 (multi-point かつ 0点) の時のみドラッグを許可
-        if ((this.drawState === 'idle' || this.drawState === 'multi-point') && this.tempPoints.length === 0 && this.hoveredPoint) {
+        // 作図中の誤操作を防ぐため、以下の時のみドラッグを許可
+        // 1. 待機状態 (idle) または 作図開始前 (multi-point かつ 0点)
+        // 2. さらに、ツール選択中の場合はそのツールの点のみを許可、ツール未選択ならすべての点を許可
+        const isDrawingInProgress = (this.drawState !== 'idle' && this.drawState !== 'multi-point') || this.tempPoints.length > 0;
+        
+        if (!isDrawingInProgress && this.hoveredPoint) {
             this.draggingPoint = this.hoveredPoint;
             if (this.canvas) this.canvas.style.cursor = 'grabbing';
             return;
@@ -357,7 +361,7 @@ class AnalysisCard {
                 const statusEl = this.card.querySelector('.calib-status');
                 if(statusEl) statusEl.textContent = `[1px = ${this.pxToMm.toFixed(4)}mm]`;
                 this.tempStart = null; this.tempEnd = null;
-                this.drawState = 'idle';
+                this.deselectTool();
                 this.updateStats();
                 this.drawCanvas();
              });
@@ -396,7 +400,7 @@ class AnalysisCard {
               else {
                  this.lines[cfg.key] = [...this.tempPoints];
                  this.tempPoints = [];
-                 this.drawState = 'idle';
+                 this.deselectTool();
                  this.showTooltip(cfg.texts[cfg.limits] || "完了しました");
                  setTimeout(() => this.hideTooltip(), 3000);
                  this.updateStats();
@@ -414,10 +418,12 @@ class AnalysisCard {
         if (this.drawState === 'idle') {
           this.drawState = 'pt1-placed'; this.tempStart = coords; this.tempEnd = coords; this.drawCanvas();
         } else if (this.drawState === 'pt1-placed') {
-          this.drawState = 'idle'; this.tempEnd = coords;
+          this.tempEnd = coords;
           this.lines[this.activeTool] = { startX: this.tempStart.realX, startY: this.tempStart.realY, endX: this.tempEnd.realX, endY: this.tempEnd.realY };
-          if (this.activeTool === 'hbar-ref') this.showTooltip(this.STEPS.HBAR_REF[2]);
-          else if (this.activeTool === 'hbar-bar') this.showTooltip(this.STEPS.HBAR_BAR[2]);
+          const finishedTool = this.activeTool;
+          this.deselectTool();
+          if (finishedTool === 'hbar-ref') this.showTooltip(this.STEPS.HBAR_REF[2]);
+          else if (finishedTool === 'hbar-bar') this.showTooltip(this.STEPS.HBAR_BAR[2]);
           this.tempStart = null; this.tempEnd = null; this.drawCanvas(); this.updateStats();
         }
       });
@@ -706,6 +712,30 @@ class AnalysisCard {
       } else this.canvas.style.filter = 'none';
   }
 
+  deselectTool() {
+      this.activeTool = null;
+      this.drawState = 'idle';
+      this.toolRadios.forEach(r => { r.checked = false; });
+      this.updateToolbarStatus();
+  }
+
+  getToolDataKey(toolValue) {
+      if (!toolValue) return null;
+      const map = {
+          'vertical-proportions': 'verticalProportions',
+          'eline': 'eLine',
+          'wl-ratio': 'wlRatio',
+          'red-prop': 'redProp',
+          'pink-esth': 'pinkEsth',
+          'smile-arc': 'smileArc',
+          'corridor': 'corridor',
+          'gingival': 'gingival',
+          'axial-incl': 'axialIncl',
+          'papilla': 'papilla'
+      };
+      return map[toolValue] || toolValue;
+  }
+
   findHoverPoint(coords) {
       const threshold = 15 / coords.scale; 
       for(let i=0; i<this.tempPoints.length; i++) {
@@ -714,6 +744,11 @@ class AnalysisCard {
           }
       }
       for (const key in this.lines) {
+          // プロットツール選択中の場合、そのツール以外の点は無視する（誤操作防止）
+          if (this.activeTool) {
+              const activeKey = this.getToolDataKey(this.activeTool);
+              if (key !== activeKey && key !== 'shadeSample' && key !== 'shadeDiffA' && key !== 'shadeDiffB') continue;
+          }
           const v = this.lines[key];
           if (key === 'shadeSample' && v && this.activeTool === 'shade-picker' && Math.hypot(v.x - coords.realX, v.y - coords.realY) < threshold) {
               return { key:'shadeSample', pt:v, mode:'shade' };

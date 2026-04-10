@@ -48,6 +48,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/phases-main.css">
   <link rel="stylesheet" href="css/phases-lab.css">
+  <link rel="stylesheet" href="css/report.css">
 </head>
 
 <body>
@@ -91,7 +92,7 @@
       <div class="privacy-body">
         <section>
           <h3>1. 画像データの取り扱い</h3>
-          <p>本アプリで行う解析はすべて<strong>ブラウザ内（ローカル）で完結</strong>し、画像データが外部サーバーへ送信・保存されることはありません。患者様の個人情報（氏名等が写り込んだ画像など）はアップロードしないでください。</p>
+          <p>本アプリで行う解析はすべて<strong>ブラウザ内（ローカル）で完結</strong>し、画像データが外部サーバーへ送信・保存されることはありません。</p>
         </section>
         <section>
           <h3>2. 知的財産権と著作権</h3>
@@ -172,6 +173,16 @@
       </nav>
 
       <div class="sidebar-footer">
+        <div class="report-input-group">
+          <div class="input-item">
+            <label for="patient-name-input">患者氏名</label>
+            <input type="text" id="patient-name-input" placeholder="氏名を入力">
+          </div>
+          <div class="input-item">
+            <label for="patient-no-input">患者番号</label>
+            <input type="text" id="patient-no-input" placeholder="IDを入力">
+          </div>
+        </div>
         <button id="export-pdf-btn" class="btn btn-primary w-full">
           <i data-lucide="file-down"></i> PDFレポートを出力
         </button>
@@ -1268,7 +1279,7 @@
             </div>
 
             <!-- Unit: Free Supplemental Images -->
-            <div class="sub-analysis-section">
+            <div class="sub-analysis-section" id="card-supplemental-images">
               <div class="sub-header">
                 <h4><i data-lucide="images"></i> 補足画像（フリースペース）</h4>
                 <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
@@ -1319,7 +1330,7 @@
             </div>
 
             <!-- Unit: Lab Instructions Text -->
-            <div class="sub-analysis-section">
+            <div class="sub-analysis-section" id="card-lab-instructions">
               <div class="sub-header">
                 <h4><i data-lucide="message-square"></i> 技工指示内容</h4>
               </div>
@@ -1374,6 +1385,43 @@
     </div>
       <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
     </div> <!-- end .app-container -->
+
+    <!-- PDF Cover Page Template (Hidden from main UI) -->
+    <div id="pdf-cover-template" style="display: none;">
+      <div class="cover-content">
+        <div class="cover-header">
+          <div class="app-logo">
+            <i data-lucide="activity"></i>
+          </div>
+          <h1>柴田の審美歯科 画像解析システム</h1>
+          <p class="subtitle">Precision Core [Beta Build]</p>
+        </div>
+        <div class="cover-main">
+          <h2 id="pdf-report-main-title" class="report-title">Comprehensive Aesthetic Analysis Report</h2>
+          <div class="case-info">
+            <div class="info-row">
+              <span class="info-label">Case Title:</span>
+              <span id="pdf-cover-case-title" class="info-value">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Patient Name:</span>
+              <span id="pdf-cover-patient-name" class="info-value">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Patient ID:</span>
+              <span id="pdf-cover-patient-id" class="info-value">--</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Analysis Date:</span>
+              <span id="pdf-cover-date" class="info-value">--</span>
+            </div>
+          </div>
+        </div>
+        <div class="cover-footer">
+          <p>© 2026 Shibata Aesthetic Dentistry Research. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
   <!-- PDF Generation Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1391,6 +1439,8 @@
   <script src="js/TrialManager.js"></script>
   <script src="js/LayoutHandler.js"></script>
   <script src="js/TouchHandler.js"></script>
+  <script src="js/report/PDFGenerator.js"></script>
+  <script src="js/report/ReportEngine.js"></script>
   <script src="app.js"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
