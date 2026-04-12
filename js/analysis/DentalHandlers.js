@@ -171,8 +171,8 @@ window.DentalHandlers = {
         if (card.lines.wlRatio) {
             const p = card.lines.wlRatio;
             const getProfile = (ratio) => {
-                if (ratio > 85) return 'Long (女性的)';
-                if (ratio < 75) return 'Short (男性的)';
+                if (ratio > 85) return 'Short (幅広・男性的)';
+                if (ratio < 75) return 'Long (細長・女性的)';
                 return 'Ideal (理想的)';
             };
 

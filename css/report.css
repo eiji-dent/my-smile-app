@@ -152,3 +152,22 @@
 .input-item input::placeholder {
     color: #94a3b8;
 }
+
+/* Visibility during export */
+body.is-exporting .view-container.hidden {
+    display: flex !important;
+    visibility: visible !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+/* Hide elements not needed in PDF */
+body.is-exporting .tab-navigation,
+body.is-exporting .topbar,
+body.is-exporting .sidebar,
+body.is-exporting .right-panel,
+body.is-exporting .btn-ai-enhance,
+body.is-exporting .horizontal-toolbar,
+body.is-exporting .sub-actions {
+    display: none !important;
+}

@@ -6,7 +6,9 @@
 const LayoutHandler = {
   init() {
     this.sidebarToggle = document.getElementById('sidebar-toggle');
+    this.sidebarHandle = document.getElementById('sidebar-handle'); 
     this.rightToggle = document.getElementById('right-panel-toggle');
+    this.rightHandle = document.getElementById('right-panel-handle'); // New right handle
     this.overlay = document.getElementById('sidebar-overlay');
     this.appContainer = document.querySelector('.app-container');
 
@@ -17,12 +19,22 @@ const LayoutHandler = {
   },
 
   bindEvents() {
+    // Left Sidebar triggers
     if (this.sidebarToggle) {
       this.sidebarToggle.addEventListener('click', () => this.toggleLeftSidebar());
     }
+    if (this.sidebarHandle) {
+      this.sidebarHandle.addEventListener('click', (e) => this.handleFastToggle(e, 'left'));
+      this.sidebarHandle.addEventListener('touchstart', (e) => this.handleFastToggle(e, 'left'), { passive: true });
+    }
 
+    // Right Panel triggers
     if (this.rightToggle) {
       this.rightToggle.addEventListener('click', () => this.toggleRightPanel());
+    }
+    if (this.rightHandle) {
+      this.rightHandle.addEventListener('click', (e) => this.handleFastToggle(e, 'right'));
+      this.rightHandle.addEventListener('touchstart', (e) => this.handleFastToggle(e, 'right'), { passive: true });
     }
 
     if (this.overlay) {
@@ -55,6 +67,19 @@ const LayoutHandler = {
       this.updateLeftSidebar(leftCollapsed === 'true', false);
       this.updateRightPanel(rightCollapsed === 'true', false);
     }
+  },
+
+  handleFastToggle(e, side) {
+    if (e.type === 'touchstart') {
+      this.lastTouchType = true;
+    } else if (e.type === 'click' && this.lastTouchType) {
+      // Ignore click if it follows a touchstart (prevent double toggle)
+      this.lastTouchType = false;
+      return;
+    }
+
+    if (side === 'left') this.toggleLeftSidebar();
+    else this.toggleRightPanel();
   },
 
   toggleLeftSidebar() {

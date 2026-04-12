@@ -48,7 +48,9 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/phases-main.css">
   <link rel="stylesheet" href="css/phases-lab.css">
+  <link rel="stylesheet" href="css/tabs.css">
   <link rel="stylesheet" href="css/report.css">
+  <link rel="stylesheet" href="css/report_modal.css">
 </head>
 
 <body>
@@ -165,10 +167,22 @@
           <i data-lucide="zoom-in"></i>
           ⑧ 圧排時の分析
         </a>
-        <a href="#card-lab-tools" class="nav-item">
-          <i data-lucide="wrench"></i>
-          技工用ツール
-          <span class="lab-marker">LAB</span>
+        <div class="nav-section">技工指示 (Laboratory)</div>
+        <a href="#chapter-hbar" class="nav-item">
+          <i data-lucide="minus"></i>
+          ⑨ ホリゾンタルバー
+        </a>
+        <a href="#chapter-shade" class="nav-item">
+          <i data-lucide="palette"></i>
+          ⑩ シェード判定
+        </a>
+        <a href="#chapter-supplemental" class="nav-item">
+          <i data-lucide="images"></i>
+          ⑪ 補足画像
+        </a>
+        <a href="#chapter-instructions" class="nav-item">
+          <i data-lucide="message-square"></i>
+          ⑫ 技工指示書
         </a>
       </nav>
 
@@ -183,28 +197,42 @@
             <input type="text" id="patient-no-input" placeholder="IDを入力">
           </div>
         </div>
-        <button id="export-pdf-btn" class="btn btn-primary w-full">
-          <i data-lucide="file-down"></i> PDFレポートを出力
+        
+        <!-- Combined Cloud Sync & PDF Button -->
+        <button id="export-combined-btn" class="btn btn-primary w-full btn-lg" style="padding: 18px; margin-top: 10px; font-weight: 700; font-size: 1.05rem;">
+          <i data-lucide="send"></i> 解析データを送信して<br>レポートを出力
         </button>
+        
+        <!-- Cloud Sync Status Indicator -->
+        <div class="cloud-status-panel" style="margin-top: 15px;">
       </div>
     </aside>
+    
+    <!-- Trapezoidal Sidebar Handle -->
+    <button id="sidebar-handle" class="sidebar-handle" title="サイドバーを開閉">
+      <i data-lucide="chevron-left"></i>
+    </button>
 
     <!-- Main Content Area (Scrollable) -->
     <main class="main-content" id="main-scroll-area">
-      <header class="topbar">
-        <button id="sidebar-toggle" class="btn btn-ghost sidebar-toggle" title="サイドバーを開閉">
-          <i data-lucide="menu"></i>
-        </button>
-        <div class="patient-info">
-          <h2>患者ケース (包括的分析)</h2>
-          <span class="badge">フルスクロールビュー</span>
+
+      <!-- Tab Navigation -->
+      <nav class="tab-navigation">
+        <div class="tab-segmented-control">
+          <button id="tab-btn-analysis" class="tab-btn active">
+            <i data-lucide="microscope"></i>
+            分析ツール (1-8)
+          </button>
+          <button id="tab-btn-lab" class="tab-btn">
+            <i data-lucide="wrench"></i>
+            技工ツール
+          </button>
         </div>
-        <button id="right-panel-toggle" class="btn btn-ghost sidebar-toggle" title="右パネルを開閉">
-          <i data-lucide="panel-right"></i>
-        </button>
-      </header>
+      </nav>
 
       <div class="workspace-scroll">
+        <!-- View 1: Analysis Tools -->
+        <div id="analysis-view" class="view-container">
 
         <!-- CARD 1: Frontal -->
         <div class="analysis-card" id="card-frontal" data-phase="frontal">
@@ -218,7 +246,12 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -305,10 +338,15 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn-ai-enhance ai-analyze-btn btn-under-dev" title="現在開発中につきご利用いただけません" disabled><i data-lucide="wrench"></i> AI解析 (開発中)</button>
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="upload"></i> 画像
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -403,7 +441,12 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn-ai-enhance ai-analyze-btn" title="AIによる自動解析"><i data-lucide="sparkles"></i> AI自動解析</button>
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -493,10 +536,15 @@
               </label>
             </div>
             <div class="card-actions">
-              <button class="btn-ai-enhance ai-analyze-btn btn-under-dev" title="現在開発中につきご利用いただけません" disabled><i data-lucide="wrench"></i> AI自動解析 (準備中)</button>
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="upload"></i> 画像
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -615,6 +663,12 @@
               </label>
             </div>
             <div class="card-actions">
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -673,6 +727,12 @@
               </label>
             </div>
             <div class="card-actions">
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -731,6 +791,12 @@
               </label>
             </div>
             <div class="card-actions">
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -789,6 +855,12 @@
               </label>
             </div>
             <div class="card-actions">
+              <button class="btn btn-ai ai-analyze-btn" title="AI自動解析を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
+                <i data-lucide="send"></i> 解析データを送信
+              </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
                 <i data-lucide="upload"></i> 画像を読み込む
@@ -1026,24 +1098,24 @@
             <div class="instruction-tooltip hidden"></div>
           </div> <!-- end card-content -->
         </div> <!-- end analysis-card (Phase 8) -->
+      </div> <!-- end analysis-view -->
 
-        <!-- CARD: Lab Tools (Consolidated Phase 9 & 10) -->
-        <div class="analysis-card lab-card" id="card-lab-tools">
+      <!-- View 2: Lab Tools -->
+      <div id="lab-view" class="view-container hidden">
+
+        <!-- CHAPTER 9: Horizontal Bar -->
+        <div class="analysis-card lab-chapter-card" id="chapter-hbar">
           <div class="card-header">
             <div class="card-title-group">
-              <div class="step-badge">Lab Tools</div>
-              <h2>技工用ツール <span class="lab-badge">技工指示</span></h2>
-            </div>
-            <div class="card-actions">
-              <!-- Global actions -->
+              <div class="step-badge">Chapter 9</div>
+              <h2>ホリゾンタルバー <span class="lab-badge">技工指示</span></h2>
             </div>
           </div>
           <div class="card-content" style="padding: 0;">
-            
             <!-- Unit 9-A: Horizontal Bar Frontal -->
             <div class="sub-analysis-section analysis-unit" id="card-horizontal-bar-front" data-phase="horizontal-bar-front">
-              <div class="sub-header">
-                <h4><span class="badge-text">9-A</span> ホリゾンタルバー（正面像）</h4>
+              <div class="sub-header" style="border-top: none;">
+                <h4><span class="badge-text">9-A</span> 正面像 (Frontal View)</h4>
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
@@ -1092,7 +1164,7 @@
             <!-- Unit 9-B: Horizontal Bar Top -->
             <div class="sub-analysis-section analysis-unit" id="card-horizontal-bar-top" data-phase="horizontal-bar-top">
               <div class="sub-header">
-                <h4><span class="badge-text">9-B</span> ホリゾンタルバー（頭側像）</h4>
+                <h4><span class="badge-text">9-B</span> 頭側像 (Top View)</h4>
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
@@ -1137,11 +1209,22 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
 
-            <!-- Unit 10: Shade Take -->
+        <!-- CHAPTER 10: Shade Analysis -->
+        <div class="analysis-card lab-chapter-card" id="chapter-shade">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 10</div>
+              <h2>シェード分析 (Shade Analysis) <span class="lab-badge">色調指示</span></h2>
+            </div>
+          </div>
+          <div class="card-content" style="padding: 0;">
             <div class="sub-analysis-section analysis-unit" id="card-shade-take" data-phase="shade-take">
-              <div class="sub-header">
-                <h4><span class="badge-text">10</span> シェードテイク (Shade Analysis)</h4>
+              <!-- Content for Shade Take (same as before but inside standalone card) -->
+              <div class="sub-header" style="border-top: none;">
+                <h4><i data-lucide="palette"></i> シェード判定・キャリブレーション</h4>
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
@@ -1214,7 +1297,6 @@
               </div>
 
               <div class="horizontal-card-layout">
-                <!-- Wrapper to stack canvas and comparison panel vertically -->
                 <div class="analysis-main-column">
                   <div class="canvas-wrapper drop-zone" style="aspect-ratio: 1/1; height: 560px; max-height: 560px;">
                     <canvas class="analysis-canvas"></canvas>
@@ -1224,8 +1306,6 @@
                       <p>口腔内写真またはシェード画像をドロップ</p>
                     </div>
                   </div>
-
-                  <!-- Relocated Shade Comparison Result Panel (Part of the main column under canvas) -->
                   <div id="shade-diff-panel" class="shade-diff-panel">
                     <div class="diff-header">色の比較分析結果</div>
                     <div class="diff-chips">
@@ -1246,7 +1326,6 @@
                     </div>
                   </div>
                 </div>
-
                 <div class="quick-stats lateral-stats">
                   <div class="shade-result-container">
                     <div class="shade-preview-box">
@@ -1262,8 +1341,6 @@
                         <tr><td><strong>Delta E</strong></td><td id="shade-delta-e">--</td><td class="shade-ref-val" style="color:var(--text-light);font-size:0.75rem;">vs 判定シェード</td></tr>
                       </tbody>
                     </table>
-
-                    <!-- Magnifier (Shade Map) moved to right, but Comparison Result is now under canvas -->
                     <div id="shade-magnifier-container" class="shade-magnifier-container">
                       <div class="magnifier-label">
                         <i data-lucide="zoom-in"></i> 詳細拡大ルーペ (100分割解析)
@@ -1277,75 +1354,92 @@
                 </div>
               </div>
             </div>
-
-            <!-- Unit: Free Supplemental Images -->
-            <div class="sub-analysis-section" id="card-supplemental-images">
-              <div class="sub-header">
-                <h4><i data-lucide="images"></i> 補足画像（フリースペース）</h4>
-                <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
-              </div>
-              <div class="free-image-grid" id="free-image-grid">
-                <!-- 8 Slots generated manually -->
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 1</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 2</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 3</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 4</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 5</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 6</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 7</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-                <div class="image-slot" onclick="this.querySelector('input').click()">
-                  <i data-lucide="plus" class="slot-icon"></i>
-                  <span class="slot-label">画像 8</span>
-                  <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-                </div>
-              </div>
-            </div>
-
-            <!-- Unit: Lab Instructions Text -->
-            <div class="sub-analysis-section" id="card-lab-instructions">
-              <div class="sub-header">
-                <h4><i data-lucide="message-square"></i> 技工指示内容</h4>
-              </div>
-              <div class="lab-textarea-container">
-                <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
-              </div>
-            </div>
-
           </div>
         </div>
 
-        <!-- Bottom spacing for scrolling -->
-        <div style="height: 100px;"></div>
+        <!-- CHAPTER 11: Supplemental Images -->
+        <div class="analysis-card lab-chapter-card" id="chapter-supplemental">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 11</div>
+              <h2>補足画像 (Supplemental Images) <span class="lab-badge">資料提供</span></h2>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="sub-header" style="border-top: none; padding-top: 0;">
+              <h4><i data-lucide="images"></i> フリー画像スペース</h4>
+              <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
+            </div>
+            <div class="free-image-grid" id="free-image-grid">
+              <!-- 8 Slots generated manually -->
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 1</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 2</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 3</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 4</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 5</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 6</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 7</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 8</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+            </div>
+          </div>
+        </div>
 
-      </div>
+        <!-- CHAPTER 12: Lab Instructions -->
+        <div class="analysis-card lab-chapter-card" id="chapter-instructions">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 12</div>
+              <h2>技工指示内容 (Lab Instructions) <span class="lab-badge">指示書</span></h2>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="sub-header" style="border-top: none; padding-top: 0;">
+              <h4><i data-lucide="message-square"></i> 具体的な指示事項</h4>
+            </div>
+            <div class="lab-textarea-container">
+              <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- end lab-view -->
+
+      <!-- Bottom spacing for scrolling -->
+      <div style="height: 100px;"></div>
+
+    </div>
     </main>
 
     <!-- Right Side Panel (Fixed Tools & Loupe) -->
@@ -1376,6 +1470,11 @@
 
     </aside>
 
+    <!-- Mirror Trapezoidal Handle for Right Panel -->
+    <button id="right-panel-handle" class="right-panel-handle" title="右パネルを開閉">
+      <i data-lucide="chevron-right"></i>
+    </button>
+
 
     <div id="pdf-loading-overlay" class="hidden">
       <div class="spinner"></div>
@@ -1385,6 +1484,41 @@
     </div>
       <div id="sidebar-overlay" class="sidebar-overlay hidden"></div>
     </div> <!-- end .app-container -->
+
+    <!-- PDF Selection Modal -->
+    <div id="pdf-selection-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <i data-lucide="file-text"></i>
+          <h3>レポート出力設定</h3>
+        </div>
+        <div class="modal-body">
+          <p style="margin-bottom: 24px; color: var(--text-muted); font-size: 0.9rem;">出力するセクションを選択してください（複数選択可能）</p>
+          <div class="selection-group">
+            <div class="selection-card active" id="sel-analysis">
+              <div class="card-icon"><i data-lucide="microscope"></i></div>
+              <div class="card-info">
+                <span class="card-title">分析ツール</span>
+                <span class="card-desc">Phase 1 〜 8 の診断結果</span>
+              </div>
+              <div class="custom-checkbox"><i data-lucide="check"></i></div>
+            </div>
+            <div class="selection-card active" id="sel-lab">
+              <div class="card-icon"><i data-lucide="wrench"></i></div>
+              <div class="card-info">
+                <span class="card-title">技工ツール</span>
+                <span class="card-desc">Chapter 9 〜 12 の技工指示</span>
+              </div>
+              <div class="custom-checkbox"><i data-lucide="check"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-pdf-cancel" class="btn-cancel">キャンセル</button>
+          <button id="btn-pdf-confirm" class="btn-confirm">PDFを生成する</button>
+        </div>
+      </div>
+    </div>
 
     <!-- PDF Cover Page Template (Hidden from main UI) -->
     <div id="pdf-cover-template" style="display: none;">
@@ -1400,25 +1534,44 @@
           <h2 id="pdf-report-main-title" class="report-title">Comprehensive Aesthetic Analysis Report</h2>
           <div class="case-info">
             <div class="info-row">
-              <span class="info-label">Case Title:</span>
+              <span class="info-label">案件名:</span>
               <span id="pdf-cover-case-title" class="info-value">--</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Patient Name:</span>
+              <span class="info-label">患者氏名:</span>
               <span id="pdf-cover-patient-name" class="info-value">--</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Patient ID:</span>
+              <span class="info-label">患者番号:</span>
               <span id="pdf-cover-patient-id" class="info-value">--</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Analysis Date:</span>
+              <span class="info-label">解析日:</span>
               <span id="pdf-cover-date" class="info-value">--</span>
             </div>
           </div>
         </div>
         <div class="cover-footer">
           <p>© 2026 Shibata Aesthetic Dentistry Research. All rights reserved.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Data Sending Confirmation Modal -->
+    <div id="data-send-modal" class="modal-overlay">
+      <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-header">
+          <i data-lucide="help-circle"></i>
+          <h3 id="data-send-title">解析データの送信</h3>
+        </div>
+        <div class="modal-body" style="padding: 40px 24px;">
+          <p id="data-send-msg" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: var(--text-main);">
+            プロットは正確ですか？
+          </p>
+        </div>
+        <div class="modal-footer" id="data-send-footer" style="padding: 16px 24px 32px;">
+          <button id="btn-send-no" class="btn-cancel" style="flex: 1; padding: 14px;">いいえ</button>
+          <button id="btn-send-yes" class="btn-confirm" style="flex: 1; padding: 14px;">はい</button>
         </div>
       </div>
     </div>
@@ -1429,19 +1582,39 @@
 
   <!-- Trial License Modal Removed -->
 
+  <!-- Firebase SDK (Compat Version) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
   <script src="js/constants.js"></script>
+  <script src="js/services/FirebaseService.js"></script>
+  <script src="js/services/IntelligenceService.js"></script>
+  <script src="js/analysis/PatternMatcher.js"></script>
+  
+  <!-- Specialized AI Engines (One file per phase) -->
+  <script src="js/analysis/engines/Phase2Engine.js"></script>
+  <script src="js/analysis/engines/Phase3Engine.js"></script>
+  <script src="js/analysis/engines/Phase4Engine.js"></script>
+  <script src="js/analysis/engines/Phase5Engine.js"></script>
+  <script src="js/analysis/engines/Phase6Engine.js"></script>
+  <script src="js/analysis/engines/Phase7Engine.js"></script>
+  <script src="js/analysis/engines/Phase8Engine.js"></script>
+
   <script src="js/ai-utils.js"></script>
   <script src="js/analysis/FacialHandlers.js"></script>
   <script src="js/analysis/LateralAI.js"></script>
   <script src="js/analysis/DentalHandlers.js"></script>
   <script src="js/analysis/ShadeHandlers.js"></script>
-  <script src="js/AnalysisCard.js"></script>
+  <script src="js/AnalysisCard.js?v=3"></script>
   <script src="js/TrialManager.js"></script>
-  <script src="js/LayoutHandler.js"></script>
-  <script src="js/TouchHandler.js"></script>
+  <script src="js/LayoutHandler.js?v=3"></script>
+  <script src="js/TouchHandler.js?v=3"></script>
   <script src="js/report/PDFGenerator.js"></script>
   <script src="js/report/ReportEngine.js"></script>
-  <script src="app.js"></script>
+  <script src="js/data/DataExporter.js"></script>
+  <script src="js/TabManager.js"></script>
+  <script src="app.js?v=3"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
   <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">

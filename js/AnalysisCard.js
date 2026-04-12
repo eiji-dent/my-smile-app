@@ -305,6 +305,9 @@ class AnalysisCard {
       const aiBtn = this.card.querySelector('.ai-analyze-btn');
       if (aiBtn) aiBtn.addEventListener('click', () => this.runAIAnalysis());
 
+      const sendBtn = this.card.querySelector('.send-data-btn');
+      if (sendBtn) sendBtn.addEventListener('click', () => this.sendAnalysisData());
+
       this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('drag-over'); });
       this.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); this.dropZone.classList.remove('drag-over'); });
       this.dropZone.addEventListener('drop', (e) => {
@@ -315,7 +318,136 @@ class AnalysisCard {
         if (e.target.files && e.target.files.length > 0) this.handleImage(e.target.files[0]);
       });
       window.addEventListener('resize', () => { if (this.currentImage) this.resizeCanvas(); });
-      this.canvas.addEventListener('mousedown', (e) => {
+      this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+      this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+      window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
+
+      this.initAdvancedListeners();
+    }
+
+    initAdvancedListeners() {
+      this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+      this.canvas.addEventListener('wheel', (e) => {
+          if (!this.currentImage) return;
+          e.preventDefault();
+          this.panX -= e.deltaX; this.panY -= e.deltaY;
+          this.constrainPan();
+          this.drawCanvas();
+      }, { passive: false });
+
+      // --- Native iPad/Touch Support ---
+      this.canvas.addEventListener('touchstart', (e) => {
+          if (!this.currentImage || e.touches.length > 1) return;
+          const coords = this.getMouseCoords(e);
+          this.hoveredPoint = this.findHoverPoint(coords, true);
+          
+          if (this.hoveredPoint) {
+              const isDrawingInProgress = (this.drawState !== 'idle' && this.drawState !== 'multi-point') || this.tempPoints.length > 0;
+              if (!isDrawingInProgress) {
+                  e.preventDefault(); // Start drag, stop scroll
+                  this.draggingPoint = this.hoveredPoint;
+                  this.updateMagnifier(e);
+                  this.drawCanvas();
+                  return;
+              }
+          }
+          this.touchStartX = e.touches[0].clientX;
+          this.touchStartY = e.touches[0].clientY;
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchmove', (e) => {
+          if (!this.currentImage || e.touches.length > 1) return;
+          if (this.draggingPoint) {
+              e.preventDefault();
+              this.handleMouseMove(e);
+          }
+      }, { passive: false });
+
+      this.canvas.addEventListener('touchend', (e) => {
+          if (this.draggingPoint) {
+              e.preventDefault();
+              this.handleMouseUp(e);
+          } else {
+              const touch = e.changedTouches[0];
+              const dx = touch.clientX - this.touchStartX;
+              const dy = touch.clientY - this.touchStartY;
+              if (Math.hypot(dx, dy) < 10) {
+                  this.handleMouseDown(e);
+                  setTimeout(() => this.handleMouseUp(e), 50);
+              }
+          }
+      }, { passive: false });
+
+       // Other advanced interactions (rotation, sync, etc.)
+       const btnRotInter = this.card.querySelector('.rotate-inter-btn');
+       if (btnRotInter) {
+          btnRotInter.addEventListener('click', () => {
+             const line = this.lines['interpupillary'] || this.lines['interpupillary-e'];
+             if (line) {
+                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
+                 if (cx < 0) { cx = -cx; cy = -cy; }
+                 this.imgRotation = -Math.atan2(cy, cx);
+                 this.drawCanvas();
+             } else alert('基準となる瞳孔間線がプロットされていません。');
+          });
+       }
+
+       const btnRotMid = this.card.querySelector('.rotate-mid-btn');
+       if (btnRotMid) {
+          btnRotMid.addEventListener('click', () => {
+             const line = this.lines['midline'] || this.lines['f-midline'];
+             if (line) {
+                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
+                 if (cy < 0) { cx = -cx; cy = -cy; }
+                 this.imgRotation = (Math.PI / 2) - Math.atan2(cy, cx);
+                 this.drawCanvas();
+             } else alert('基準となる顔貌正中線がプロットされていません。');
+          });
+       }
+
+       const btnApplyP3Mid = this.card.querySelector('.apply-p3-mid-btn');
+       if (btnApplyP3Mid) {
+          btnApplyP3Mid.addEventListener('click', () => {
+             const phase3Card = window.appCards.find(c => c.phase === 'e-midline');
+             if (phase3Card && phase3Card.lines['f-midline']) {
+                 const line = phase3Card.lines['f-midline'];
+                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
+                 if (cy < 0) { cx = -cx; cy = -cy; }
+                 this.imgRotation = (Math.PI / 2) - Math.atan2(cy, cx);
+                 this.drawCanvas();
+                 alert('Phase 3の顔貌正中線の傾き（補正量）を適用しました。');
+             } else alert('Phase 3 (E音発音時) で顔貌正中線がプロットされていません。');
+          });
+       }
+
+       const btnRotHBarRef = this.card.querySelector(".rotate-hbar-ref-btn");
+       if (btnRotHBarRef) {
+          btnRotHBarRef.addEventListener("click", () => {
+             const line = this.lines["hbar-ref"];
+             if (line) {
+                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
+                 if (cx < 0) { cx = -cx; cy = -cy; }
+                 this.imgRotation = -Math.atan2(cy, cx);
+                 this.drawCanvas(); this.updateStats();
+             } else alert("基準となる水平基準プロットが引かれていません。");
+          });
+       }
+
+       const vSlider = this.card.querySelector('.vertical-zoom-slider');
+       if (vSlider) {
+           vSlider.addEventListener('input', (e) => {
+              this.zoomLevel = parseInt(e.target.value) / 100;
+              if (this.zoomLevel <= 1.0) { this.panX = 0; this.panY = 0; }
+              this.drawCanvas();
+           });
+       }
+
+       this.constrainPan();
+    }
+
+
+
+    handleMouseDown(e) {
         if (!this.currentImage) return;
         const coords = this.getMouseCoords(e);
         
@@ -335,6 +467,7 @@ class AnalysisCard {
         if (!isDrawingInProgress && this.hoveredPoint) {
             this.draggingPoint = this.hoveredPoint;
             if (this.canvas) this.canvas.style.cursor = 'grabbing';
+            this.updateMagnifier(e);
             return;
         }
 
@@ -426,15 +559,15 @@ class AnalysisCard {
           else if (finishedTool === 'hbar-bar') this.showTooltip(this.STEPS.HBAR_BAR[2]);
           this.tempStart = null; this.tempEnd = null; this.drawCanvas(); this.updateStats();
         }
-      });
+    }
 
-      this.canvas.addEventListener('mousemove', (e) => {
+    handleMouseMove(e) {
         if (!this.currentImage) return;
         if (this.isPanning) {
             this.panX += e.clientX - this.lastPanPt.x;
             this.panY += e.clientY - this.lastPanPt.y;
             this.lastPanPt = { x: e.clientX, y: e.clientY };
-            this.constrainPan(); // 追加: 移動制限を適用
+            this.constrainPan();
             this.drawCanvas();
             return;
         }
@@ -452,11 +585,10 @@ class AnalysisCard {
             }
             this.drawCanvas(); 
             this.updateStats();
-            this.updateDragGuidance(); // ドラッグ中にガイドを更新
+            this.updateDragGuidance();
             return;
         }
         this.hoveredPoint = this.findHoverPoint(coords);
-        // ドラッグが許可されている状態 (+ ホバーしている点がある) の時だけ手のマークにする
         const canDrag = (this.drawState === 'idle' || this.drawState === 'multi-point') && this.tempPoints.length === 0;
         this.canvas.style.cursor = (this.hoveredPoint && canDrag) ? 'grab' : 'crosshair';
         if (this.activeTool === 'shade-map' && this.shadeMapRect && this.shadeMapRect.active) {
@@ -470,108 +602,24 @@ class AnalysisCard {
         }
         if (this.drawState === 'multi-point' && this.tempPoints.length > 0) { this.tempEnd = coords; this.drawCanvas(); }
         if (this.drawState === 'pt1-placed') { this.tempEnd = coords; this.drawCanvas(); }
-      });
-      
-      window.addEventListener('mouseup', () => {
-         if (this.shadeMapRect && this.shadeMapRect.active) {
-             this.shadeMapRect.active = false; this.shadeMapRect.finalized = true;
-             this.drawCanvas(); this.updateStats();
-         }
-         if (this.isPanning) {
-             this.isPanning = false;
-             this.draggingPoint = null;
-             if(this.canvas) this.canvas.style.cursor = 'crosshair';
-         }
-         if (this.draggingPoint) {
+    }
+
+    handleMouseUp(e) {
+        if (this.shadeMapRect && this.shadeMapRect.active) {
+            this.shadeMapRect.active = false; this.shadeMapRect.finalized = true;
+            this.drawCanvas(); this.updateStats();
+        }
+        if (this.isPanning) {
+            this.isPanning = false;
             this.draggingPoint = null;
-            this.hideTooltip(); // ドラッグ終了時にガイドを隠す
+            if(this.canvas) this.canvas.style.cursor = 'crosshair';
+        }
+        if (this.draggingPoint) {
+            this.draggingPoint = null;
+            this.hideTooltip();
             if (this.canvas) this.canvas.style.cursor = this.hoveredPoint ? 'grab' : 'crosshair';
-         }
-      });
-      
-      this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-      this.canvas.addEventListener('wheel', (e) => {
-          if (!this.currentImage) return;
-          e.preventDefault();
-          this.panX -= e.deltaX; this.panY -= e.deltaY;
-          this.constrainPan(); // 移動制限を適用
-          this.drawCanvas();
-      }, { passive: false });
-
-      this.constrainPan(); // 初期状態でも制限を適用
-      
-      const vSlider = this.card.querySelector('.vertical-zoom-slider');
-      if (vSlider) {
-          vSlider.addEventListener('input', (e) => {
-             this.zoomLevel = parseInt(e.target.value) / 100;
-             if (this.zoomLevel <= 1.0) { this.panX = 0; this.panY = 0; }
-             this.drawCanvas();
-          });
-      }
-
-      this.canvas.addEventListener('mouseleave', () => { 
-        const lc = document.getElementById('loupe-container');
-        if(lc) lc.classList.add('hidden'); 
-      });
-      this.canvas.addEventListener('mouseenter', (e) => {
-         const lc = document.getElementById('loupe-container');
-         if (this.currentImage && this.activeTool && lc) { lc.classList.remove('hidden'); this.updateMagnifier(e); }
-      });
-
-       const btnRotInter = this.card.querySelector('.rotate-inter-btn');
-       if (btnRotInter) {
-          btnRotInter.addEventListener('click', () => {
-             const line = this.lines['interpupillary'] || this.lines['interpupillary-e'];
-             if (line) {
-                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
-                 if (cx < 0) { cx = -cx; cy = -cy; }
-                 this.imgRotation = -Math.atan2(cy, cx);
-                 this.drawCanvas();
-             } else alert('基準となる瞳孔間線がプロットされていません。');
-          });
-       }
-
-       const btnRotMid = this.card.querySelector('.rotate-mid-btn');
-       if (btnRotMid) {
-          btnRotMid.addEventListener('click', () => {
-             const line = this.lines['midline'] || this.lines['f-midline'];
-             if (line) {
-                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
-                 if (cy < 0) { cx = -cx; cy = -cy; }
-                 this.imgRotation = (Math.PI / 2) - Math.atan2(cy, cx);
-                 this.drawCanvas();
-             } else alert('基準となる顔貌正中線がプロットされていません。');
-          });
-       }
-
-       const btnApplyP3Mid = this.card.querySelector('.apply-p3-mid-btn');
-       if (btnApplyP3Mid) {
-          btnApplyP3Mid.addEventListener('click', () => {
-             const phase3Card = window.appCards.find(c => c.phase === 'e-midline');
-             if (phase3Card && phase3Card.lines['f-midline']) {
-                 const line = phase3Card.lines['f-midline'];
-                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
-                 if (cy < 0) { cx = -cx; cy = -cy; }
-                 this.imgRotation = (Math.PI / 2) - Math.atan2(cy, cx);
-                 this.drawCanvas();
-                 alert('Phase 3の顔貌正中線の傾き（補正量）を適用しました。');
-             } else alert('Phase 3 (E音発音時) で顔貌正中線がプロットされていません。');
-          });
-       }
-
-       const btnRotHBarRef = this.card.querySelector(".rotate-hbar-ref-btn");
-       if (btnRotHBarRef) {
-          btnRotHBarRef.addEventListener("click", () => {
-             const line = this.lines["hbar-ref"];
-             if (line) {
-                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
-                 if (cx < 0) { cx = -cx; cy = -cy; }
-                 this.imgRotation = -Math.atan2(cy, cx);
-                 this.drawCanvas(); this.updateStats();
-             } else alert("基準となる水平基準プロットが引かれていません。");
-          });
-       }
-  }
+        }
+    }
 
   constrainPan() {
     if (!this.currentImage) return;
@@ -606,67 +654,55 @@ class AnalysisCard {
       const aiBtn = this.card.querySelector('.ai-analyze-btn');
       const originalHTML = aiBtn.innerHTML;
       aiBtn.disabled = true;
-      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">AIモデル読込中...</span>';
+      aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">AIエンジンの準備中...</span>';
       this.card.classList.add('ai-scanning');
       
       try {
-          console.log(`AI Analysis started for phase: ${this.phase}`);
-          
-          // Phase 4 (E-sound / Mini-esthetics) is currently under development
-          if (this.phase === 'e-sound') {
-              alert("E音/フルスマイルの自動解析機能は現在開発中です。近日アップデート予定です。");
-              return;
-          }
-
+          console.log(`Dispatching AI analysis for phase: ${this.phase}`);
           this.prepareOffScreenCanvas();
           const canvas = AnalysisCard.offScreenCanvas;
 
-          if (this.phase === 'lateral') {
-              // --- Lateral Analysis (Silhouette Scanning) ---
-              const segmenter = await window.initImageSegmenter();
-              if (!segmenter) throw new Error("セグメンテーションモデルの初期化に失敗しました。");
-              
-              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">シルエット解析中...</span>';
-              const result = segmenter.segment(canvas);
-              const mask = result.categoryMask.getAsUint8Array();
-              const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-              
-              const lateralPoints = LateralAI.detectFromMask(mask, canvas.width, canvas.height, imageData.data);
-              if (lateralPoints) {
-                  this.applyLateralLandmarks(lateralPoints);
-                  this.showTooltip("側貌（横顔）の自動解析が完了しました。");
-              } else {
-                  alert("側貌の輪郭を特定できませんでした。背景がシンプルな画像でお試しください。");
-              }
-          } else {
-              // --- Frontal / E-Midline (Face Landmarker) ---
+          let result = { success: false, message: "このフェーズにはまだ対応していません。" };
+
+          // --- AI Engine Dispatcher ---
+          if (this.phase === 'frontal') {
+              // Phase 1: Keep as is (Standard FaceLandmarker)
               const landmarker = await window.initFaceLandmarker();
-              if (!landmarker) throw new Error("AIモデルの初期化に失敗しました。");
-              
-              aiBtn.innerHTML = '<i class="spinner"></i> <span style="font-size:0.85em">特徴点検出中...</span>';
-              const result = landmarker.detect(canvas);
-              
-              if (this.phase !== 'frontal' && this.pxToMm === 0.075) {
-                  const frontalCard = window.appCards?.find(c => c.phase === 'frontal');
-                  if (frontalCard && frontalCard.pxToMm !== 0.075) {
-                      this.updatePxToMm(frontalCard.pxToMm); // Sync but badges only update locally
-                  }
+              const mpResult = landmarker.detect(canvas);
+              if (mpResult && mpResult.faceLandmarks?.length > 0) {
+                  this.applyAILandmarks(mpResult);
+                  result = { success: true, message: "正面顔貌の解析が完了しました。" };
               }
-              
-              if (!result || !result.faceLandmarks || result.faceLandmarks.length === 0) {
-                  alert("顔を正しく認識できませんでした。明るさや角度を調整してください。");
-              } else {
-                  this.applyAILandmarks(result);
-                  console.log(`${this.phase} AI analysis successful.`);
-              }
+          } else if (this.phase === 'lateral' && window.Phase2Engine) {
+              result = await window.Phase2Engine.analyze(this, canvas);
+          } else if (this.phase === 'e-midline' && window.Phase3Engine) {
+              result = await window.Phase3Engine.analyze(this, canvas);
+          } else if (this.phase === 'e-sound' && window.Phase4Engine) {
+              result = await window.Phase4Engine.analyze(this, canvas);
+          } else if (this.phase === 's-sound' && window.Phase5Engine) {
+              result = await window.Phase5Engine.analyze(this, canvas);
+          } else if (this.phase === 'm-sound' && window.Phase6Engine) {
+              result = await window.Phase6Engine.analyze(this, canvas);
+          } else if (this.phase === 'fv-sound' && window.Phase7Engine) {
+              result = await window.Phase7Engine.analyze(this, canvas);
+          } else if ((this.phase === 'golden-prop' || this.phase === 'intraoral') && window.Phase8Engine) {
+              result = await window.Phase8Engine.analyze(this, canvas);
           }
+
+          if (result.success) {
+              this.showTooltip(result.message || "解析が完了しました。");
+              this.drawCanvas(); // Force redraw with new landmarks
+          } else if (result.message) {
+              alert(result.message);
+          }
+
       } catch (err) {
-          console.error("AI Error:", err); 
+          console.error("Specialized AI Error:", err); 
           alert("解析中にエラーが発生しました：\n" + (err.message || "不明なエラー"));
       } finally {
           aiBtn.disabled = false; aiBtn.innerHTML = originalHTML;
           this.card.classList.remove('ai-scanning');
-          this.drawState = 'idle'; // Reset state after AI
+          this.drawState = 'idle';
           if (window.lucide) window.lucide.createIcons({ root: aiBtn });
       }
   }
@@ -736,8 +772,9 @@ class AnalysisCard {
       return map[toolValue] || toolValue;
   }
 
-  findHoverPoint(coords) {
-      const threshold = 15 / coords.scale; 
+  findHoverPoint(coords, isTouch = false) {
+      const baseThreshold = isTouch ? 30 : 15;
+      const threshold = baseThreshold / coords.scale; 
       for(let i=0; i<this.tempPoints.length; i++) {
           if(Math.hypot(this.tempPoints[i].x - coords.realX, this.tempPoints[i].y - coords.realY) < threshold) {
               return { key:'tempPoints', index:i, pt:this.tempPoints[i], mode:'multi' };
@@ -873,9 +910,9 @@ class AnalysisCard {
               // 垂直6点分析 (Vertical Proportions)
               this.lines.verticalProportions = [
                   getPt(10),   // 1. 髪際 (Hairline)
-                  getPt(9),    // 2. 眉間 (Glabella) - より高い眉の位置に変更
+                  getPt(9),    // 2. 眉間 (Glabella)
                   { x: (lE.x + rE.x) / 2, y: (lE.y + rE.y) / 2 }, // 3. 瞳孔間線レベル
-                  getPt(2),    // 4. 鼻下点 (Subnasale)
+                  getPt(2),    // 4. 鼻下点 (Subnasale) - ユーザーの希望により鼻の先端(index 2)に戻す
                   getPt(13),   // 5. 口裂点 (Stomion)
                   getPt(152)   // 6. 頤下点 (Menton)
               ];
@@ -949,7 +986,21 @@ class AnalysisCard {
 
   getMouseCoords(e) {
     const rect = this.canvas.getBoundingClientRect();
-    const mX = e.clientX - rect.left; const mY = e.clientY - rect.top;
+    let cX, cY;
+    
+    // Support both mouse and touch events
+    if (e.touches && e.touches.length > 0) {
+        cX = e.touches[0].clientX;
+        cY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        cX = e.changedTouches[0].clientX;
+        cY = e.changedTouches[0].clientY;
+    } else {
+        cX = e.clientX;
+        cY = e.clientY;
+    }
+
+    const mX = cX - rect.left; const mY = cY - rect.top;
     const scale = Math.min(this.canvas.width / this.currentImage.width, this.canvas.height / this.currentImage.height) * this.zoomLevel;
     const xO = (this.canvas.width / 2) + this.panX; const yO = (this.canvas.height / 2) + this.panY;
     const dx = mX - xO; const dy = mY - yO;
@@ -1244,6 +1295,165 @@ class AnalysisCard {
       this.updateStats(); this.drawCanvas();
   }
 
-  // Silhouette analysis logic is now embedded in runAIAnalysis for better flow control.
+  // --- Data Export Methods (for AI Training) ---
+  
+  /**
+   * Returns structured plot data for the current phase.
+   */
+  getPlotData() {
+      if (!this.currentImage) return null;
+      return {
+          phase: this.phase,
+          imageWidth: this.currentImage.width,
+          imageHeight: this.currentImage.height,
+          pxToMm: this.pxToMm,
+          landmarks: JSON.parse(JSON.stringify(this.lines)), // Deep copy
+          metrics: this.lastStats || {} // Use cached stats if available
+      };
+  }
+
+  /**
+   * Captures the current image as a DataURL (Base64). 
+   * Useful for bundling images into a JSON dataset.
+   * @param {number} maxSize - Maximum dimension (width or height) to resize to.
+   */
+  async getImageDataURL(maxSize = 1024) {
+      if (!this.currentImage) return null;
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      let width = this.currentImage.width;
+      let height = this.currentImage.height;
+      
+      if (width > maxSize || height > maxSize) {
+          const ratio = Math.min(maxSize / width, maxSize / height);
+          width *= ratio;
+          height *= ratio;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(this.currentImage, 0, 0, width, height);
+      
+      return canvas.toDataURL('image/jpeg', 0.85); // JPEG format for better compression
+  }
+
+  /**
+   * Sends analysis data with a 2-step confirmation modal
+   */
+  async sendAnalysisData() {
+      if (!this.currentImage) return alert("解析する画像がありません。");
+      
+      const modal = document.getElementById('data-send-modal');
+      const msg = document.getElementById('data-send-msg');
+      const title = document.getElementById('data-send-title');
+      const footer = document.getElementById('data-send-footer');
+      const btnYes = document.getElementById('btn-send-yes');
+      const btnNo = document.getElementById('btn-send-no');
+      const sendBtn = this.card.querySelector('.send-data-btn');
+
+      if (!modal || !btnYes || !btnNo) return;
+
+      // Reset Modal State
+      title.textContent = "解析データの送信";
+      msg.textContent = "プロットは正確ですか？";
+      msg.style.color = "var(--text-main)";
+      footer.style.display = "flex";
+      btnYes.disabled = false; // Add this line to fix the bug
+      btnYes.innerHTML = "はい";
+      btnNo.innerHTML = "いいえ";
+      modal.classList.add('active');
+
+      // Cleanup previous listeners
+      const newBtnYes = btnYes.cloneNode(true);
+      const newBtnNo = btnNo.cloneNode(true);
+      btnYes.parentNode.replaceChild(newBtnYes, btnYes);
+      btnNo.parentNode.replaceChild(newBtnNo, btnNo);
+
+      newBtnNo.addEventListener('click', () => {
+          msg.textContent = "正しいプロットに修正お願いします";
+          msg.style.color = "#ef4444";
+          footer.style.display = "none";
+          setTimeout(() => modal.classList.remove('active'), 2000);
+      });
+
+      newBtnYes.addEventListener('click', async () => {
+          // Patient identifier is handled locally/anonymously in FirebaseService now
+          
+          // Step 2: Sending state (Multi-stage Firebase Sync)
+          newBtnYes.disabled = true;
+          newBtnYes.innerHTML = '<span class="loading-spinner"></span> 同期中(匿名)...';
+          
+          try {
+              const data = this.getPlotData();
+              const imageData = await this.getImageDataURL(1024); // Resize for cloud storage efficiency
+              
+              // Prepare data for Learning AI (Intelligence)
+              if (this.phase === 'intraoral' || this.phase === 'golden-prop') {
+                  data.features = window.PatternMatcher.extractDentalFeatures(this.lines);
+              } else {
+                  // Facial phase: if we don't have landmarks yet, run a quick background detect
+                  let landmarks = this.faceLandmarks;
+                  if (!landmarks) {
+                      try {
+                          this.prepareOffScreenCanvas();
+                          const landmarker = await window.initFaceLandmarker();
+                          const res = landmarker.detect(AnalysisCard.offScreenCanvas);
+                          if (res.faceLandmarks && res.faceLandmarks.length > 0) {
+                              landmarks = res.faceLandmarks[0];
+                          }
+                      } catch (e) {
+                          console.warn("Background feature extraction failed:", e);
+                      }
+                  }
+                  if (landmarks) {
+                      data.features = window.PatternMatcher.extractFacialFeatures(landmarks);
+                  }
+              }
+
+              // Execute Cloud Sync via FirebaseService
+              await window.FirebaseService.uploadAnalysis(
+                  this.phase, 
+                  data, 
+                  imageData,
+                  (progressMsg) => {
+                      msg.textContent = progressMsg;
+                      msg.style.color = "var(--primary)";
+                  }
+              );
+
+              // Step 3: Success feedback
+              title.textContent = "クラウド同期完了";
+              msg.textContent = "正常に保存されました。";
+              msg.style.color = "#10b981";
+              footer.style.display = "none";
+              
+              // Update the button on the card to indicate persistent cloud status
+              const originalHTML = sendBtn.innerHTML;
+              sendBtn.innerHTML = '<i data-lucide="cloud-check"></i> 同期済み';
+              sendBtn.classList.add('btn-success');
+              if (window.lucide) window.lucide.createIcons({ root: sendBtn });
+
+              setTimeout(() => {
+                  modal.classList.remove('active');
+                  // Revert button after some time or keep it green? I'll revert for reuse.
+                  setTimeout(() => {
+                      sendBtn.innerHTML = originalHTML;
+                      sendBtn.classList.remove('btn-success');
+                      if (window.lucide) window.lucide.createIcons({ root: sendBtn });
+                  }, 5000);
+              }, 2000);
+
+          } catch (error) {
+              console.error("Cloud Sync Failed:", error);
+              title.textContent = "同期エラー";
+              msg.textContent = "通信環境を確認してください。";
+              msg.style.color = "#ef4444";
+              newBtnYes.disabled = false;
+              newBtnYes.innerHTML = "再試行";
+          }
+      });
+  }
 }
 window.AnalysisCard = AnalysisCard;

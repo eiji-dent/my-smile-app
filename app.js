@@ -33,10 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
   cardElements.forEach(el => {
     const card = new window.AnalysisCard(el);
     window.appCards.push(card);
-    // iPad/タッチデバイス向けハンドラの初期化
+    // iPad/タッチデバイス向けハンドラの初期化（AnalysisCard内で統合管理されるため無効化）
+    /*
     if (window.TouchHandler) {
       new window.TouchHandler(card);
     }
+    */
   });
 
   // Global Zoom Slider Sync

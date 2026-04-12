@@ -52,6 +52,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   /* Scroll handled in main content */
 }
@@ -60,6 +61,7 @@ body {
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
@@ -187,7 +189,7 @@ body {
 
 /* Workspace Scroll Area */
 .workspace-scroll {
-  padding: 2rem;
+  padding: 1rem 2rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
@@ -206,8 +208,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  scroll-margin-top: 90px;
-  /* Leave space for sticky header when jumping */
+  scroll-margin-top: 80px;
+  /* Prevent content from hiding under the sticky tab-navigation */
 }
 
 .card-header {

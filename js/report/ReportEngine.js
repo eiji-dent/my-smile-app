@@ -4,7 +4,7 @@
  */
 class ReportEngine {
     constructor() {
-        this.exportBtn = document.getElementById('export-pdf-btn');
+        this.exportBtn = document.getElementById('export-combined-btn');
         this.loadingOverlay = document.getElementById('pdf-loading-overlay');
         this.progressStep = document.getElementById('pdf-progress-step');
         
@@ -14,23 +14,67 @@ class ReportEngine {
     }
 
     init() {
-        this.exportBtn.addEventListener('click', async () => {
-            await this.handleExport();
+        this.exportBtn.addEventListener('click', () => {
+            this.showSelectionModal();
         });
+
+        // Modal Elements
+        this.modal = document.getElementById('pdf-selection-modal');
+        this.cancelBtn = document.getElementById('btn-pdf-cancel');
+        this.confirmBtn = document.getElementById('btn-pdf-confirm');
+        this.selAnalysis = document.getElementById('sel-analysis');
+        this.selLab = document.getElementById('sel-lab');
+
+        if (this.modal) {
+            this.cancelBtn.addEventListener('click', () => this.hideSelectionModal());
+            this.selAnalysis.addEventListener('click', () => this.toggleSelection(this.selAnalysis));
+            this.selLab.addEventListener('click', () => this.toggleSelection(this.selLab));
+            this.confirmBtn.addEventListener('click', () => this.handleExport());
+        }
+    }
+
+    showSelectionModal() {
+        if (this.modal) this.modal.classList.add('active');
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    hideSelectionModal() {
+        if (this.modal) this.modal.classList.remove('active');
+    }
+
+    toggleSelection(card) {
+        card.classList.toggle('active');
+        const anyActive = this.selAnalysis.classList.contains('active') || this.selLab.classList.contains('active');
+        this.confirmBtn.disabled = !anyActive;
     }
 
     async handleExport() {
-        if (!window.PDFGenerator) {
-            alert('PDF生成エンジンが読み込まれていません。');
+        if (!window.PDFGenerator || !window.DataExporter) {
+            alert('レポート生成またはデータ同期モジュールが見つかりません。');
             return;
         }
+
+        const options = {
+            includeAnalysis: this.selAnalysis.classList.contains('active'),
+            includeLab: this.selLab.classList.contains('active')
+        };
+
+        this.hideSelectionModal();
 
         try {
             this.showLoading(true);
             
+            // Step 1: Force Cloud Sync (Automatically extracting features for learning)
+            if (window.DataExporter && window.DataExporter.syncAllToCloud) {
+                this.updateProgress('解析データをクラウドに送信中...');
+                await window.DataExporter.syncAllToCloud();
+            }
+
+            // Step 2: Generate PDF
+            this.updateProgress('PDFレポートを生成中...');
             const pdf = await window.PDFGenerator.generate((step) => {
-                if (this.progressStep) this.progressStep.textContent = step;
-            });
+                this.updateProgress(step);
+            }, options);
 
             if (pdf) {
                 const dateStr = new Date().toISOString().split('T')[0];
@@ -67,10 +111,16 @@ class ReportEngine {
         if (this.loadingOverlay) {
             if (isLoading) {
                 this.loadingOverlay.classList.remove('hidden');
-                if (this.progressStep) this.progressStep.textContent = '0';
+                this.updateProgress('準備中...');
             } else {
                 this.loadingOverlay.classList.add('hidden');
             }
+        }
+    }
+
+    updateProgress(text) {
+        if (this.progressStep) {
+            this.progressStep.textContent = text;
         }
     }
 }

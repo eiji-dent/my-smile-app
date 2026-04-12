@@ -60,26 +60,98 @@
   pointer-events: none;
 }
 
-/* --- Toggles & Icons --- */
-.sidebar-toggle {
+/* --- Centered Handle (Trapezoid Design) --- */
+.sidebar-handle {
+  position: fixed;
+  left: 260px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 110px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  border-left: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 106;
+  padding-left: 4px;
   color: var(--text-muted);
-  cursor: pointer;
-  transition: var(--transition);
-  padding: 0.6rem;
-  border-radius: var(--radius-sm);
+  box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Trapezoidal Shape */
+  clip-path: polygon(0 0, 100% 18%, 100% 82%, 0 100%);
 }
 
-.sidebar-toggle:hover {
+.sidebar-handle:hover {
+  background: white;
   color: var(--primary);
-  background-color: var(--primary-light);
+  width: 38px;
+  padding-left: 8px;
 }
 
-.sidebar-toggle i {
-  width: 20px;
-  height: 20px;
+.sidebar-collapsed .sidebar-handle {
+  left: 0;
+}
+
+/* Icon rotation in handle */
+.sidebar-handle i {
+  transition: transform 0.4s ease;
+}
+
+.sidebar-collapsed .sidebar-handle i {
+  transform: rotate(180deg);
+}
+
+/* --- Right Panel Handle (Mirror Design) --- */
+.right-panel-handle {
+  position: fixed;
+  right: 280px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 110px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-right: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 106;
+  padding-right: 4px;
+  color: var(--text-muted);
+  box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Mirror Trapezoidal Shape */
+  clip-path: polygon(100% 0, 0 18%, 0 82%, 100% 100%);
+}
+
+.right-panel-handle:hover {
+  background: white;
+  color: var(--primary);
+  width: 38px;
+  padding-right: 8px;
+}
+
+.right-panel-collapsed .right-panel-handle {
+  right: 0;
+}
+
+/* Icon rotation in right handle: Chevron-right (points out) rotates to Chevron-left when collapsed */
+.right-panel-handle i {
+  transition: transform 0.4s ease;
+}
+
+.right-panel-collapsed .right-panel-handle i {
+  transform: rotate(180deg);
+}
+
+.sidebar-toggle {
+  display: none; /* Hide old toggles */
 }
 
 /* --- Overlay --- */
@@ -150,7 +222,5 @@
 
 /* Auto-hide right panel slightly earlier on narrow desktops if not collapsed */
 @media (max-width: 1200px) {
-  .app-container:not(.right-panel-collapsed) .right-panel {
-    /* Optional: can be empty or add specific iPad landscape behavior */
-  }
+  /* Future iPad landscape adjustments can be added here */
 }

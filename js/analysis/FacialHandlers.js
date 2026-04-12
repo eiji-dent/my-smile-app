@@ -183,8 +183,16 @@ window.FacialHandlers = {
            const middle = Math.abs(pts[3].y - pts[1].y);
            const lower = Math.abs(pts[5].y - pts[3].y);
            if (middle > 0) elThirds.textContent = `${(upper / middle).toFixed(1)} : 1.0 : ${(lower / middle).toFixed(1)}`;
-           const ptS = Math.abs(pts[4].y - pts[2].y);
-           if (middle > 0) elWillis.textContent = `1 : ${(ptS / middle).toFixed(1)}`;
+           const distLowerFace = Math.abs(pts[5].y - pts[3].y);
+           const distEyeToLip = Math.abs(pts[4].y - pts[2].y);
+           if (distEyeToLip > 0) {
+               const r = distLowerFace / distEyeToLip;
+               const diff = Math.abs(r - 1.0);
+               elWillis.textContent = `1 : ${r.toFixed(1)}`;
+               if (diff < 0.101) elWillis.style.color = 'var(--success)'; // 0.1以内は緑
+               else if (diff < 0.201) elWillis.style.color = '#f59e0b'; // 0.2以内はオレンジ
+               else elWillis.style.color = 'var(--danger)'; // それ以上は赤
+           }
            const lU = Math.abs(pts[4].y - pts[3].y);
            const lL = Math.abs(pts[5].y - pts[4].y);
            if (lU > 0) elLower.textContent = `1 : ${(lL / lU).toFixed(1)}`;
@@ -323,10 +331,12 @@ window.FacialHandlers = {
         }
         if (card.lines.gingival && card.lines.gingival.length === 4) {
             const pts = card.lines.gingival;
-            const gPx = pts[1].y - pts[0].y;
+            // ユーザー要望: 1つ目(歯肉縁)が2つ目(唇縁)より下ならプラス、上ならマイナス
+            // Canvas座標系(下がプラス)では y0 > y1 の時にプラスにしたいので (y0 - y1)
+            const gPx = pts[0].y - pts[1].y;
             const gMm = gPx * card.pxToMm;
             if (elGingival) {
-                elGingival.textContent = gMm.toFixed(1) + ' mm';
+                elGingival.textContent = (gMm > 0 ? '+' : '') + gMm.toFixed(1) + ' mm';
                 elGingival.style.color = (gMm >= -2.0 && gMm <= 0.5) ? 'var(--success)' : 'var(--danger)';
             }
             const iPx = pts[2].y - pts[1].y;
