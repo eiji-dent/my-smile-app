@@ -18,10 +18,10 @@ window.FacialHandlers = {
             const p1 = mapC(pts[0].x, pts[0].y); const p2 = mapC(pts[1].x, pts[1].y);
             const dx=p2.x-p1.x; const dy=p2.y-p1.y; const len=Math.sqrt(dx*dx+dy*dy); const ux=dx/len; const uy=dy/len;
             ctx.beginPath(); ctx.moveTo(p1.x-ux*50,p1.y-uy*50); ctx.lineTo(p2.x+ux*50,p2.y+uy*50);
-            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1; ctx.setLineDash(isPre?[5,5]:[]); ctx.stroke();
+            ctx.strokeStyle = 'var(--warning)'; ctx.lineWidth = 1; ctx.setLineDash(isPre?[5,5]:[]); ctx.stroke();
         }
         pts.forEach((pt,i)=>{
-            const mp=mapC(pt.x,pt.y); ctx.fillStyle = i<2?'#f59e0b':'#ec4899';
+            const mp=mapC(pt.x,pt.y); ctx.fillStyle = i<2?'var(--warning)':'#ec4899';
             ctx.beginPath(); ctx.arc(mp.x, mp.y, 5, 0, Math.PI*2); ctx.fill();
         });
     },
@@ -108,7 +108,7 @@ window.FacialHandlers = {
         ctx.setLineDash(isPre?[5,5]:[]); ctx.lineWidth = 1;
         if (pts.length >= 2) {
             const leftP = mapC(pts[0].x, pts[0].y); const rightP = mapC(pts[pts.length-1].x, pts[pts.length-1].y);
-            ctx.strokeStyle = '#f59e0b';
+            ctx.strokeStyle = 'var(--warning)';
             ctx.beginPath(); ctx.moveTo(leftP.x, leftP.y); ctx.lineTo(rightP.x, rightP.y); ctx.stroke();
         }
         if (pts.length === 4) {
@@ -119,7 +119,7 @@ window.FacialHandlers = {
             ctx.fillRect(t2.x, t2.y-15, c2.x - t2.x, 30);
         }
         pts.forEach((pt, i)=>{ 
-            const m=mapC(pt.x,pt.y); ctx.fillStyle='#f59e0b';
+            const m=mapC(pt.x,pt.y); ctx.fillStyle='var(--warning)';
             ctx.beginPath(); ctx.moveTo(m.x, m.y-25); ctx.lineTo(m.x, m.y+25); ctx.stroke();
             ctx.beginPath(); ctx.arc(m.x,m.y,5,0,7); ctx.fill(); 
         });
@@ -190,7 +190,7 @@ window.FacialHandlers = {
                const diff = Math.abs(r - 1.0);
                elWillis.textContent = `1 : ${r.toFixed(1)}`;
                if (diff < 0.101) elWillis.style.color = 'var(--success)'; // 0.1以内は緑
-               else if (diff < 0.201) elWillis.style.color = '#f59e0b'; // 0.2以内はオレンジ
+               else if (diff < 0.201) elWillis.style.color = 'var(--warning)'; // 0.2以内はオレンジ
                else elWillis.style.color = 'var(--danger)'; // それ以上は赤
            }
            const lU = Math.abs(pts[4].y - pts[3].y);
@@ -233,7 +233,16 @@ window.FacialHandlers = {
           const mA = Math.sqrt(vA.x*vA.x+vA.y*vA.y);
           const mB = Math.sqrt(vB.x*vB.x+vB.y*vB.y);
           const aDeg = Math.acos(d / (mA * mB)) * (180/Math.PI);
-          if(elNla) { elNla.textContent = aDeg.toFixed(1) + ' °'; elNla.style.color = (aDeg>=80&&aDeg<=100) ? 'var(--success)' : 'var(--primary)'; }
+          if(elNla) {
+            elNla.textContent = aDeg.toFixed(1) + ' °';
+            let nlaColor = 'var(--danger)'; // その他は赤
+            if (aDeg >= 90 && aDeg <= 110) {
+              nlaColor = 'var(--success)'; // 理想値内は緑
+            } else if (aDeg >= 80 && aDeg <= 100) {
+              nlaColor = 'var(--warning)'; // 日本人平均内はオレンジ
+            }
+            elNla.style.color = nlaColor;
+          }
         } else if(elNla) elNla.textContent = '-- °';
 
         const elConvexity = card.card.querySelector('.convexity-val');
@@ -260,7 +269,7 @@ window.FacialHandlers = {
           let displayAngle = isConcave ? (360 - aDeg) : aDeg;
 
           let cat = ''; let col = 'var(--primary)';
-          if (displayAngle < 165) { cat = 'Convex (凸)'; col = '#f59e0b'; }
+          if (displayAngle < 165) { cat = 'Convex (凸)'; col = 'var(--warning)'; }
           else if (displayAngle >= 165 && displayAngle <= 175) { cat = 'Straight (直)'; col = 'var(--success)'; }
           else { cat = 'Concave (凹)'; col = 'var(--danger)'; }
 
@@ -313,7 +322,7 @@ window.FacialHandlers = {
                 color = 'var(--danger)';
             } else if (teethSag < 12 || (lipSag > 10 && teethSag < lipSag * 0.7)) {
                 result = 'Flat (平坦)'; 
-                color = '#f59e0b';
+                color = 'var(--warning)';
             }
 
             elArc.textContent = result;

@@ -12,6 +12,7 @@ window.DentalHandlers = {
         if (pts.pinkEsth) this.drawPinkEsth(card, pts.pinkEsth, mapC, false);
         if (pts.axialIncl) this.drawAxial(card, pts.axialIncl, mapC, false);
         if (pts.papilla) this.drawPapilla(card, pts.papilla, mapC, false);
+        if (pts['align-p3']) this.drawAlignmentGuide(card, pts['align-p3'], mapC, false);
 
         // Draw preview for active tool
         if (state === 'multi-point' && temp.length > 0) {
@@ -20,6 +21,40 @@ window.DentalHandlers = {
             else if (tool === 'pink-esth') this.drawPinkEsth(card, temp, mapC, true);
             else if (tool === 'axial-incl') this.drawAxial(card, temp, mapC, true);
             else if (tool === 'papilla') this.drawPapilla(card, temp, mapC, true);
+            else if (tool === 'align-p3') this.drawAlignmentGuide(card, temp, mapC, true, card.tempEnd);
+        }
+    },
+
+    drawAlignmentGuide(card, pts, mapC, isPre, tempEnd) {
+        const ctx = card.ctx;
+        ctx.lineWidth = 1; ctx.strokeStyle = '#db2777'; // Pinkish for midline
+        ctx.setLineDash(isPre ? [5, 5] : []);
+
+        if (pts.length > 0) {
+            const p0 = mapC(pts[0].x, pts[0].y);
+            const p1 = pts.length > 1 ? mapC(pts[1].x, pts[1].y) : (tempEnd ? mapC(tempEnd.realX, tempEnd.realY) : null);
+
+            if (p1) {
+                const dx = p1.x - p0.x;
+                const dy = p1.y - p0.y;
+                const len = Math.hypot(dx, dy);
+                if (len > 0) {
+                    const nx = dx / len;
+                    const ny = dy / len;
+                    const m = 10000; // Large multiplier for "infinite" line
+                    ctx.beginPath();
+                    ctx.moveTo(p0.x - nx * m, p0.y - ny * m);
+                    ctx.lineTo(p0.x + nx * m, p0.y + ny * m);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw points
+            pts.forEach(pt => {
+                const m = mapC(pt.x, pt.y);
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath(); ctx.arc(m.x, m.y, 4, 0, 7); ctx.fill();
+            });
         }
     },
 
@@ -95,7 +130,7 @@ window.DentalHandlers = {
     drawAxial(card, pts, mapC, isPre) {
         const ctx = card.ctx;
         ctx.lineWidth = 1;
-        pts.forEach((pt)=>{ const m=mapC(pt.x,pt.y); ctx.fillStyle='#f59e0b'; ctx.beginPath(); ctx.arc(m.x,m.y,4,0,7); ctx.fill(); });
+        pts.forEach((pt)=>{ const m=mapC(pt.x,pt.y); ctx.fillStyle='var(--warning)'; ctx.beginPath(); ctx.arc(m.x,m.y,4,0,7); ctx.fill(); });
         
         if(pts.length >= 2) {
            const p1 = mapC(pts[0].x, pts[0].y); const p2 = mapC(pts[1].x, pts[1].y);
@@ -239,7 +274,7 @@ window.DentalHandlers = {
             const elD2 = card.card.querySelector('.red-diff2-val');
             if (elD1) {
                 elD1.textContent = diff1.toFixed(1) + ' mm';
-                elD1.style.color = diff1 <= 0.5 ? 'var(--success)' : (diff1 <= 1.0 ? '#f59e0b' : 'var(--danger)');
+                elD1.style.color = diff1 <= 0.5 ? 'var(--success)' : (diff1 <= 1.0 ? 'var(--warning)' : 'var(--danger)');
             }
             if (elD2) {
                 elD2.textContent = diff2.toFixed(1) + ' mm';
@@ -274,7 +309,7 @@ window.DentalHandlers = {
                 if (el) {
                     el.textContent = val.toFixed(1) + ' mm';
                     // 基準値: 0.5mm 〜 1.5mm 程度歯冠側にあるのが理想的
-                    el.style.color = (val >= 0.5 && val <= 1.5) ? 'var(--success)' : '#f59e0b';
+                    el.style.color = (val >= 0.5 && val <= 1.5) ? 'var(--success)' : 'var(--warning)';
                 }
             };
             validateLevel(elLevelR, levelR);
@@ -319,7 +354,7 @@ window.DentalHandlers = {
                     
                     const diff = Math.abs(res.val - res.ideal);
                     if (diff >= 2.0) {
-                        res.color = '#f59e0b'; // 黄色
+                        res.color = 'var(--warning)'; // 黄色
                     } else {
                         res.color = 'var(--success)'; // 緑
                     }
@@ -355,7 +390,7 @@ window.DentalHandlers = {
                     if (dist >= 3.0) {
                         el.style.color = 'var(--danger)';
                     } else if (dist >= 2.0) {
-                        el.style.color = '#f59e0b';
+                        el.style.color = 'var(--warning)';
                     } else {
                         el.style.color = 'var(--success)';
                     }
@@ -369,7 +404,7 @@ window.DentalHandlers = {
                     const diff = Math.abs(values[idx1] - values[idx2]);
                     el.textContent = diff.toFixed(1) + ' mm';
                     // 左右差が2mm以上で警告 (オレンジ)
-                    el.style.color = diff >= 2.0 ? '#f59e0b' : 'var(--success)';
+                    el.style.color = diff >= 2.0 ? 'var(--warning)' : 'var(--success)';
                 }
             };
 

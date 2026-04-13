@@ -418,15 +418,69 @@ class AnalysisCard {
        const btnApplyP3Mid = this.card.querySelector('.apply-p3-mid-btn');
        if (btnApplyP3Mid) {
           btnApplyP3Mid.addEventListener('click', () => {
-             const phase3Card = window.appCards.find(c => c.phase === 'e-midline');
-             if (phase3Card && phase3Card.lines['f-midline']) {
-                 const line = phase3Card.lines['f-midline'];
-                 let cx = line.endX - line.startX; let cy = line.endY - line.startY;
-                 if (cy < 0) { cx = -cx; cy = -cy; }
-                 this.imgRotation = (Math.PI / 2) - Math.atan2(cy, cx);
+             // --- トグル / リセット機能 ---
+             if (this.activeTool === 'align-p3' || this.lines['align-p3']) {
+                 this.imgRotation = 0; // 傾きを元に戻す
+                 delete this.lines['align-p3']; // プロットを削除
+                 this.deselectTool();
+                 const indicator = this.card.querySelector('.alignment-indicator');
+                 if (indicator) indicator.classList.add('hidden');
                  this.drawCanvas();
-                 alert('Phase 3の顔貌正中線の傾き（補正量）を適用しました。');
-             } else alert('Phase 3 (E音発音時) で顔貌正中線がプロットされていません。');
+                 this.updateStats();
+                 return;
+             }
+
+             const phase3Card = window.appCards.find(c => c.phase === 'e-midline');
+             if (phase3Card && phase3Card.lines['interpupillary-e'] && phase3Card.lines['d-midline']) {
+                 this.activeTool = 'align-p3';
+                 this.drawState = 'idle'; // 最初は待機状態
+                 this.tempPoints = [];
+                 
+                 const indicator = this.card.querySelector('.alignment-indicator');
+                 if (indicator) {
+                    const p3Pupil = phase3Card.lines['interpupillary-e'];
+                    const p3Dental = phase3Card.lines['d-midline'];
+                    const ang = window.AlignmentHelper ? 
+                        (Math.atan2(p3Dental.endY-p3Dental.startY, p3Dental.endX-p3Dental.startX) - 
+                         Math.atan2(p3Pupil.endY-p3Pupil.startY, p3Pupil.endX-p3Pupil.startX)) * 180/Math.PI : 0;
+                    
+                    const angVal = indicator.querySelector('.p3-angle-val');
+                    if(angVal) angVal.textContent = Math.abs(ang).toFixed(1);
+
+                    indicator.classList.remove('hidden');
+                    const actions = indicator.querySelector('.align-actions');
+                    if (actions) actions.classList.remove('hidden');
+                    
+                    // 「はい」ボタン
+                    const yesBtn = indicator.querySelector('.align-yes-btn');
+                    if (yesBtn && !yesBtn.hasListener) {
+                        yesBtn.addEventListener('click', () => {
+                            this.drawState = 'multi-point';
+                            const p3AngleText = ang ? ` (基準角: ${Math.abs(ang).toFixed(1)}°)` : '';
+                            this.showTooltip(window.AESTHETIC_CONSTANTS.STEPS.ALIGN_P3[0] + p3AngleText);
+                            indicator.classList.add('hidden'); // ウィンドウ全体を隠す
+                            this.drawCanvas();
+                        });
+                        yesBtn.hasListener = true;
+                    }
+                    // 「中止」ボタン
+                    const cancelBtn = indicator.querySelector('.align-cancel-btn');
+                    if (cancelBtn && !cancelBtn.hasListener) {
+                        cancelBtn.addEventListener('click', () => {
+                            this.deselectTool();
+                            indicator.classList.add('hidden');
+                            this.drawCanvas();
+                        });
+                        cancelBtn.hasListener = true;
+                    }
+
+                    if (window.lucide) window.lucide.createIcons({ root: indicator });
+                 }
+                 
+                 this.drawCanvas();
+             } else {
+                 alert('Phase 3 (E音発音時) で「瞳孔間線」と「歯列正中」の両方がプロットされている必要があります。');
+             }
           });
        }
 
@@ -532,7 +586,8 @@ class AnalysisCard {
                'corridor': { limits: 4, texts: s.CORRIDOR, key: 'corridor' },
                'gingival': { limits: 4, texts: s.GINGIVAL, key: 'gingival' },
                'axial-incl': { limits: 14, texts: s.AXIAL, key: 'axialIncl' },
-               'papilla': { limits: 10, texts: s.PAPILLA, key: 'papilla' }
+               'papilla': { limits: 10, texts: s.PAPILLA, key: 'papilla' },
+               'align-p3': { limits: 2, texts: s.ALIGN_P3, key: 'align-p3' }
            };
            const cfg = map[this.activeTool];
            if(!cfg) return;
@@ -540,7 +595,11 @@ class AnalysisCard {
               this.tempPoints.push({ x: coords.realX, y: coords.realY });
               if (this.tempPoints.length < cfg.limits) this.showTooltip(cfg.texts[this.tempPoints.length]);
               else {
-                 this.lines[cfg.key] = [...this.tempPoints];
+                 if (this.activeTool === 'align-p3') {
+                    this.executeAlignP3(this.tempPoints);
+                 } else {
+                    this.lines[cfg.key] = [...this.tempPoints];
+                 }
                  this.tempPoints = [];
                  this.deselectTool();
                  this.showTooltip(cfg.texts[cfg.limits] || "完了しました");
@@ -755,6 +814,36 @@ class AnalysisCard {
           matrix.setAttribute('values', this.shadeMatrixValues);
           this.canvas.style.filter = 'url(#shade-auto-filter)';
       } else this.canvas.style.filter = 'none';
+  }
+
+  /**
+   * Phase 8の歯列正中プロットを基に、Phase 3の基準角を再現する回転を適用する
+   */
+  executeAlignP3(pts) {
+      if (!window.appCards) return;
+      const phase3Card = window.appCards.find(c => c.phase === 'e-midline');
+      if (!phase3Card) return alert('Phase 3 (E音発音時) のカードが見つかりません。');
+
+      const pupil = phase3Card.lines['interpupillary-e'];
+      const dental = phase3Card.lines['d-midline'];
+
+      if (!pupil || !dental) {
+          return alert('Phase 3 で「瞳孔間線」と「歯列正中」の両方をプロットしてから実行してください。');
+      }
+
+      if (window.AlignmentHelper) {
+          this.imgRotation = window.AlignmentHelper.calculateRotationFromP3(pupil, dental, pts);
+          this.lines['align-p3'] = [...pts]; // Save points for persistent display
+          this.drawCanvas();
+          this.updateStats();
+          
+          const indicator = this.card.querySelector('.alignment-indicator');
+          if (indicator) indicator.classList.add('hidden');
+          
+          console.log(`Phase 8 alignment executed. New rotation: ${this.imgRotation} rad`);
+      } else {
+          console.error("AlignmentHelper not found");
+      }
   }
 
   deselectTool() {
@@ -1088,7 +1177,7 @@ class AnalysisCard {
       else if(toolType === 'f-midline') { this.ctx.strokeStyle = '#06b6d4'; this.ctx.setLineDash([5,5]); }
       else if(toolType === 'd-midline') { this.ctx.strokeStyle = '#db2777'; this.ctx.setLineDash([5,5]); }
       else if(toolType === 'hbar-ref') { this.ctx.strokeStyle = '#10b981'; this.ctx.setLineDash([5,5]); }
-      else if(toolType === 'hbar-bar') this.ctx.strokeStyle = '#f59e0b';
+      else if(toolType === 'hbar-bar') this.ctx.strokeStyle = 'var(--warning)';
       else this.ctx.strokeStyle = '#ef4444'; 
     }
     this.ctx.stroke(); this.ctx.fillStyle = this.ctx.strokeStyle;

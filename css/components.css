@@ -383,6 +383,79 @@
   text-align: center;
 }
 
+/* Alignment Overlay Guide */
+.alignment-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 1.5rem 2rem;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  z-index: 100;
+  pointer-events: auto;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 90%;
+  max-width: 440px;
+  animation: fadeInOut 0.3s ease-out;
+}
+
+.alignment-indicator i {
+  width: 40px;
+  height: 40px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.align-msg {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.align-info {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.align-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.align-actions .btn {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+@keyframes fadeInOut {
+  from { opacity: 0; transform: translate(-50%, -40%); }
+  to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* ==========================================================================
+   Developer Tools (AI Debug Panel) 
+   ベータ版リリースのため一時的に非表示にしています。
+   復元する場合は以下の 'display: none !important;' を削除またはコメントアウトしてください。
+   ========================================================================== */
+.ai-debug-panel {
+    display: none !important;
+}
+
 /* PDF Export Loading Overlay */
 #pdf-loading-overlay {
   position: fixed;

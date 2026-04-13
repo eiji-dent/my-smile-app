@@ -379,7 +379,7 @@ window.ShadeHandlers = {
             const { x1, y1, x2, y2, active, finalized } = card.shadeMapRect;
             const m1 = mapC(x1, y1);
             const m2 = mapC(x2, y2);
-            card.ctx.strokeStyle = (active || finalized) ? '#f59e0b' : '#94a3b8'; // Amber or Slate
+            card.ctx.strokeStyle = (active || finalized) ? 'var(--warning)' : '#94a3b8'; // Amber or Slate
             card.ctx.lineWidth = finalized ? 2 : 1;
             if (active) card.ctx.setLineDash([5, 5]);
             else card.ctx.setLineDash([]);

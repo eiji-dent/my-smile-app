@@ -93,20 +93,28 @@
       </div>
       <div class="privacy-body">
         <section>
-          <h3>1. 画像データの取り扱い</h3>
-          <p>本アプリで行う解析はすべて<strong>ブラウザ内（ローカル）で完結</strong>し、画像データが外部サーバーへ送信・保存されることはありません。</p>
+          <h3>1. 画像データとAI解析の安全性</h3>
+          <p>本アプリでの画像解析（自動計測を含む）は原則としてブラウザ内（ローカル）で処理されます。<strong>「送信」ボタンを押さない限り、画像データやプロット情報が外部サーバーへ送信・保存されることはありません。</strong>また、ブラウザを閉じると作業データは破棄され、自動的に保存されることもありません。</p>
         </section>
         <section>
-          <h3>2. 知的財産権と著作権</h3>
-          <p>本アプリの独自機能、アルゴリズム、デザイン、およびユーザーインターフェースを無断で模倣・複製することは、<strong>著作権および知的財産権の侵害</strong>に該当し、法的措置の対象となる場合があります。</p>
+          <h3>2. AI学習への協力とデータ提供の同意</h3>
+          <p>「送信」ボタンをクリックして明示的に提供されたデータは、分析精度の向上およびAIアルゴリズムの学習に活用されます。正面・側貌等の顔貌写真が含まれる場合、それらを<strong>将来の歯科医療発展のための学習データとして提供することに同意いただいたもの</strong>とみなします。</p>
         </section>
         <section>
-          <h3>3. 免責事項</h3>
-          <p>本アプリは評価・開発中のベータ版です。解析結果は補助的な参考値であり、最終的な診断および決定は臨床的な知見に基づき歯科医師の責任において行ってください。</p>
+          <h3>3. 解析結果の解釈と免責事項</h3>
+          <p>AIや計算ロジックによる解析結果は、あくまで診断を補助するための「参考値」です。撮影条件（角度・照明）により誤差が生じる可能性があるため、最終的な臨床判断は歯科医師の責任において行ってください。本アプリの使用により生じた損害等について、開発者は一切の責任を負いません。</p>
+        </section>
+        <section>
+          <h3>4. 知的財産権</h3>
+          <p>本アプリの独自機能、アルゴリズム、デザイン、およびUIを無断で模倣・複製することは、<strong>著作権および知的財産権の侵害</strong>に該当し、法的措置の対象となる場合があります。</p>
+        </section>
+        <section>
+          <h3>5. 患者様の説明責任（利用者の義務）</h3>
+          <p>個人を特定できる写真を使用・送信する場合、利用者は必ず患者様本人から適切な同意（AI学習への利用を含む）を得ているものとします。不当な利用や同意のない情報送信によって生じたトラブルについて、開発者は一切の責任を負いません。臨床に不要な個人情報（目のマスキング等）が含まれない写真の使用を推奨します。</p>
         </section>
         <section class="feedback-info">
-          <h3>4. 不具合報告・フィードバック</h3>
-          <p>動作不良や改善要望がございましたら、お手数ですが以下のInstagram DMまでお知らせください。</p>
+          <h3>6. フィードバック</h3>
+          <p>改善要望等は以下のInstagram DMまでお知らせください。</p>
           <a href="https://www.instagram.com/shibata_dds?igsh=Y2ljdHB4em9hZmoz&utm_source=qr" target="_blank" class="insta-link">
             <i data-lucide="instagram"></i> @shibata_dds
           </a>
@@ -897,6 +905,15 @@
             <!-- DropZone + Canvas Area -->
             <div class="canvas-wrapper drop-zone">
               <canvas class="analysis-canvas"></canvas>
+              <div class="alignment-indicator hidden">
+                <i data-lucide="scan-line"></i>
+                <div class="align-msg">顔貌に対する正中の傾斜を再現するために<br>歯列正中をプロットしてください</div>
+                <div class="align-info">基準角 (Phase 3): <span class="p3-angle-val">--</span>°</div>
+                <div class="align-actions">
+                  <button class="btn btn-primary align-yes-btn">はい（プロット開始）</button>
+                  <button class="btn btn-secondary align-cancel-btn">中止する</button>
+                </div>
+              </div>
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
@@ -1606,6 +1623,7 @@
   <script src="js/analysis/LateralAI.js?v=12"></script>
   <script src="js/analysis/DentalHandlers.js?v=12"></script>
   <script src="js/analysis/ShadeHandlers.js?v=12"></script>
+  <script src="js/analysis/AlignmentHelper.js"></script>
   <script src="js/AnalysisCard.js?v=12"></script>
   <script src="js/TrialManager.js?v=12"></script>
   <script src="js/LayoutHandler.js?v=12"></script>
