@@ -142,6 +142,8 @@ class AnalysisCard {
     }
   }
 
+
+
   initShadeUI() {
     this.shadeSwatch = this.card.querySelector('#shade-color-swatch');
     this.shadeIdValue = this.card.querySelector('#shade-result-id');
@@ -308,26 +310,33 @@ class AnalysisCard {
       const sendBtn = this.card.querySelector('.send-data-btn');
       if (sendBtn) sendBtn.addEventListener('click', () => this.sendAnalysisData());
 
-      this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('drag-over'); });
-      this.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); this.dropZone.classList.remove('drag-over'); });
-      this.dropZone.addEventListener('drop', (e) => {
-        e.preventDefault(); this.dropZone.classList.remove('drag-over');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) this.handleImage(e.dataTransfer.files[0]);
-      });
-      this.fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length > 0) this.handleImage(e.target.files[0]);
-      });
+      if (this.dropZone) {
+          this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('drag-over'); });
+          this.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); this.dropZone.classList.remove('drag-over'); });
+          this.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); this.dropZone.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) this.handleImage(e.dataTransfer.files[0]);
+          });
+      }
+      if (this.fileInput) {
+          this.fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) this.handleImage(e.target.files[0]);
+          });
+      }
       window.addEventListener('resize', () => { if (this.currentImage) this.resizeCanvas(); });
-      this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
-      this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+      if (this.canvas) {
+          this.canvas.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+          this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+      }
       window.addEventListener('mouseup', (e) => this.handleMouseUp(e));
 
-      this.initAdvancedListeners();
-    }
+    this.initAdvancedListeners();
+  }
 
-    initAdvancedListeners() {
-      this.canvas.addEventListener('contextmenu', e => e.preventDefault());
-      this.canvas.addEventListener('wheel', (e) => {
+  initAdvancedListeners() {
+      if (this.canvas) {
+          this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+          this.canvas.addEventListener('wheel', (e) => {
           if (!this.currentImage) return;
           e.preventDefault();
           this.panX -= e.deltaX; this.panY -= e.deltaY;
@@ -372,6 +381,7 @@ class AnalysisCard {
               const dx = touch.clientX - this.touchStartX;
               const dy = touch.clientY - this.touchStartY;
               if (Math.hypot(dx, dy) < 10) {
+                  e.preventDefault(); // Stop synthetic ghost mousedown
                   this.handleMouseDown(e);
                   setTimeout(() => this.handleMouseUp(e), 50);
               }
@@ -442,12 +452,11 @@ class AnalysisCard {
            });
        }
 
-       this.constrainPan();
+    this.constrainPan();
     }
+  }
 
-
-
-    handleMouseDown(e) {
+  handleMouseDown(e) {
         if (!this.currentImage) return;
         const coords = this.getMouseCoords(e);
         
@@ -1000,7 +1009,8 @@ class AnalysisCard {
         cY = e.clientY;
     }
 
-    const mX = cX - rect.left; const mY = cY - rect.top;
+    const mX = (cX - rect.left) * (this.canvas.width / rect.width);
+    const mY = (cY - rect.top) * (this.canvas.height / rect.height);
     const scale = Math.min(this.canvas.width / this.currentImage.width, this.canvas.height / this.currentImage.height) * this.zoomLevel;
     const xO = (this.canvas.width / 2) + this.panX; const yO = (this.canvas.height / 2) + this.panY;
     const dx = mX - xO; const dy = mY - yO;
@@ -1391,7 +1401,8 @@ class AnalysisCard {
               
               // Prepare data for Learning AI (Intelligence)
               if (this.phase === 'intraoral' || this.phase === 'golden-prop') {
-                  data.features = window.PatternMatcher.extractDentalFeatures(this.lines);
+                  data.features = window.PatternMatcher.extractDentalFeatures(this.lines, this.currentImage);
+                  this.showAiDebugInfoAsync(data.features, "Saving...", null);
               } else {
                   // Facial phase: if we don't have landmarks yet, run a quick background detect
                   let landmarks = this.faceLandmarks;
@@ -1429,11 +1440,14 @@ class AnalysisCard {
               msg.style.color = "#10b981";
               footer.style.display = "none";
               
-              // Update the button on the card to indicate persistent cloud status
+               // Update the button on the card to indicate persistent cloud status
               const originalHTML = sendBtn.innerHTML;
               sendBtn.innerHTML = '<i data-lucide="cloud-check"></i> 同期済み';
               sendBtn.classList.add('btn-success');
               if (window.lucide) window.lucide.createIcons({ root: sendBtn });
+
+              // Global status update
+              if (window.refreshAiStats) window.refreshAiStats();
 
               setTimeout(() => {
                   modal.classList.remove('active');
@@ -1454,6 +1468,105 @@ class AnalysisCard {
               newBtnYes.innerHTML = "再試行";
           }
       });
+  }
+
+  /**
+   * Visualizes the AI's internal representation of the image and checks the DB.
+   */
+  async showAiDebugInfoAsync(features, score, matchId) {
+      if (!features) return;
+      
+      let debugPanel = this.card.querySelector('.ai-debug-panel');
+      if (!debugPanel) {
+          debugPanel = document.createElement('div');
+          debugPanel.className = 'ai-debug-panel';
+          debugPanel.style.cssText = `
+              margin-top: 15px; padding: 15px; background: #1e293b; color: #10b981; 
+              border-radius: 8px; font-family: monospace; font-size: 0.8rem;
+              box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); word-wrap: break-word;
+          `;
+          const contentArea = this.card.querySelector('.card-content');
+          contentArea.appendChild(debugPanel);
+      }
+
+      let html = `<h4 style="color: #60a5fa; margin-top: 0; border-bottom: 1px solid #334155; padding-bottom: 5px;">🤖 AI Visualizer & DB State</h4>`;
+      
+      html += `<div style="display: flex; flex-wrap: wrap; gap: 20px;">`;
+      
+      // --- Column 1: Current Image Data ---
+      html += `<div style="flex: 1; min-width: 250px;">`;
+      html += `<strong style="color:#f8fafc">【Current Query Image】</strong><br>`;
+      if (features.visualHash) {
+          html += `Visual Fingerprint:<br>`;
+          const rawHash = features.visualHash;
+          for (let i=0; i<8; i++) {
+              html += `<span style="color:#cbd5e1; background:#334155; padding:2px; margin:1px; display:inline-block">${rawHash.substr(i*8, 8)}</span><br>`;
+          }
+      } else {
+          html += `<strong style="color:#ef4444;">No Visual Fingerprint extracted!</strong><br>`;
+      }
+      html += `<br><strong>Latest Match Score:</strong> <span style="color:#fbbf24">${score !== undefined ? score : 'N/A'}</span>`;
+      html += `</div>`;
+
+      // --- Column 2: Database Check ---
+      html += `<div style="flex: 1; min-width: 250px;">`;
+      html += `<strong style="color:#f8fafc">【Cloud DB (Recent 3 Saves)】</strong><br>`;
+      
+      try {
+          if (window.db) {
+              const snap = await window.db.collection('analyses').where('phase', '==', this.phase).limit(15).get();
+              if (snap.empty) {
+                  html += `<span style="color:#94a3b8">No cases found in DB.</span><br>`;
+              } else {
+                  // Sort in JS
+                  const docs = snap.docs.sort((a, b) => {
+                      const ta = a.data().timestamp?.seconds || 0;
+                      const tb = b.data().timestamp?.seconds || 0;
+                      return tb - ta;
+                  }).slice(0, 3); // Take top 3
+
+                  docs.forEach(doc => {
+                      const d = doc.data();
+                      const hasHash = d.features && d.features.visualHash;
+                      const isMatch = hasHash && d.features.visualHash === features.visualHash;
+                      const hasPlots = d.results?.landmarks ? "YES" : "NO";
+                      
+                      html += `<div style="padding: 5px; margin-bottom: 5px; border-left: 3px solid ${isMatch ? '#10b981' : '#475569'}; background: #0f172a;">`;
+                      html += `ID: ${doc.id.substring(0,6)}... | Plots: <strong style="color:${hasPlots==='YES'?'#10b981':'#ef4444'}">${hasPlots}</strong><br>`;
+                      html += `Hash: ${hasHash ? (isMatch ? "MATCH!" : "Different") : "Missing"}<br>`;
+                      if(isMatch && hasPlots === 'NO') {
+                          html += `<span style="color:#ef4444; font-size:0.75rem;">(Skipped by AI: No plots saved)</span>`;
+                      }
+                      html += `</div>`;
+                  });
+              }
+          }
+      } catch (e) {
+          html += `<span style="color:#ef4444">DB Error: ${e.message}</span>`;
+      }
+      html += `</div>`;
+      
+      // --- Column 3: AI Stats Debug ---
+      html += `<div style="flex: 1; min-width: 250px;">`;
+      html += `<strong style="color:#f8fafc">【Learning Progress Stats】</strong><br>`;
+      try {
+          if (window.IntelligenceService) {
+              const counts = await window.IntelligenceService.getPhaseCounts();
+              const myCount = counts[this.phase] || 0;
+              html += `Phase (${this.phase}): <strong style="color:#10b981">${myCount}</strong><br>`;
+              html += `<span style="color:#94a3b8; font-size:0.75rem;">Raw DB Aggregation:</span><br>`;
+              Object.keys(counts).forEach(k => {
+                  html += `<span style="color:#cbd5e1">- ${k}: ${counts[k]}</span><br>`;
+              });
+          }
+      } catch(e) {
+          html += `<span style="color:#ef4444">Stats Error: ${e.message}</span>`;
+      }
+      html += `</div>`;
+
+      html += `</div>`;
+
+      debugPanel.innerHTML = html;
   }
 }
 window.AnalysisCard = AnalysisCard;

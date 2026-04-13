@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-
-
   // TrialManager initialization removed
 
   // Initialize all AnalysisCards
@@ -64,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (zOut) zOut.addEventListener('click', () => setGlobalZoom(parseInt(zSlider.value) - 10));
 
   // PDF Export Logic (Moved to js/report/ReportEngine.js and PDFGenerator.js)
+
 
 });
 
