@@ -5,28 +5,46 @@
 
 window.Phase2Engine = {
     async analyze(card, canvas) {
-        console.log("Phase 2 Engine: Running Lateral Analysis...");
+        console.log("Phase 2 Engine: Running Lateral Analysis (Search-Only Memory mode)...");
         
-        // 1. Try to find a similar case first (Learning AI)
-        // Note: For lateral, we need a way to extract features from the image directly 
-        // if we don't have landmarks yet. Or we run segmentation first.
+        // 1. Calculate image fingerprint (visual hash)
+        // Use card.currentImage if available for maximum consistency with previous uploads
+        const hash = window.PatternMatcher.calculateVisualHash(card.currentImage || canvas);
+        if (!hash) throw new Error("画像ハッシュの解析に失敗しました。");
+
+        const features = {
+            visualHash: hash,
+            type: 'lateral_profile' // Identifier for clinical profile matching
+        };
+
+        // 2. Search Cloud for existing human-corrected analysis (Learning AI)
+        const learnedData = await window.IntelligenceService.findSimilarCase(card.phase, features);
         
-        // 2. Standard Logic (Fallback/Hybrid)
-        const segmenter = await window.initImageSegmenter();
-        if (!segmenter) throw new Error("セグメンテーションモデルの初期化に失敗しました。");
-        
-        const result = segmenter.segment(canvas);
-        const mask = result.categoryMask.getAsUint8Array();
-        const imageData = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-        
-        // Use the 기존 LateralAI logic (assuming it's available globally)
-        const lateralPoints = window.LateralAI.detectFromMask(mask, canvas.width, canvas.height, imageData.data);
-        
-        if (lateralPoints) {
-            card.applyLateralLandmarks(lateralPoints);
-            return { success: true, message: "側貌（横顔）の自動解析が完了しました。" };
+        if (learnedData && learnedData.landmarks) {
+            console.log("Phase 2 Engine: Found matched historical landmarks in Cloud.");
+            
+            // Restore historical landmark arrays
+            const lm = learnedData.landmarks;
+            if (lm.eLine) card.lines.eLine = lm.eLine;
+            if (lm.nla) card.lines.nla = lm.nla;
+            if (lm.convexity) card.lines.convexity = lm.convexity;
+            if (lm.mmeasure) card.lines.mmeasure = lm.mmeasure;
+            
+            return { 
+                success: true, 
+                message: "クラウド上の過去データから最適なプロットを復元しました。",
+                landmarks: learnedData.landmarks,
+                isLearned: true
+            };
         } else {
-            return { success: false, message: "側貌の輪郭を特定できませんでした。" };
+            console.log("Phase 2 Engine: No learning data found in Cloud for this fingerprint.");
+            
+            // Like Phase 8, we do not run automated detection if it's inaccurate.
+            // We wait for the user to plot once to "teach" the AI.
+            return { 
+                success: false, 
+                message: "クラウドに学習データが見つかりませんでした。手動プロットを一度行い「送信」して学習させてください。" 
+            };
         }
     }
 };

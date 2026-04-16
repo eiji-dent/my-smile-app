@@ -251,6 +251,22 @@ class PDFGenerator {
                         pdf.addImage(canvas12.toDataURL('image/jpeg', 0.7), 'JPEG', margin, y, contentWidth, Math.min(h12, pageHeight-y- margin), undefined, 'FAST');
                     }
                 }
+
+                // Chapter 13: Material Choice
+                const chapter13 = document.getElementById('chapter-material');
+                if (chapter13) {
+                    currentPageNum++; if (onProgress) onProgress(currentPageNum);
+                    pdf.addPage();
+                    pdf.setFontSize(10); pdf.setTextColor(150);
+                    pdf.text(`Smile Analysis Report - Page ${currentPageNum} (Chapter 13: Material Choice)`, margin, 8);
+
+                    const ui13 = hideUI(chapter13);
+                    const canvas13 = await html2canvas(chapter13, { scale: 1.2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+                    showUI(chapter13, ui13);
+
+                    const h13 = (canvas13.height * contentWidth) / canvas13.width;
+                    pdf.addImage(canvas13.toDataURL('image/jpeg', 0.8), 'JPEG', margin, 15, contentWidth, Math.min(h13, pageHeight-30), undefined, 'FAST');
+                }
             }
 
             return pdf;

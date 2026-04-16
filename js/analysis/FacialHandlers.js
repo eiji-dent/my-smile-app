@@ -209,6 +209,7 @@ window.FacialHandlers = {
         const elNla = card.card.querySelector('.nla-val');
         if (card.lines.eLine && card.lines.eLine.length === 4) {
           const [nose, pog, ulip, llip] = card.lines.eLine;
+          if (!nose || !pog || !ulip || !llip) return; // Safety check
           const isLF = nose.x < (card.currentImage.width/2);
           const cDist = (pt) => {
              const A = nose.y - pog.y; const B = pog.x - nose.x; const C = (nose.x * pog.y) - (pog.x * nose.y);

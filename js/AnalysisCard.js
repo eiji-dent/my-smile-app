@@ -30,9 +30,19 @@ class AnalysisCard {
     this.tempEnd = null;
     this.tempPoints = []; 
     
-    this.lines = {}; 
-    this.guidedMode = false;
     this.pxToMm = 0.075; 
+    
+    // --- Landmarks State ---
+    this._lines = {}; // Internal storage
+    this.lines = new Proxy(this._lines, {
+        set: (target, key, value) => {
+            target[key] = value;
+            this.updateToolbarStatus(); // Auto-update toolbar UI when data changes
+            return true;
+        },
+        get: (target, key) => target[key]
+    });
+
     this.calibBadge = cardElement.querySelector('.calibration-status-badge');
 
     // Constants from window.AESTHETIC_CONSTANTS
@@ -743,6 +753,9 @@ class AnalysisCard {
               }
           } else if (this.phase === 'lateral' && window.Phase2Engine) {
               result = await window.Phase2Engine.analyze(this, canvas);
+              if (result.success && result.landmarks) {
+                  this.lateralLandmarks = result.landmarks;
+              }
           } else if (this.phase === 'e-midline' && window.Phase3Engine) {
               result = await window.Phase3Engine.analyze(this, canvas);
           } else if (this.phase === 'e-sound' && window.Phase4Engine) {
@@ -785,10 +798,13 @@ class AnalysisCard {
   }
 
   applyLateralLandmarks(pts) {
+      if (!pts) return;
       // LateralAI.js から得られた自動計測点を適用
+      // Proxy経由でセットし、自動的にToolbar更新とStats更新をトリガー
       this.lines.eLine = [pts.prn, pts.pg, pts.ls, pts.li];
       this.lines.nla = [pts.col, pts.sn, pts.ls];
       this.lines.convexity = [pts.g, pts.sn, pts.pg];
+      
       this.updateStats(); 
       this.drawCanvas();
   }
@@ -1043,7 +1059,7 @@ class AnalysisCard {
         }
         this.currentImage = img; 
         this.placeholder.style.display = 'none'; 
-        this.lines = {}; 
+        this._lines = {}; 
         this.tempPoints = [];
         const multiHndls = ['vertical-proportions', 'eline', 'nla', 'wl-ratio', 'red-prop', 'pink-esth', 'smile-arc', 'corridor', 'gingival', 'axial-incl', 'papilla', 'convexity'];
         if (multiHndls.includes(this.activeTool)) {
@@ -1234,7 +1250,7 @@ class AnalysisCard {
       const label = this.card.querySelector(`label[for="${radio.id}"]`);
       if (!label) return;
       const val = radio.value;
-      const L = this.lines;
+      const L = this.lines || {};
       let isDone = false;
       switch(val) {
         case 'interpupillary': isDone = !!L.interpupillary; break;
@@ -1491,6 +1507,10 @@ class AnalysisCard {
               // Prepare data for Learning AI (Intelligence)
               if (this.phase === 'intraoral' || this.phase === 'golden-prop') {
                   data.features = window.PatternMatcher.extractDentalFeatures(this.lines, this.currentImage);
+                  this.showAiDebugInfoAsync(data.features, "Saving...", null);
+              } else if (this.phase === 'lateral') {
+                  // Profile-specific features (Silhouette) - Deleting legacy FaceMesh fallback for P2
+                  data.features = window.PatternMatcher.extractLateralFeatures(this.lateralLandmarks, this.currentImage);
                   this.showAiDebugInfoAsync(data.features, "Saving...", null);
               } else {
                   // Facial phase: if we don't have landmarks yet, run a quick background detect

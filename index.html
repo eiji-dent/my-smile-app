@@ -50,7 +50,8 @@
   <link rel="stylesheet" href="css/phases-lab.css?v=9">
   <link rel="stylesheet" href="css/tabs.css?v=9">
   <link rel="stylesheet" href="css/report.css?v=9">
-  <link rel="stylesheet" href="css/report_modal.css?v=9">
+  <link rel="stylesheet" href="css/report_modal.css?v=20">
+
 </head>
 
 <body>
@@ -191,6 +192,10 @@
         <a href="#chapter-instructions" class="nav-item">
           <i data-lucide="message-square"></i>
           ⑫ 技工指示書
+        </a>
+        <a href="#chapter-material" class="nav-item">
+          <i data-lucide="layers"></i>
+          ⑬ マテリアル選択
         </a>
       </nav>
 
@@ -1120,8 +1125,8 @@
       <!-- View 2: Lab Tools -->
       <div id="lab-view" class="view-container hidden">
 
-        <!-- CHAPTER 9: Horizontal Bar -->
-        <div class="analysis-card lab-chapter-card" id="chapter-hbar">
+        <!-- CHAPTER 9: Horizontal Bar Tool (9-A, 9-B) -->
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-hbar">
           <div class="card-header">
             <div class="card-title-group">
               <div class="step-badge">Chapter 9</div>
@@ -1230,7 +1235,7 @@
         </div>
 
         <!-- CHAPTER 10: Shade Analysis -->
-        <div class="analysis-card lab-chapter-card" id="chapter-shade">
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-shade">
           <div class="card-header">
             <div class="card-title-group">
               <div class="step-badge">Chapter 10</div>
@@ -1375,7 +1380,7 @@
         </div>
 
         <!-- CHAPTER 11: Supplemental Images -->
-        <div class="analysis-card lab-chapter-card" id="chapter-supplemental">
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-supplemental">
           <div class="card-header">
             <div class="card-title-group">
               <div class="step-badge">Chapter 11</div>
@@ -1434,7 +1439,7 @@
         </div>
 
         <!-- CHAPTER 12: Lab Instructions -->
-        <div class="analysis-card lab-chapter-card" id="chapter-instructions">
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-instructions">
           <div class="card-header">
             <div class="card-title-group">
               <div class="step-badge">Chapter 12</div>
@@ -1447,6 +1452,133 @@
             </div>
             <div class="lab-textarea-container">
               <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAPTER 13: Material Choice - Isolated & Bulletproof -->
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-material">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 13</div>
+              <h2>マテリアル選択 (Material Choice) <span class="lab-badge">技工分析</span> <span class="status-indicator"></span></h2>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
+              <div class="btn btn-secondary btn-upload-trigger" data-slot="A">
+                <i data-lucide="upload"></i> 黒背景 (開口時)
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </div>
+              <div class="btn btn-secondary btn-upload-trigger" data-slot="B">
+                <i data-lucide="upload"></i> 白背景 (咬合時)
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-content">
+            <div id="chapter-material-isolation">
+              <!-- Grid Container -->
+              <div id="material-canvases-fix">
+                
+                <!-- 1. Left Zoom Slider Column -->
+                <div id="material-slider-col">
+                  <input type="range" id="material-zoom-slider" min="100" max="800" value="100" orient="vertical">
+                </div>
+
+                <!-- 2. Image Slot A (Dark Background) -->
+                <div class="material-box-isolated" id="material-item-a">
+                  <span class="canvas-label">黒背景 (開口時)</span>
+                  <canvas id="material-canvas-a" class="analysis-canvas"></canvas>
+                  <div class="canvas-placeholder">
+                    <i data-lucide="image-plus"></i>
+                    <div>クリックして読み込み</div>
+                  </div>
+                </div>
+
+                <!-- 3. Image Slot B (White Background) -->
+                <div class="material-box-isolated" id="material-item-b">
+                  <span class="canvas-label">白背景 (咬合時)</span>
+                  <canvas id="material-canvas-b" class="analysis-canvas"></canvas>
+                  <div class="canvas-placeholder">
+                    <i data-lucide="image-plus"></i>
+                    <div>クリックして読み込み</div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Metrics Section -->
+              <div id="material-results-fix">
+                <div class="sampling-data-section">
+                  <div class="result-section-title" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; font-weight:bold;">
+                    <span><i data-lucide="database"></i> 解析データ (L*a*b*)</span>
+                    <span id="plotting-guide" style="font-size:0.75rem; color:#f59e0b; padding:2px 8px; background:#fffbeb; border-radius:4px; border:1px solid #fef3c7;">
+                      背景をプロットしてください
+                    </span>
+                  </div>
+                  <div class="sample-cards-container">
+                    <!-- BLACK BG CARD -->
+                    <div class="sample-card" id="sample-a-card">
+                      <div class="sample-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:0.75rem; font-weight:800; color:#64748b;">BLACK BG (Reference + Target)</span>
+                      </div>
+                      <div class="lab-compact-grid">
+                        <div class="lab-row header"><span></span><span>COL</span><span>L*</span><span>a*</span><span>b*</span></div>
+                        <div class="lab-row ref-row">
+                          <span class="row-label">Ref</span>
+                          <div class="sample-swatch-sm" id="material-swatch-a-ref"></div>
+                          <span class="lab-val ref-l">--</span><span class="lab-val ref-a">--</span><span class="lab-val ref-b">--</span>
+                        </div>
+                        <div class="lab-row target-row highlight">
+                          <span class="row-label">Point</span>
+                          <div class="sample-swatch-sm" id="material-swatch-a-target"></div>
+                          <span class="lab-val val-l">--</span><span class="lab-val val-a">--</span><span class="lab-val val-b">--</span>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- WHITE BG CARD -->
+                    <div class="sample-card" id="sample-b-card">
+                      <div class="sample-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <span style="font-size:0.75rem; font-weight:800; color:#64748b;">WHITE BG (Reference + Target)</span>
+                      </div>
+                      <div class="lab-compact-grid">
+                        <div class="lab-row header"><span></span><span>COL</span><span>L*</span><span>a*</span><span>b*</span></div>
+                        <div class="lab-row ref-row">
+                          <span class="row-label">Ref</span>
+                          <div class="sample-swatch-sm" id="material-swatch-b-ref"></div>
+                          <span class="lab-val ref-l">--</span><span class="lab-val ref-a">--</span><span class="lab-val ref-b">--</span>
+                        </div>
+                        <div class="lab-row target-row highlight">
+                          <span class="row-label">Point</span>
+                          <div class="sample-swatch-sm" id="material-swatch-b-target"></div>
+                          <span class="lab-val val-l">--</span><span class="lab-val val-a">--</span><span class="lab-val val-b">--</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="analysis-summary-panel" style="display:flex; flex-direction:column; justify-content:center; gap:20px; padding-left:30px; border-left:1px solid #e2e8f0;">
+                  <div class="score-display" style="text-align:center; display:flex; gap:60px; justify-content:center; align-items: center;">
+                    <div class="score-item">
+                      <div class="score-label" style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">不透明度 (Opacity)</div>
+                      <div id="material-score" class="score-value" style="font-size:3.2rem; color:#f59e0b; font-weight: 800; line-height: 1;">--</div>
+                    </div>
+                    <div class="score-item" style="border-left:1px solid #e2e8f0; padding-left:60px;">
+                      <div class="score-label" style="font-size:0.85rem; color:#64748b; margin-bottom:8px;">透過性 (TP)</div>
+                      <div id="material-tp" class="score-value" style="font-size:3.2rem; color:#f59e0b; font-weight: 800; line-height: 1;">--</div>
+                    </div>
+                  </div>
+                  <div id="material-recommendation-container" class="material-recommendation-card">
+                    <strong style="display:block; margin-bottom:8px; font-size: 0.75rem; color:#2563eb; text-transform: uppercase; letter-spacing: 0.05em;">推奨マテリアル・技法</strong>
+                    <div id="material-recommendation-content">
+                      <span class="rec-material-name">解析を開始してください</span>
+                      <span class="rec-reason">プロットが完了すると、不透明度とTP値に基づいた最適なマテリアルがここに表示されます。</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1631,8 +1763,9 @@
   <script src="js/report/PDFGenerator.js?v=12"></script>
   <script src="js/report/ReportEngine.js?v=12"></script>
   <script src="js/data/DataExporter.js?v=12"></script>
-  <script src="js/TabManager.js?v=12"></script>
-  <script src="app.js?v=12"></script>
+  <script src="js/TabManager.js?v=20"></script>
+  <script src="js/analysis/MaterialChoice.js?v=20"></script>
+  <script src="app.js?v=20"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
   <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">

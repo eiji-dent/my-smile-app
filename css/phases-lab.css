@@ -491,3 +491,225 @@
 }
 
 #shade-zoom-canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+
+/* ==========================================================================
+   Chapter 13: Material Choice - Isolated Styling
+   ========================================================================== */
+
+#chapter-material-isolation {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 25px !important;
+  width: 100% !important;
+}
+
+#material-canvases-fix {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 20px !important;
+  width: 100% !important;
+  min-height: 420px !important;
+  position: relative !important;
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 16px;
+}
+
+/* Left Vertical Slider */
+#material-slider-col {
+  width: 44px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+}
+
+#material-zoom-slider {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 12px;
+  height: 300px;
+  cursor: pointer;
+  accent-color: #f59e0b;
+}
+
+/* Canvas Boxes (Isolated from global .canvas-wrapper) */
+.material-box-isolated {
+  flex: 1 !important;
+  position: relative !important;
+  background: #ffffff !important; /* White-based theme to match other phases */
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid #e2e8f0 !important;
+  aspect-ratio: 4 / 3 !important;
+  cursor: crosshair;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.material-box-isolated:hover {
+  border-color: #f59e0b !important;
+}
+
+/* Internal labels fixed to top-left */
+.material-box-isolated .canvas-label {
+  position: absolute !important;
+  top: 12px !important;
+  left: 12px !important;
+  background: rgba(255, 255, 255, 0.9) !important; /* White semi-transparent */
+  color: #1e293b !important; /* Dark text */
+  padding: 4px 12px !important;
+  border-radius: 4px !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+  border-left: 3px solid #f59e0b !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Placeholder Centering */
+.material-box-isolated .canvas-placeholder {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: #94a3b8 !important;
+  text-align: center !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+
+.material-box-isolated .canvas-placeholder i {
+  width: 48px !important;
+  height: 48px !important;
+  margin-bottom: 10px;
+  opacity: 0.4;
+}
+
+.material-box-isolated.has-image .canvas-placeholder {
+  display: none !important;
+}
+
+/* Metrics Section Restoration */
+#material-results-fix {
+  display: grid !important;
+  grid-template-columns: 1.5fr 1fr !important;
+  gap: 30px !important;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+#material-results-fix .sample-cards-container {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+}
+
+#material-results-fix .lab-compact-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: white;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+#material-results-fix .lab-row {
+  display: grid;
+  grid-template-columns: 50px 30px repeat(3, 1fr);
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f8fafc;
+  gap: 8px;
+}
+
+#material-results-fix .sample-swatch-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #eee;
+  background: #f8fafc;
+}
+
+#material-results-fix .lab-row.header {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+#material-results-fix .lab-row.ref-row {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+#material-results-fix .lab-row.target-row.highlight {
+  background: #fffbeb;
+  border-radius: 4px;
+  color: #f59e0b;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+#material-results-fix .row-label {
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+#material-results-fix .lab-val {
+  text-align: center;
+}
+
+#material-results-fix .score-value {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #f59e0b;
+}
+
+#material-results-fix .material-recommendation-card {
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #e2e8f0;
+  background: #f8fafc;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+}
+
+#material-results-fix .recommendation-zone-1 { border-left-color: #3b82f6; background: #eff6ff; } /* Ultra High */
+#material-results-fix .recommendation-zone-2 { border-left-color: #10b981; background: #ecfdf5; } /* High */
+#material-results-fix .recommendation-zone-3 { border-left-color: #f59e0b; background: #fffbe6; } /* Medium */
+#material-results-fix .recommendation-zone-4 { border-left-color: #64748b; background: #f1f5f9; } /* Masking */
+
+#material-results-fix .rec-material-name {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+#material-results-fix .rec-reason {
+  display: block;
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+#material-results-fix .recommendation-alert {
+  padding: 20px;
+  background: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+}
+
+@media (max-width: 1000px) {
+  #material-canvases-fix { flex-direction: column !important; }
+  #material-slider-col { display: none !important; }
+}

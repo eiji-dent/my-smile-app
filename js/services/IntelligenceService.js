@@ -47,13 +47,13 @@ window.IntelligenceService = {
                 }
             }
 
-            // Threshold: Relaxed to 4.0. Hamming distance scale is 0-10.
-            // 4.0 allows for significant but not total bit difference.
-            if (minScore < 4.0) {
-                console.log(`[AI Match] Success! Score: ${minScore.toFixed(4)} (Threshold: 4.0)`);
+            // Threshold: Relaxed to 3.5 to allow for minor rendering/compression noise.
+            // A score of 0-10, where 3.5 means ~65% similarity required.
+            if (minScore < 3.5) {
+                console.log(`%c[AI Match] Success! Best Score: ${minScore.toFixed(4)} (Threshold: 3.5)`, "color: #10b981; font-weight: bold;");
                 return bestMatch;
             } else {
-                console.log(`[AI Match] No match found. Best score: ${minScore.toFixed(4)}, Candidates: ${matchCount}`);
+                console.log(`%c[AI Match] No confident match. Best Score: ${minScore.toFixed(4)}, Candidates: ${matchCount}`, "color: #ef4444;");
             }
 
             return null;

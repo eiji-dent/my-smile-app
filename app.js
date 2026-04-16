@@ -63,6 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // PDF Export Logic (Moved to js/report/ReportEngine.js and PDFGenerator.js)
 
+  // Initialize MaterialChoice (Lab Tool Chapter 13)
+  if (window.MaterialChoice) {
+    window.MaterialChoice.init();
+  }
+
 
 });
 

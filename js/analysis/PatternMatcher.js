@@ -38,6 +38,39 @@ window.PatternMatcher = {
     },
 
     /**
+     * Extracts features from Lateral landmarks (Silhouette scanner).
+     * @param {Object} lms - Landmarks (prn, sn, ls, li, pg, g)
+     * @returns {Object} Feature vector
+     */
+    extractLateralFeatures(lms, canvas = null) {
+        if (!lms || !lms.prn || !lms.sn || !lms.pg || !lms.g) return null;
+
+        const dist = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        const angle = (p1, p2, p3) => {
+            const a = dist(p2, p3);
+            const b = dist(p1, p3);
+            const c = dist(p1, p2);
+            // Law of Cosines
+            const cosVal = (a*a + c*c - b*b) / (2 * a * c);
+            const alpha = Math.acos(Math.max(-1, Math.min(1, cosVal))) * (180 / Math.PI);
+            return alpha;
+        };
+
+        const features = {
+            convexityAngle: angle(lms.g, lms.sn, lms.pg),
+            nasalProjection: dist(lms.sn, lms.prn) / dist(lms.sn, lms.pg),
+            lipRatio: dist(lms.sn, lms.ls) / dist(lms.ls, lms.pg),
+            profileVersion: "p1"
+        };
+
+        if (canvas) {
+            features.visualHash = this.calculateVisualHash(canvas);
+        }
+
+        return features;
+    },
+
+    /**
      * Extracts features from Dental landmarks (Unit 8).
      * @param {Object} lines - The lines object from AnalysisCard
      * @param {HTMLCanvasElement} canvas - Optional canvas to extract visual features
@@ -52,6 +85,11 @@ window.PatternMatcher = {
             const width = Math.abs(wl[3] ? wl[3].x - wl[2].x : 100);
             const height = Math.abs(wl[1].y - wl[0].y);
             features.whRatio = width / height;
+        }
+
+        // 2. Visual Features (Perceptual Hash)
+        if (canvas) {
+            features.visualHash = this.calculateVisualHash(canvas);
         }
 
         // 2. Visual Features (Perceptual Hash)
