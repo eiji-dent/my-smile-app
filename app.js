@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.MaterialChoice.init();
   }
 
+  // Initialize SimulationEngine (Lab Tool Chapter 14)
+  if (window.SimulationEngine) {
+    window.SimulationEngine.init();
+  }
 
 });
 

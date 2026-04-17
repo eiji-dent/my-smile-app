@@ -51,6 +51,7 @@
   <link rel="stylesheet" href="css/tabs.css?v=9">
   <link rel="stylesheet" href="css/report.css?v=9">
   <link rel="stylesheet" href="css/report_modal.css?v=20">
+  <link rel="stylesheet" href="css/simulation.css?v=1">
 
 </head>
 
@@ -196,6 +197,10 @@
         <a href="#chapter-material" class="nav-item">
           <i data-lucide="layers"></i>
           ⑬ マテリアル選択
+        </a>
+        <a href="#chapter-simulation" class="nav-item">
+          <i data-lucide="wand-2"></i>
+          ⑭ 臨床シミュレーション
         </a>
       </nav>
 
@@ -1583,6 +1588,82 @@
           </div>
         </div>
 
+        <!-- CHAPTER 14: Clinical Simulation (DSD) -->
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-simulation">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 14</div>
+              <h2>臨床シミュレーション (Clinical Simulation / DSD) <span class="lab-badge">シミュレーション</span></h2>
+            </div>
+            <div class="card-actions">
+              <label class="btn btn-secondary" title="口腔内写真を読み込む">
+                <i data-lucide="upload"></i> 画像を読み込む
+                <input type="file" id="sim-file-input" accept="image/*" hidden>
+              </label>
+              <button id="sim-btn-reset" class="btn btn-ghost icon-btn" title="リセット">
+                <i data-lucide="rotate-ccw"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="card-content">
+            <div id="simulation-workspace">
+
+              <!-- Phase Banner -->
+              <div id="sim-phase-banner" class="sim-phase-banner">
+                ⬆️ まず口腔内写真をアップロードしてください。
+              </div>
+
+              <!-- Toolbar -->
+              <div class="sim-toolbar">
+                <span class="tool-caption">モード：</span>
+                <div class="sim-tool-group">
+                  <button id="sim-btn-extract" class="sim-tool-btn" disabled>
+                    <i data-lucide="pen-tool"></i> 抽出（ポリゴン）
+                  </button>
+                  <button id="sim-btn-confirm" class="sim-tool-btn btn-confirm" disabled>
+                    <i data-lucide="check-circle"></i> 抽出確定
+                  </button>
+                  <div class="sim-tool-separator"></div>
+                  <button id="sim-btn-simulate" class="sim-tool-btn" disabled>
+                    <i data-lucide="move"></i> シミュレーション
+                  </button>
+                </div>
+                <div id="sim-opacity-row" class="sim-opacity-control" style="display:none;">
+                  <label for="sim-opacity-slider">透過度</label>
+                  <input type="range" id="sim-opacity-slider" min="0" max="100" value="100">
+                  <span id="sim-opacity-label">100%</span>
+                </div>
+                <div class="sim-tool-separator"></div>
+                <button id="sim-btn-snapshot" class="sim-tool-btn" disabled title="結果をPNG保存">
+                  <i data-lucide="camera"></i> 保存
+                </button>
+              </div>
+
+              <!-- Triple Canvas Area -->
+              <div class="sim-canvas-area mode-upload">
+                <!-- Layer 1: Background -->
+                <canvas id="sim-bg-canvas"></canvas>
+                <!-- Layer 2: Extracted tooth -->
+                <canvas id="sim-fg-canvas"></canvas>
+                <!-- Layer 3: UI (all pointer events here) -->
+                <canvas id="sim-ui-canvas"></canvas>
+                <!-- Drop / upload overlay -->
+                <div id="sim-drop-overlay">
+                  <i data-lucide="image-plus"></i>
+                  <p>画像をドロップ、またはヘッダーの「画像を読み込む」から選択</p>
+                </div>
+              </div>
+
+              <!-- Usage note -->
+              <p style="font-size:0.78rem; color:#94a3b8; padding: 0 4px; line-height:1.5;">
+                ※ 抽出フェーズで点を打ちポリゴンを閉じると、選択した歯が切り抜かれます。シミュレーションフェーズでは、抽出した歯をドラッグで移動し、ハンドルで回転・サイズ変更ができます。透過度スライダーで下の歯との位置関係を確認可能です。
+              </p>
+
+            </div><!-- /simulation-workspace -->
+          </div><!-- /card-content -->
+        </div><!-- /chapter-simulation -->
+
       </div> <!-- end lab-view -->
 
       <!-- Bottom spacing for scrolling -->
@@ -1765,6 +1846,7 @@
   <script src="js/data/DataExporter.js?v=12"></script>
   <script src="js/TabManager.js?v=20"></script>
   <script src="js/analysis/MaterialChoice.js?v=20"></script>
+  <script src="js/analysis/SimulationEngine.js?v=1"></script>
   <script src="app.js?v=20"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
