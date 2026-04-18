@@ -9,14 +9,13 @@ class TabManager {
     }
 
     init() {
-        // Create tab buttons if they don't exist in HTML (or handle existing ones)
         const analysisBtn = document.getElementById('tab-btn-analysis');
         const labBtn = document.getElementById('tab-btn-lab');
+        const simBtn = document.getElementById('tab-btn-sim');
 
-        if (analysisBtn && labBtn) {
-            analysisBtn.addEventListener('click', () => this.switchTab('analysis'));
-            labBtn.addEventListener('click', () => this.switchTab('lab'));
-        }
+        if (analysisBtn) analysisBtn.addEventListener('click', () => this.switchTab('analysis'));
+        if (labBtn) labBtn.addEventListener('click', () => this.switchTab('lab'));
+        if (simBtn) simBtn.addEventListener('click', () => this.switchTab('sim'));
 
         // Listen for sidebar link clicks to switch tabs automatically
         this.setupSidebarInterception();
@@ -34,24 +33,25 @@ class TabManager {
         this.activeTab = tabId;
 
         // Toggle visibility
-        const analysisView = document.getElementById('analysis-view');
-        const labView = document.getElementById('lab-view');
-        const analysisBtn = document.getElementById('tab-btn-analysis');
-        const labBtn = document.getElementById('tab-btn-lab');
+        const views = {
+            'analysis': document.getElementById('analysis-view'),
+            'lab': document.getElementById('lab-view'),
+            'sim': document.getElementById('simulation-view')
+        };
+        const buttons = {
+            'analysis': document.getElementById('tab-btn-analysis'),
+            'lab': document.getElementById('tab-btn-lab'),
+            'sim': document.getElementById('tab-btn-sim')
+        };
 
-        if (tabId === 'analysis') {
-            analysisView.classList.remove('hidden');
-            labView.classList.add('hidden');
-            analysisBtn.classList.add('active');
-            labBtn.classList.remove('active');
-        } else {
-            analysisView.classList.add('hidden');
-            labView.classList.remove('hidden');
-            analysisBtn.classList.remove('active');
-            labBtn.classList.add('active');
-        }
+        Object.keys(views).forEach(key => {
+            const view = views[key];
+            const btn = buttons[key];
+            if (view) view.classList.toggle('hidden', key !== tabId);
+            if (btn) btn.classList.toggle('active', key === tabId);
+        });
 
-        // Re-initialize Lucide icons in new tab if needed (mostly static here)
+        // Re-initialize Lucide icons in new tab if needed
         if (window.lucide) window.lucide.createIcons();
     }
 
@@ -72,7 +72,9 @@ class TabManager {
         if (!targetEl) return;
 
         // Check which container the target belongs to
-        if (targetEl.closest('#lab-view')) {
+        if (targetEl.closest('#simulation-view')) {
+            this.switchTab('sim');
+        } else if (targetEl.closest('#lab-view')) {
             this.switchTab('lab');
         } else if (targetEl.closest('#analysis-view')) {
             this.switchTab('analysis');

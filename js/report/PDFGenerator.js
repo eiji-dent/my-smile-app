@@ -267,6 +267,46 @@ class PDFGenerator {
                     const h13 = (canvas13.height * contentWidth) / canvas13.width;
                     pdf.addImage(canvas13.toDataURL('image/jpeg', 0.8), 'JPEG', margin, 15, contentWidth, Math.min(h13, pageHeight-30), undefined, 'FAST');
                 }
+
+                // Chapter 14: Clinical Simulation
+                const chapter14 = document.getElementById('chapter-simulation');
+                if (chapter14 && window.SimulationEngine && window.SimulationEngine.image) {
+                    currentPageNum++; if (onProgress) onProgress(currentPageNum);
+                    pdf.addPage();
+                    pdf.setFontSize(10); pdf.setTextColor(150);
+                    pdf.text(`Smile Analysis Report - Page ${currentPageNum} (Chapter 14: Clinical Simulation)`, margin, 8);
+
+                    // For the simulation, we use the engine's built-in snapshot tool to get merged layers
+                    const snapData = window.SimulationEngine.getSimulationSnapshot();
+                    if (snapData) {
+                        // Capture the card title and header first using html2canvas (UI hidden)
+                        const ui14 = hideUI(chapter14);
+                        const workspace = chapter14.querySelector('#simulation-workspace');
+                        const canvasArea = chapter14.querySelector('.sim-canvas-area');
+                        
+                        // Temporarily hide workspace content to just get the header
+                        if (workspace) workspace.style.display = 'none';
+                        const headerCanvas = await html2canvas(chapter14, { scale: 1.2, useCORS: true, logging: false, backgroundColor: '#ffffff' });
+                        if (workspace) workspace.style.display = '';
+                        showUI(chapter14, ui14);
+
+                        const hHeader = (headerCanvas.height * contentWidth) / headerCanvas.width;
+                        pdf.addImage(headerCanvas.toDataURL('image/jpeg', 0.8), 'JPEG', margin, 15, contentWidth, hHeader, undefined, 'FAST');
+
+                        // Then draw the high-quality merged simulation image below the header
+                        // Calculate aspect ratio from snapshot
+                        const tempImg = new Image();
+                        await new Promise(resolve => {
+                            tempImg.onload = resolve;
+                            tempImg.src = snapData;
+                        });
+                        const hSnap = (tempImg.height * contentWidth) / tempImg.width;
+                        pdf.addImage(snapData, 'PNG', margin, 15 + hHeader + 5, contentWidth, Math.min(hSnap, pageHeight - hHeader - 35), undefined, 'FAST');
+                        
+                        pdf.setFontSize(8); pdf.setTextColor(180);
+                        pdf.text(`※ シミュレーション結果（抽出された歯の移動・調整後）`, margin, 15 + hHeader + hSnap + 12);
+                    }
+                }
             }
 
             return pdf;

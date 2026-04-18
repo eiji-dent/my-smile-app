@@ -41,8 +41,9 @@ window.SimulationEngine = {
     simOpacity: 1.0,
 
     // Interaction
-    /** 'upload' | 'extract' | 'simulate' */
+    /** 'upload' | 'extract' | 'ai_extract' | 'simulate' */
     mode: 'upload',
+    _isAIInitialized: false,
     isDragging: false,
     dragStart: null,       // { scx, scy, px, py } screen + simPos snapshot
     rotateHandle: null,    // screen coords of rotate knob
@@ -55,9 +56,16 @@ window.SimulationEngine = {
     // Animation loop
     _rafId: null,
     _dirty: true,           // flag: uiCanvas needs redraw
+    _isInitialized: false,
+
+    // Debugging / Hinting AI
+    _debugPt: null,         // Legacy single click debug
+    aiHintPoints: [],       // Array of {x, y} in image space
+    isAIRunning: false,
 
     // ---------------------------------------------------------------- INIT
     init() {
+        if (this._isInitialized) return;
         this.container = document.getElementById('chapter-simulation');
         if (!this.container) return;
 
@@ -79,18 +87,22 @@ window.SimulationEngine = {
         this._updateBanner();
         this._updateToolbarState();
 
+        this._isInitialized = true;
         console.log('[SimulationEngine] Initialized.');
     },
 
-    // ---------------------------------------------------------------- FILE
     _setupFileHandling() {
         const fileInput = document.getElementById('sim-file-input');
         const area = this.container.querySelector('.sim-canvas-area');
 
         if (fileInput) {
             fileInput.addEventListener('change', (e) => {
-                if (e.target.files[0]) this._loadImage(e.target.files[0]);
-                e.target.value = ''; // reset so same file can reload
+                const file = e.target.files[0];
+                if (file) {
+                    this._loadImage(file);
+                }
+                // Small delay before reset to prevent synchronous clearing issues
+                setTimeout(() => { e.target.value = ''; }, 100);
             });
         }
         if (area) {
@@ -108,13 +120,20 @@ window.SimulationEngine = {
     },
 
     _loadImage(file) {
-        if (!file.type.startsWith('image/')) return;
+        console.log('[SimulationEngine] Attempting to load file:', file.name, file.type, file.size);
+        if (!file || !file.type.startsWith('image/')) {
+            console.error('[SimulationEngine] Invalid file type:', file);
+            alert('画像ファイルを選択してください。');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (e) => {
+            console.log('[SimulationEngine] FileReader loaded.');
             const img = new Image();
             img.onload = () => {
+                console.log('[SimulationEngine] Image object created:', img.width, 'x', img.height);
                 this.image = img;
-                this.reset(false); // keep image, reset only state
+                this.reset(true); // reset state but KEEP the new image
                 this._resizeCanvases();
                 this._drawBackground();
                 const area = this.container.querySelector('.sim-canvas-area');
@@ -134,14 +153,21 @@ window.SimulationEngine = {
         if (!this.image) return;
         const area = this.container.querySelector('.sim-canvas-area');
         const W = area.clientWidth;
-        // maintain up to 70vh
         const maxH = Math.min(window.innerHeight * 0.70, W * (this.image.height / this.image.width));
-        const H = maxH;
+        const H = maxH || 400; // Fallback height if maxH is 0
         area.style.height = H + 'px';
 
+        console.log(`[SimulationEngine] _resizeCanvases: Computed W=${W}, H=${H}, img=${this.image.width}x${this.image.height}`);
+
         [this.bgCanvas, this.fgCanvas, this.uiCanvas].forEach(c => {
-            c.width = W;
-            c.height = H;
+            if (c) {
+                // Changing width/height clears the canvas automatically
+                c.width = W;
+                c.height = H;
+                // Force CSS dimensions explicitly to prevent flexbox collapsing
+                c.style.width = W + 'px';
+                c.style.height = H + 'px';
+            }
         });
 
         // Compute scale/offset (letter-box fit)
@@ -163,8 +189,11 @@ window.SimulationEngine = {
     _drawBackground() {
         if (!this.image) return;
         const { bgCtx: ctx, bgCanvas: c, image: img, imgScale: s, imgOffX: ox, imgOffY: oy } = this;
+        console.log(`[SimulationEngine] _drawBackground: c.width=${c.width}, c.height=${c.height}, s=${s}, ox=${ox}, oy=${oy}`);
+        if (!ctx) return;
         ctx.clearRect(0, 0, c.width, c.height);
         ctx.drawImage(img, ox, oy, img.width * s, img.height * s);
+        console.log('[SimulationEngine] _drawBackground complete.');
     },
 
     // --------------------------------------------------------------- EXTRACTION
@@ -270,6 +299,47 @@ window.SimulationEngine = {
 
         if (this.mode === 'extract') {
             this._drawPolygon(ctx);
+        } else if (this.mode === 'ai_extract') {
+            // Draw multi-point hint guides
+            if (this.aiHintPoints.length > 0) {
+                const s = this.imgScale;
+                const ox = this.imgOffX, oy = this.imgOffY;
+                
+                // Draw polygon area
+                if (this.aiHintPoints.length >= 3) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.beginPath();
+                    this.aiHintPoints.forEach((pt, i) => {
+                        if (i === 0) ctx.moveTo(ox + pt.x * s, oy + pt.y * s);
+                        else ctx.lineTo(ox + pt.x * s, oy + pt.y * s);
+                    });
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Draw lines and dots
+                ctx.strokeStyle = '#38bdf8';
+                ctx.setLineDash([5, 5]);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                this.aiHintPoints.forEach((pt, i) => {
+                    if (i === 0) ctx.moveTo(ox + pt.x * s, oy + pt.y * s);
+                    else ctx.lineTo(ox + pt.x * s, oy + pt.y * s);
+                });
+                if (this.aiHintPoints.length >= 3) ctx.closePath();
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                this.aiHintPoints.forEach(pt => {
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.beginPath();
+                    ctx.arc(ox + pt.x * s, oy + pt.y * s, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                });
+            }
         } else if (this.mode === 'simulate') {
             this._drawTransformHandles(ctx);
         }
@@ -478,6 +548,9 @@ window.SimulationEngine = {
         if (btnReset)    btnReset.addEventListener('click',    () => this.reset(true));
         if (btnSnapshot) btnSnapshot.addEventListener('click', () => this.exportSnapshot());
 
+        const btnAI = document.getElementById('sim-btn-ai');
+        if (btnAI) btnAI.addEventListener('click', () => this._switchMode('ai_extract'));
+
         if (opacitySlider) {
             opacitySlider.addEventListener('input', (e) => {
                 this.simOpacity = parseInt(e.target.value) / 100;
@@ -519,20 +592,44 @@ window.SimulationEngine = {
 
         if (this.mode === 'extract') {
             const imgPt = this._screenToImage(scx, scy);
-            // Close polygon if clicking near first point
-            if (this.polyPoints.length >= 3) {
-                const first = this.polyPoints[0];
-                const firstScreen = {
-                    x: this.imgOffX + first.x * this.imgScale,
-                    y: this.imgOffY + first.y * this.imgScale,
-                };
-                if (Math.hypot(scx - firstScreen.x, scy - firstScreen.y) < 18) {
-                    this._confirmPolygon();
-                    return;
+
+            // If polygon is already closed (fine-tuning mode), check for dragging existing points
+            if (this.polygonClosed) {
+                const ox = this.imgOffX, oy = this.imgOffY, s = this.imgScale;
+                for (let i = 0; i < this.polyPoints.length; i++) {
+                    const p = this.polyPoints[i];
+                    const sx = ox + p.x * s;
+                    const sy = oy + p.y * s;
+                    if (Math.hypot(scx - sx, scy - sy) < 15) {
+                        this.dragPolyIdx = i;
+                        this._dirty = true;
+                        return;
+                    }
                 }
+            } else {
+                // Initial plotting mode: Close polygon if clicking near first point
+                if (this.polyPoints.length >= 3) {
+                    const first = this.polyPoints[0];
+                    const firstScreen = {
+                        x: this.imgOffX + first.x * this.imgScale,
+                        y: this.imgOffY + first.y * this.imgScale,
+                    };
+                    if (Math.hypot(scx - firstScreen.x, scy - firstScreen.y) < 18) {
+                        this._confirmPolygon();
+                        return;
+                    }
+                }
+                // Add new point
+                this.polyPoints.push(imgPt);
+                this._dirty = true;
+                return;
             }
-            // Add new point
-            this.polyPoints.push(imgPt);
+        }
+
+        if (this.mode === 'ai_extract') {
+            const imgPt = this._screenToImage(scx, scy);
+            this.aiHintPoints.push(imgPt);
+            this._updateBanner();
             this._dirty = true;
             return;
         }
@@ -571,6 +668,12 @@ window.SimulationEngine = {
     _onPointerMove(e) {
         if (e.cancelable) e.preventDefault();
         const { scx, scy } = this._getCanvasCoords(e);
+
+        if (this.mode === 'extract' && this.dragPolyIdx !== -1) {
+            this.polyPoints[this.dragPolyIdx] = this._screenToImage(scx, scy);
+            this._dirty = true;
+            return;
+        }
 
         if (this.mode === 'simulate') {
             if (this.isDragging) {
@@ -615,6 +718,7 @@ window.SimulationEngine = {
         this.isDragging = false;
         this.isRotating = false;
         this.isScaling = false;
+        this.dragPolyIdx = -1;
         this.dragStart = null;
         this.rotateStart = null;
         this.scaleStart = null;
@@ -678,12 +782,17 @@ window.SimulationEngine = {
             if (area) area.classList.remove('has-image');
             [this.bgCtx, this.fgCtx, this.uiCtx].forEach((ctx, i) => {
                 const c = [this.bgCanvas, this.fgCanvas, this.uiCanvas][i];
-                if (ctx && c) ctx.clearRect(0, 0, c.width, c.height);
+                if (ctx && c) {
+                    ctx.clearRect(0, 0, c.width, c.height);
+                }
             });
         } else {
-            this._drawBackground();
+            // Do NOT draw background here; let _resizeCanvases handle it
+            // because canvas dimensions might not be set yet.
             const fgCtx = this.fgCtx;
-            if (fgCtx) fgCtx.clearRect(0, 0, this.fgCanvas.width, this.fgCanvas.height);
+            if (fgCtx && this.fgCanvas) {
+                fgCtx.clearRect(0, 0, this.fgCanvas.width, this.fgCanvas.height);
+            }
         }
 
         this.mode = this.image ? 'extract' : 'upload';
@@ -697,29 +806,257 @@ window.SimulationEngine = {
         const banner = document.getElementById('sim-phase-banner');
         if (!banner) return;
 
-        const phases = {
-            upload: { text: '⬆️ まず口腔内写真をアップロードしてください。',                                cls: '' },
-            extract: { text: '✏️ 抽出モード: 歯の形に沿って点をプロットし、最初の点付近をクリックして閉じてください。', cls: 'phase-extract' },
-            simulate: { text: '↔️ シミュレーションモード: 歯をドラッグして移動し、ハンドルで回転・拡大縮小できます。',   cls: 'phase-simulate' },
-        };
-        const p = phases[this.mode] || phases.upload;
-        banner.textContent = p.text;
-        banner.className = 'sim-phase-banner ' + p.cls;
+        let icon = 'info';
+        let text = '';
+        let cls = 'sim-phase-banner';
+
+        if (this.mode === 'upload') {
+            text = '⬆️ まず口腔内写真をアップロードしてください。';
+        } else if (this.mode === 'extract') {
+            icon = 'pen-tool';
+            if (this.polygonClosed) {
+                text = '調整モード：点をドラッグして形を整えてください。完了したら「抽出確定」を押してください。';
+            } else {
+                text = '抽出モード：歯の形に沿ってプロットし、最初をクリックして閉じてください。';
+            }
+            cls += ' phase-extract';
+        } else if (this.mode === 'ai_extract') {
+            if (this.isAIRunning) {
+                banner.innerHTML = `<div class="banner-content"><i data-lucide="loader-2" class="animate-spin"></i> AI分析中... しばらくお待ちください。</div>`;
+            } else {
+                const count = this.aiHintPoints.length;
+                let html = `<div class="banner-content"><i data-lucide="sparkles"></i> <b>AI抽出モード</b>：歯の周りを囲むようにタップしてください。 (${count}点指定中)</div>`;
+                html += `<div class="banner-actions">`;
+                if (count >= 3) {
+                    html += `<button class="banner-btn primary" onclick="SimulationEngine.startAI()">✨ 解析実行</button>`;
+                }
+                if (count > 0) {
+                    html += `<button class="banner-btn secondary" onclick="SimulationEngine.undoAIPoint()">↩ 戻る</button>`;
+                    html += `<button class="banner-btn danger" onclick="SimulationEngine.resetAIPoints()">✕ クリア</button>`;
+                }
+                html += `</div>`;
+                banner.innerHTML = html;
+            }
+            cls += ' phase-ai';
+        } else if (this.mode === 'simulate') {
+            icon = 'move';
+            text = 'シミュレーションモード：歯を移動・変形できます。';
+            cls += ' phase-simulate';
+        }
+
+        banner.className = cls;
+        if (this.mode !== 'ai_extract' && !this.isAIRunning) {
+            banner.innerHTML = `<i data-lucide="${icon}"></i> ${text}`;
+        }
+        if (window.lucide) window.lucide.createIcons();
+    },
+
+    // Global entry points for banner buttons
+    startAI() { window.SimulationEngine._runAISegmentation(); },
+    undoAIPoint() {
+        window.SimulationEngine.aiHintPoints.pop();
+        window.SimulationEngine._updateBanner();
+        window.SimulationEngine._dirty = true;
+    },
+    resetAIPoints() {
+        window.SimulationEngine.aiHintPoints = [];
+        window.SimulationEngine._updateBanner();
+        window.SimulationEngine._dirty = true;
     },
 
     _updateToolbarState() {
-        const btnExtract  = document.getElementById('sim-btn-extract');
+        const hasImg = !!this.image;
+        if (!hasImg) return;
+        const btnAI = document.getElementById('sim-btn-ai');
+        const btnExtract = document.getElementById('sim-btn-extract');
         const btnSimulate = document.getElementById('sim-btn-simulate');
-        const btnConfirm  = document.getElementById('sim-btn-confirm');
-        const btnSnapshot = document.getElementById('sim-btn-snapshot');
-        const opacityRow  = document.getElementById('sim-opacity-row');
-
-        if (btnExtract)  btnExtract.classList.toggle('active', this.mode === 'extract');
+        const btnConfirm = document.getElementById('sim-btn-confirm');
+        
+        if (btnAI) btnAI.classList.toggle('active', this.mode === 'ai_extract');
+        if (btnExtract) btnExtract.classList.toggle('active', this.mode === 'extract');
         if (btnSimulate) btnSimulate.classList.toggle('active', this.mode === 'simulate');
-        if (btnConfirm)  btnConfirm.disabled = this.mode !== 'extract';
-        if (btnSimulate) btnSimulate.disabled = !this.extractedCanvas;
-        if (btnSnapshot) btnSnapshot.disabled = this.mode !== 'simulate';
-        if (opacityRow)  opacityRow.style.display = this.mode === 'simulate' ? 'flex' : 'none';
+        if (btnConfirm) btnConfirm.disabled = (this.mode !== 'extract' || this.polyPoints.length < 3);
+    },
+
+    // --------------------------------------------------------------- AI SEGMENTATION
+    async _runAISegmentation() {
+        if (!window.initInteractiveSegmenter || this.aiHintPoints.length < 3) return;
+        
+        this.isAIRunning = true;
+        this._updateBanner();
+
+        try {
+            const segmenter = await window.initInteractiveSegmenter();
+            
+            // 1. Calculate Crop Area (Image space)
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            let sumX = 0, sumY = 0;
+            this.aiHintPoints.forEach(pt => {
+                minX = Math.min(minX, pt.x); minY = Math.min(minY, pt.y);
+                maxX = Math.max(maxX, pt.x); maxY = Math.max(maxY, pt.y);
+                sumX += pt.x; sumY += pt.y;
+            });
+            const avgX = sumX / this.aiHintPoints.length;
+            const avgY = sumY / this.aiHintPoints.length;
+
+            const w = maxX - minX, h = maxY - minY;
+            const margin = Math.max(w, h) * 0.4;
+            
+            const naturalW = this.image.naturalWidth || this.image.width;
+            const naturalH = this.image.naturalHeight || this.image.height;
+
+            const finalCropX = Math.max(0, Math.floor(minX - margin));
+            const finalCropY = Math.max(0, Math.floor(minY - margin));
+            const finalCropW = Math.min(naturalW, Math.ceil(maxX + margin)) - finalCropX;
+            const finalCropH = Math.min(naturalH, Math.ceil(maxY + margin)) - finalCropY;
+
+            // 2. Prepare AI Canvas (Downscaled)
+            const maxSide = 1024;
+            const scale = Math.min(1.0, maxSide / Math.max(finalCropW, finalCropH));
+            const outW = Math.round(finalCropW * scale);
+            const outH = Math.round(finalCropH * scale);
+            
+            const aiCanvas = document.createElement('canvas');
+            aiCanvas.width = outW; aiCanvas.height = outH;
+            const aiCtx = aiCanvas.getContext('2d');
+            aiCtx.drawImage(this.image, finalCropX, finalCropY, finalCropW, finalCropH, 0, 0, outW, outH);
+
+            // 3. Prepare User Constraint Mask (Polygon enclosure)
+            const roiCanvas = document.createElement('canvas');
+            roiCanvas.width = outW; roiCanvas.height = outH;
+            const roiCtx = roiCanvas.getContext('2d');
+            roiCtx.fillStyle = '#000';
+            roiCtx.fillRect(0, 0, outW, outH);
+            roiCtx.fillStyle = '#fff';
+            roiCtx.beginPath();
+            this.aiHintPoints.forEach((pt, i) => {
+                const lx = (pt.x - finalCropX) * scale;
+                const ly = (pt.y - finalCropY) * scale;
+                if (i === 0) roiCtx.moveTo(lx, ly); else roiCtx.lineTo(lx, ly);
+            });
+            roiCtx.closePath();
+            roiCtx.fill();
+            const roiData = roiCtx.getImageData(0, 0, outW, outH).data;
+
+            // 4. Run AI with Inset Scribble
+            const scribble = this.aiHintPoints.map(pt => {
+                const dx = pt.x - avgX, dy = pt.y - avgY;
+                const insetX = avgX + dx * 0.7, insetY = avgY + dy * 0.7;
+                return { x: (insetX - finalCropX) / finalCropW, y: (insetY - finalCropY) / finalCropH };
+            });
+            
+            const result = await segmenter.segment(aiCanvas, { scribble }, performance.now());
+
+            const maskObj = result.categoryMask;
+            if (maskObj) {
+                const rawMask = maskObj.getAsUint8Array ? maskObj.getAsUint8Array() : maskObj.getAsFloat32Array();
+                const isRGBA = (rawMask.length === outW * outH * 4);
+                
+                // --- INVERSION CHECK ---
+                // Check if the AI thought our hint points are "Background" (0).
+                // If so, it means the mask is inverted for this model/environment.
+                let hitSum = 0;
+                scribble.forEach(p => {
+                    const ix = Math.floor(p.x * outW), iy = Math.floor(p.y * outH);
+                    const idx = iy * outW + ix;
+                    const val = isRGBA ? rawMask[idx * 4] : rawMask[idx];
+                    if (val > 0) hitSum++;
+                });
+                
+                const hitRate = hitSum / scribble.length;
+                const shouldInvert = (hitRate < 0.3); // If less than 30% hits, it's likely inverted
+                console.log(`[AI Debug] Mask Inversion Check: hitRate=${hitRate.toFixed(2)}, shouldInvert=${shouldInvert}`);
+
+                // Final Mask = Intersect ( (AI Result XOR Invert) , User Boundary)
+                const intersectionMask = new Uint8Array(outW * outH);
+                let fgCount = 0;
+                for (let i = 0; i < outW * outH; i++) {
+                    let aiVal = isRGBA ? rawMask[i * 4] : rawMask[i];
+                    if (shouldInvert) aiVal = (aiVal > 0) ? 0 : 255; // Reverse logic
+                    
+                    const userVal = roiData[i * 4];
+                    if (aiVal > 0 && userVal > 128) {
+                        intersectionMask[i] = 255;
+                        fgCount++;
+                    }
+                }
+                console.log(`[AI Debug] Final FG Pixels: ${fgCount}`);
+
+                // 5. Trace Contour
+                const points = this._maskToPolygon({ 
+                    width: outW, height: outH, mask: intersectionMask 
+                }, finalCropX, finalCropY, finalCropW, finalCropH);
+
+                if (points && points.length > 5) {
+                    this.polyPoints = points;
+                    this.aiHintPoints = [];
+                    this.polygonClosed = true;
+                    // Switch to manual edit mode instead of direct simulation
+                    this._switchMode('extract');
+                } else {
+                    alert('歯の形状を特定できませんでした。もう少しだけ歯の内側も含めて囲んでみてください。');
+                }
+            }
+        } catch (err) {
+            console.error('[AI Error]', err);
+            alert('AI解析に失敗しました。');
+        } finally {
+            this.isAIRunning = false;
+            this._updateBanner();
+            this._dirty = true;
+        }
+    },
+
+    /** Robust Mapper & Tracer */
+    _maskToPolygon(data, cropX, cropY, cropW, cropH) {
+        const { width, height, mask } = data;
+        const isFGD = (x, y) => {
+            if (x <= 1 || x >= width - 2 || y <= 1 || y >= height - 2) return false;
+            return mask[y * width + x] > 0;
+        };
+
+        let startX = -1, startY = -1;
+        search: for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (isFGD(x, y)) { startX = x; startY = y; break search; }
+            }
+        }
+        if (startX === -1) return null;
+
+        const points = [];
+        let currX = startX, currY = startY;
+        let prevX = startX - 1, prevY = startY;
+        const directions = [[0,-1], [1,-1], [1,0], [1,1], [0,1], [-1,1], [-1,0], [-1,-1]];
+        
+        for (let safety = 0; safety < 5000; safety++) {
+            points.push({ 
+                x: (currX / width) * cropW + cropX, 
+                y: (currY / height) * cropH + cropY 
+            });
+
+            let startDir = 0;
+            for (let i = 0; i < 8; i++) {
+                if (currX + directions[i][0] === prevX && currY + directions[i][1] === prevY) {
+                    startDir = i; break;
+                }
+            }
+            let found = false;
+            for (let i = 1; i <= 8; i++) {
+                const d = (startDir + i) % 8;
+                const nx = currX + directions[d][0], ny = currY + directions[d][1];
+                if (isFGD(nx, ny)) {
+                    prevX = currX; prevY = currY;
+                    currX = nx; currY = ny;
+                    found = true; break;
+                }
+            }
+            if (!found || (currX === startX && currY === startY)) break;
+        }
+
+        const samples = [];
+        const step = Math.max(1, Math.floor(points.length / 64));
+        for (let i = 0; i < points.length; i += step) samples.push(points[i]);
+        return samples;
     },
 
     // --------------------------------------------------------------- EXPORT
@@ -751,9 +1088,11 @@ window.SimulationEngine = {
     },
 };
 
-// Auto-init: allow app.js to call it explicitly, or triggered here on load
-window.addEventListener('load', () => {
-    if (document.getElementById('chapter-simulation')) {
-        window.SimulationEngine.init();
-    }
-});
+// Auto-init removed. app.js handles init().
+if (false) {
+    window.addEventListener('load', () => {
+        if (document.getElementById('chapter-simulation')) {
+            window.SimulationEngine.init();
+        }
+    });
+}

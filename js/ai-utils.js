@@ -1,15 +1,16 @@
 // --- AI (MediaPipe) Integration ---
 window.faceLandmarker = null;
 window.imageSegmenter = null;
+window.interactiveSegmenter = null;
 
 window.initFaceLandmarker = async () => {
     if (window.faceLandmarker) return window.faceLandmarker;
     try {
-        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20");
         const { FaceLandmarker, FilesetResolver } = vision_module;
 
         const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm"
         );
 
         const options = {
@@ -43,11 +44,11 @@ window.initFaceLandmarker = async () => {
 window.initImageSegmenter = async () => {
     if (window.imageSegmenter) return window.imageSegmenter;
     try {
-        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20");
         const { ImageSegmenter, FilesetResolver } = vision_module;
 
         const vision = await FilesetResolver.forVisionTasks(
-            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm"
         );
 
         const options = {
@@ -72,6 +73,41 @@ window.initImageSegmenter = async () => {
     } catch (err) {
         console.error("Segmenter Initialization failed:", err);
         throw new Error("ImageSegmenterの初期化に失敗しました。");
+    }
+};
+
+window.initInteractiveSegmenter = async () => {
+    if (window.interactiveSegmenter) return window.interactiveSegmenter;
+    try {
+        const vision_module = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20");
+        const { InteractiveSegmenter, FilesetResolver } = vision_module;
+
+        const vision = await FilesetResolver.forVisionTasks(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.20/wasm"
+        );
+
+        const options = {
+            baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/interactive_segmenter/magic_touch/float32/1/magic_touch.tflite`,
+                delegate: "GPU"
+            },
+            runningMode: "IMAGE",
+            outputCategoryMask: true,
+            outputConfidenceMasks: false
+        };
+
+        try {
+            window.interactiveSegmenter = await InteractiveSegmenter.createFromOptions(vision, options);
+        } catch (gpuErr) {
+            console.warn("GPU Interactive Segmenter initialization failed, falling back to CPU:", gpuErr);
+            options.baseOptions.delegate = "CPU";
+            window.interactiveSegmenter = await InteractiveSegmenter.createFromOptions(vision, options);
+        }
+
+        return window.interactiveSegmenter;
+    } catch (err) {
+        console.error("Interactive Segmenter Initialization failed:", err);
+        throw new Error("InteractiveSegmenterの初期化に失敗しました。");
     }
 };
 

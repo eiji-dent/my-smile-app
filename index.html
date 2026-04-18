@@ -38,20 +38,20 @@
     }
     #auth-modal.hidden { display: none; }
   </style>
-  <link rel="stylesheet" href="css/base.css?v=9">
-  <link rel="stylesheet" href="css/layout.css?v=9">
-  <link rel="stylesheet" href="css/components.css?v=9">
-  <link rel="stylesheet" href="css/phases-main.css?v=9">
-  <link rel="stylesheet" href="css/phases-lab.css?v=9">
-  <link rel="stylesheet" href="styles.css?v=9">
-  <link rel="stylesheet" href="css/sidebars.css?v=9">
-  <link rel="stylesheet" href="css/components.css?v=9">
-  <link rel="stylesheet" href="css/phases-main.css?v=9">
-  <link rel="stylesheet" href="css/phases-lab.css?v=9">
-  <link rel="stylesheet" href="css/tabs.css?v=9">
-  <link rel="stylesheet" href="css/report.css?v=9">
-  <link rel="stylesheet" href="css/report_modal.css?v=20">
-  <link rel="stylesheet" href="css/simulation.css?v=1">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/phases-main.css">
+  <link rel="stylesheet" href="css/phases-lab.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/sidebars.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/phases-main.css">
+  <link rel="stylesheet" href="css/phases-lab.css">
+  <link rel="stylesheet" href="css/tabs.css">
+  <link rel="stylesheet" href="css/report.css">
+  <link rel="stylesheet" href="css/report_modal.css">
+  <link rel="stylesheet" href="css/simulation.css">
 
 </head>
 
@@ -118,7 +118,7 @@
           <h3>6. フィードバック</h3>
           <p>改善要望等は以下のInstagram DMまでお知らせください。</p>
           <a href="https://www.instagram.com/shibata_dds?igsh=Y2ljdHB4em9hZmoz&utm_source=qr" target="_blank" class="insta-link">
-            <i data-lucide="instagram"></i> @shibata_dds
+            <i data-lucide="camera"></i> @shibata_dds
           </a>
         </section>
       </div>
@@ -198,9 +198,10 @@
           <i data-lucide="layers"></i>
           ⑬ マテリアル選択
         </a>
+        <div class="nav-section">シミュレーション (Simulation)</div>
         <a href="#chapter-simulation" class="nav-item">
           <i data-lucide="wand-2"></i>
-          ⑭ 臨床シミュレーション
+          ⑭ 臨床シミュレーション (開発中)
         </a>
       </nav>
 
@@ -243,7 +244,11 @@
           </button>
           <button id="tab-btn-lab" class="tab-btn">
             <i data-lucide="wrench"></i>
-            技工ツール
+            技工ツール (9-13)
+          </button>
+          <button id="tab-btn-sim" class="tab-btn">
+            <i data-lucide="wand-2"></i>
+            シミュレーション (14) (開発中)
           </button>
         </div>
       </nav>
@@ -1588,14 +1593,22 @@
           </div>
         </div>
 
+      </div> <!-- end lab-view -->
+
+      <!-- View 3: Clinical Simulation -->
+      <div id="simulation-view" class="view-container hidden">
+        
         <!-- CHAPTER 14: Clinical Simulation (DSD) -->
         <div class="analysis-card lab-chapter-card lab-card" id="chapter-simulation">
           <div class="card-header">
             <div class="card-title-group">
               <div class="step-badge">Chapter 14</div>
-              <h2>臨床シミュレーション (Clinical Simulation / DSD) <span class="lab-badge">シミュレーション</span></h2>
+              <h2>臨床シミュレーション (Clinical Simulation / DSD) <span class="lab-badge" style="background: #94a3b8;">開発中</span></h2>
             </div>
             <div class="card-actions">
+              <button id="sim-btn-ai" class="btn btn-ai ai-analyze-btn" title="AI自動解析（クリック抽出）を実行">
+                <i data-lucide="sparkles"></i> AI自動解析
+              </button>
               <label class="btn btn-secondary" title="口腔内写真を読み込む">
                 <i data-lucide="upload"></i> 画像を読み込む
                 <input type="file" id="sim-file-input" accept="image/*" hidden>
@@ -1618,15 +1631,15 @@
               <div class="sim-toolbar">
                 <span class="tool-caption">モード：</span>
                 <div class="sim-tool-group">
-                  <button id="sim-btn-extract" class="sim-tool-btn" disabled>
-                    <i data-lucide="pen-tool"></i> 抽出（ポリゴン）
+                  <button id="sim-btn-extract" class="sim-tool-btn" disabled title="抽出（ポリゴン）">
+                    <i data-lucide="pen-tool"></i> 抽出
                   </button>
                   <button id="sim-btn-confirm" class="sim-tool-btn btn-confirm" disabled>
                     <i data-lucide="check-circle"></i> 抽出確定
                   </button>
                   <div class="sim-tool-separator"></div>
-                  <button id="sim-btn-simulate" class="sim-tool-btn" disabled>
-                    <i data-lucide="move"></i> シミュレーション
+                  <button id="sim-btn-simulate" class="sim-tool-btn" disabled title="シミュレーション（移動・回転・変形）">
+                    <i data-lucide="move"></i> シミュレート
                   </button>
                 </div>
                 <div id="sim-opacity-row" class="sim-opacity-control" style="display:none;">
@@ -1664,7 +1677,7 @@
           </div><!-- /card-content -->
         </div><!-- /chapter-simulation -->
 
-      </div> <!-- end lab-view -->
+      </div> <!-- end simulation-view -->
 
       <!-- Bottom spacing for scrolling -->
       <div style="height: 100px;"></div>
@@ -1817,37 +1830,37 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js?v=12"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js?v=12"></script>
 
-  <script src="js/constants.js?v=12"></script>
-  <script src="js/services/FirebaseService.js?v=12"></script>
-  <script src="js/services/IntelligenceService.js?v=12"></script>
-  <script src="js/analysis/PatternMatcher.js?v=12"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/services/FirebaseService.js"></script>
+  <script src="js/services/IntelligenceService.js"></script>
+  <script src="js/analysis/PatternMatcher.js"></script>
   
   <!-- Specialized AI Engines (One file per phase) -->
-  <script src="js/analysis/engines/Phase2Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase3Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase4Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase5Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase6Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase7Engine.js?v=12"></script>
-  <script src="js/analysis/engines/Phase8Engine.js?v=12"></script>
+  <script src="js/analysis/engines/Phase2Engine.js"></script>
+  <script src="js/analysis/engines/Phase3Engine.js"></script>
+  <script src="js/analysis/engines/Phase4Engine.js"></script>
+  <script src="js/analysis/engines/Phase5Engine.js"></script>
+  <script src="js/analysis/engines/Phase6Engine.js"></script>
+  <script src="js/analysis/engines/Phase7Engine.js"></script>
+  <script src="js/analysis/engines/Phase8Engine.js"></script>
 
-  <script src="js/ai-utils.js?v=12"></script>
-  <script src="js/analysis/FacialHandlers.js?v=12"></script>
-  <script src="js/analysis/LateralAI.js?v=12"></script>
-  <script src="js/analysis/DentalHandlers.js?v=12"></script>
-  <script src="js/analysis/ShadeHandlers.js?v=12"></script>
+  <script src="js/ai-utils.js"></script>
+  <script src="js/analysis/FacialHandlers.js"></script>
+  <script src="js/analysis/LateralAI.js"></script>
+  <script src="js/analysis/DentalHandlers.js"></script>
+  <script src="js/analysis/ShadeHandlers.js"></script>
   <script src="js/analysis/AlignmentHelper.js"></script>
-  <script src="js/AnalysisCard.js?v=12"></script>
-  <script src="js/TrialManager.js?v=12"></script>
-  <script src="js/LayoutHandler.js?v=12"></script>
-  <script src="js/TouchHandler.js?v=12"></script>
-  <script src="js/report/PDFGenerator.js?v=12"></script>
-  <script src="js/report/ReportEngine.js?v=12"></script>
-  <script src="js/data/DataExporter.js?v=12"></script>
-  <script src="js/TabManager.js?v=20"></script>
-  <script src="js/analysis/MaterialChoice.js?v=20"></script>
-  <script src="js/analysis/SimulationEngine.js?v=1"></script>
-  <script src="app.js?v=20"></script>
+  <script src="js/AnalysisCard.js"></script>
+  <script src="js/TrialManager.js"></script>
+  <script src="js/LayoutHandler.js"></script>
+  <script src="js/TouchHandler.js"></script>
+  <script src="js/report/PDFGenerator.js"></script>
+  <script src="js/report/ReportEngine.js"></script>
+  <script src="js/data/DataExporter.js"></script>
+  <script src="js/TabManager.js"></script>
+  <script src="js/analysis/MaterialChoice.js"></script>
+  <script src="js/analysis/SimulationEngine.js"></script>
+  <script src="app.js"></script>
 
   <!-- SVG Filter for Auto Color Correction (Keynote-style) -->
   <svg style="position: absolute; width: 0; height: 0;" aria-hidden="true" focusable="false">
