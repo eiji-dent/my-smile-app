@@ -186,17 +186,17 @@
           <i data-lucide="palette"></i>
           ⑩ シェード判定
         </a>
+        <a href="#chapter-material" class="nav-item">
+          <i data-lucide="layers"></i>
+          ⑪ マテリアル選択
+        </a>
         <a href="#chapter-supplemental" class="nav-item">
           <i data-lucide="images"></i>
-          ⑪ 補足画像
+          ⑫ 補足画像
         </a>
         <a href="#chapter-instructions" class="nav-item">
           <i data-lucide="message-square"></i>
-          ⑫ 技工指示書
-        </a>
-        <a href="#chapter-material" class="nav-item">
-          <i data-lucide="layers"></i>
-          ⑬ マテリアル選択
+          ⑬ 技工指示書
         </a>
         <div class="nav-section">シミュレーション (Simulation)</div>
         <a href="#chapter-simulation" class="nav-item">
@@ -1389,88 +1389,11 @@
           </div>
         </div>
 
-        <!-- CHAPTER 11: Supplemental Images -->
-        <div class="analysis-card lab-chapter-card lab-card" id="chapter-supplemental">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="step-badge">Chapter 11</div>
-              <h2>補足画像 (Supplemental Images) <span class="lab-badge">資料提供</span></h2>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="sub-header" style="border-top: none; padding-top: 0;">
-              <h4><i data-lucide="images"></i> フリー画像スペース</h4>
-              <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
-            </div>
-            <div class="free-image-grid" id="free-image-grid">
-              <!-- 8 Slots generated manually -->
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 1</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 2</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 3</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 4</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 5</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 6</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 7</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-              <div class="image-slot" onclick="this.querySelector('input').click()">
-                <i data-lucide="plus" class="slot-icon"></i>
-                <span class="slot-label">画像 8</span>
-                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CHAPTER 12: Lab Instructions -->
-        <div class="analysis-card lab-chapter-card lab-card" id="chapter-instructions">
-          <div class="card-header">
-            <div class="card-title-group">
-              <div class="step-badge">Chapter 12</div>
-              <h2>技工指示内容 (Lab Instructions) <span class="lab-badge">指示書</span></h2>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="sub-header" style="border-top: none; padding-top: 0;">
-              <h4><i data-lucide="message-square"></i> 具体的な指示事項</h4>
-            </div>
-            <div class="lab-textarea-container">
-              <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <!-- CHAPTER 13: Material Choice - Isolated & Bulletproof -->
+        <!-- CHAPTER 11: Material Choice (MOVED AFTER SHADE) -->
         <div class="analysis-card lab-chapter-card lab-card" id="chapter-material">
           <div class="card-header">
             <div class="card-title-group">
-              <div class="step-badge">Chapter 13</div>
+              <div class="step-badge">Chapter 11</div>
               <h2>マテリアル選択 (Material Choice) <span class="lab-badge">技工分析</span> <span class="status-indicator"></span></h2>
             </div>
             <div class="card-actions">
@@ -1589,6 +1512,83 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAPTER 12: Supplemental Images -->
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-supplemental">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 12</div>
+              <h2>補足画像 (Supplemental Images) <span class="lab-badge">資料提供</span></h2>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="sub-header" style="border-top: none; padding-top: 0;">
+              <h4><i data-lucide="images"></i> フリー画像スペース</h4>
+              <div class="note-text">※模型、咬合面観、参考症例など最大8枚まで。</div>
+            </div>
+            <div class="free-image-grid" id="free-image-grid">
+              <!-- 8 Slots generated manually -->
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 1</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 2</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 3</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 4</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 5</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 6</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 7</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+              <div class="image-slot" onclick="this.querySelector('input').click()">
+                <i data-lucide="plus" class="slot-icon"></i>
+                <span class="slot-label">画像 8</span>
+                <input type="file" accept="image/*" hidden onchange="handleFreeImageUpload(this)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAPTER 13: Lab Instructions -->
+        <div class="analysis-card lab-chapter-card lab-card" id="chapter-instructions">
+          <div class="card-header">
+            <div class="card-title-group">
+              <div class="step-badge">Chapter 13</div>
+              <h2>技工指示内容 (Lab Instructions) <span class="lab-badge">指示書</span></h2>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="sub-header" style="border-top: none; padding-top: 0;">
+              <h4><i data-lucide="message-square"></i> 具体的な指示事項</h4>
+            </div>
+            <div class="lab-textarea-container">
+              <textarea class="lab-textarea" placeholder="歯冠形態、テクスチャー、マージン設定、その他技工所への具体的な指示をご記入ください..."></textarea>
             </div>
           </div>
         </div>
@@ -1750,7 +1750,7 @@
               <div class="card-icon"><i data-lucide="wrench"></i></div>
               <div class="card-info">
                 <span class="card-title">技工ツール</span>
-                <span class="card-desc">Chapter 9 〜 12 の技工指示</span>
+                <span class="card-desc">Chapter 9 〜 13 の技工指示</span>
               </div>
               <div class="custom-checkbox"><i data-lucide="check"></i></div>
             </div>
