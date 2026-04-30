@@ -1,8 +1,11 @@
 /**
- * AnalysisCard Class
- * Handles individual analysis cards/units for each diagnostic phase.
+ * BaseAnalysisCard Class
+ * Core engine for all analysis cards/units.
+ * Handles: canvas, drag & drop, zoom/pan, tool management,
+ * mouse/touch events, AI dispatch, and data export.
+ * Phase-specific subclasses extend this class.
  */
-class AnalysisCard {
+class BaseAnalysisCard {
   constructor(cardElement) {
     this.card = cardElement;
     this.phase = cardElement.dataset.phase;
@@ -60,9 +63,9 @@ class AnalysisCard {
     this.lastPanPt = { x: 0, y: 0 };
 
     // Shared offscreen canvas for processing (Static)
-    if (!AnalysisCard.offScreenCanvas) {
-      AnalysisCard.offScreenCanvas = document.createElement('canvas');
-      AnalysisCard.offScreenCtx = AnalysisCard.offScreenCanvas.getContext('2d', { willReadFrequently: true });
+    if (!BaseAnalysisCard.offScreenCanvas) {
+      BaseAnalysisCard.offScreenCanvas = document.createElement('canvas');
+      BaseAnalysisCard.offScreenCtx = BaseAnalysisCard.offScreenCanvas.getContext('2d', { willReadFrequently: true });
     }
     this.lastPanPt = null;
     this.imgRotation = 0; 
@@ -738,7 +741,7 @@ class AnalysisCard {
       try {
           console.log(`Dispatching AI analysis for phase: ${this.phase}`);
           this.prepareOffScreenCanvas();
-          const canvas = AnalysisCard.offScreenCanvas;
+          const canvas = BaseAnalysisCard.offScreenCanvas;
 
           let result = { success: false, message: "このフェーズにはまだ対応していません。" };
 
@@ -1085,7 +1088,7 @@ class AnalysisCard {
         // Force redraw on main and clear shared cache
         this.resizeCanvas(); 
         this.updateStats();
-        AnalysisCard.lastRenderedImage = null;
+        BaseAnalysisCard.lastRenderedImage = null;
       };
       img.src = e.target.result;
     };
@@ -1380,20 +1383,20 @@ class AnalysisCard {
 
   prepareOffScreenCanvas() {
       if (!this.currentImage) return;
-      if (AnalysisCard.lastRenderedImage === this.currentImage) return;
+      if (BaseAnalysisCard.lastRenderedImage === this.currentImage) return;
       
-      const canvas = AnalysisCard.offScreenCanvas;
-      const ctx = AnalysisCard.offScreenCtx;
+      const canvas = BaseAnalysisCard.offScreenCanvas;
+      const ctx = BaseAnalysisCard.offScreenCtx;
       canvas.width = this.currentImage.width;
       canvas.height = this.currentImage.height;
       ctx.drawImage(this.currentImage, 0, 0);
-      AnalysisCard.lastRenderedImage = this.currentImage;
+      BaseAnalysisCard.lastRenderedImage = this.currentImage;
   }
 
   sampleColorAt(rX, rY) {
       if (!this.currentImage) return { r: 0, g: 0, b: 0 };
       this.prepareOffScreenCanvas();
-      const ctx = AnalysisCard.offScreenCtx;
+      const ctx = BaseAnalysisCard.offScreenCtx;
       const data = ctx.getImageData(rX - 2, rY - 2, 5, 5).data;
       let r = 0, g = 0, b = 0; for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
       return { r: Math.round(r/25), g: Math.round(g/25), b: Math.round(b/25) };
@@ -1517,7 +1520,7 @@ class AnalysisCard {
                       try {
                           this.prepareOffScreenCanvas();
                           const landmarker = await window.initFaceLandmarker();
-                          const res = landmarker.detect(AnalysisCard.offScreenCanvas);
+                          const res = landmarker.detect(BaseAnalysisCard.offScreenCanvas);
                           if (res.faceLandmarks && res.faceLandmarks.length > 0) {
                               landmarks = res.faceLandmarks[0];
                           }
@@ -1680,5 +1683,12 @@ class AnalysisCard {
 
       debugPanel.innerHTML = html;
   }
+  // Static cache for offscreen canvas (shared across all subclass instances)
+  static get offScreenCanvas() { return BaseAnalysisCard._offScreenCanvas; }
+  static set offScreenCanvas(v) { BaseAnalysisCard._offScreenCanvas = v; }
+  static get offScreenCtx() { return BaseAnalysisCard._offScreenCtx; }
+  static set offScreenCtx(v) { BaseAnalysisCard._offScreenCtx = v; }
+  static get lastRenderedImage() { return BaseAnalysisCard._lastRenderedImage; }
+  static set lastRenderedImage(v) { BaseAnalysisCard._lastRenderedImage = v; }
 }
-window.AnalysisCard = AnalysisCard;
+window.BaseAnalysisCard = BaseAnalysisCard;
