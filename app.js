@@ -25,19 +25,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // TrialManager initialization removed
 
+  // Factory: instantiate the right subclass per phase
+  function createAnalysisCard(el) {
+    const phase = el.dataset.phase;
+    if (phase === 'intraoral') return new IntraoralAnalysisCard(el);
+    if (phase === 'shade-take') return new ShadeAnalysisCard(el);
+    return new AnalysisCard(el);
+  }
+
   // Initialize all AnalysisCards
   const cardElements = document.querySelectorAll('.analysis-card:not(.lab-card), .analysis-unit'); 
   window.appCards = [];
   cardElements.forEach(el => {
-    const card = new window.AnalysisCard(el);
+    const card = createAnalysisCard(el);
     window.appCards.push(card);
-    // iPad/タッチデバイス向けハンドラの初期化（AnalysisCard内で統合管理されるため無効化）
-    /*
-    if (window.TouchHandler) {
-      new window.TouchHandler(card);
-    }
-    */
   });
+
 
   // Global Zoom Slider Sync
   const zSlider = document.getElementById('global-zoom-slider');

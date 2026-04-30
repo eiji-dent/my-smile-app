@@ -9,11 +9,6 @@ class BaseAnalysisCard {
   constructor(cardElement) {
     this.card = cardElement;
     this.phase = cardElement.dataset.phase;
-
-    // --- Authentication & Expiry Logic (Gatekeeper) ---
-    if (this.phase === 'intraoral') { 
-        this.initIntraoralAuth();
-    }
     
     this.dropZone = cardElement.querySelector('.drop-zone');
     this.fileInput = cardElement.querySelector('.file-input');
@@ -79,46 +74,7 @@ class BaseAnalysisCard {
     if (this.loupeCanvas) this.loupeCtx = this.loupeCanvas.getContext('2d', { alpha: false });
   }
 
-  initIntraoralAuth() {
-    const authModal = document.getElementById('auth-modal');
-    const privacyModal = document.getElementById('privacy-modal');
-    const passwordInput = document.getElementById('auth-password');
-    const submitBtn = document.getElementById('auth-submit-btn');
-    const authError = document.getElementById('auth-error-msg');
-    const expiryError = document.getElementById('expiry-error-msg');
 
-    const expiryDate = new Date('2026-06-01T00:00:00');
-    const now = new Date();
-    const isExpired = now >= expiryDate;
-
-    if (isExpired) {
-        authModal.classList.remove('hidden');
-        expiryError.classList.remove('hidden');
-        if (passwordInput) passwordInput.disabled = true;
-        if (submitBtn) submitBtn.disabled = true;
-    } else {
-        const isAuthenticated = sessionStorage.getItem('app-auth') === 'true';
-        if (isAuthenticated) {
-            authModal.classList.add('hidden');
-            this.checkPrivacyModal(privacyModal);
-        } else {
-            authModal.classList.remove('hidden');
-            if (window.lucide) lucide.createIcons();
-        }
-
-        submitBtn?.addEventListener('click', () => {
-            if (passwordInput.value === 'shibata-beta') {
-                sessionStorage.setItem('app-auth', 'true');
-                authModal.classList.add('hidden');
-                authError.classList.add('hidden');
-                this.checkPrivacyModal(privacyModal);
-            } else {
-                authError.classList.remove('hidden');
-                if (window.lucide) lucide.createIcons();
-            }
-        });
-    }
-  }
 
   initToolbar() {
     const mmPhases = ['lateral', 'e-midline', 'e-sound', 'm-sound', 's-sound', 'fv-sound', 'intraoral'];
@@ -149,87 +105,6 @@ class BaseAnalysisCard {
         this.drawCanvas();
       });
     }
-
-    if (this.phase === 'shade-take') {
-      this.initShadeUI();
-    }
-  }
-
-
-
-  initShadeUI() {
-    this.shadeSwatch = this.card.querySelector('#shade-color-swatch');
-    this.shadeIdValue = this.card.querySelector('#shade-result-id');
-    // コンストラクタで設定済みの標準セレクタを使用
-    if (!this.dropZone) this.dropZone = this.card.querySelector('.drop-zone');
-    if (!this.canvas) this.canvas = this.card.querySelector('.analysis-canvas');
-    if (!this.fileInput) this.fileInput = this.card.querySelector('.file-input');
-    
-    this.isWaitingForAIClick = false; // 1クリック誘導AI用の状態
-    this.currentImage = null;
-    this.shadeL = this.card.querySelector('#shade-lab-l');
-    this.shadeA = this.card.querySelector('#shade-lab-a');
-    this.shadeB = this.card.querySelector('#shade-lab-b');
-    this.shadeDelta = this.card.querySelector('#shade-delta-e');
-    this.shadeCalibRef = this.card.querySelector('#shade-calib-ref');
-    this.shadeCalibResetBtn = this.card.querySelector('#shade-calib-reset-btn');
-    this.shadePlotList = this.card.querySelector('#shade-plot-list');
-    this.shadePalette = this.card.querySelector('#shade-palette');
-    this.aiEnhanceBtn = this.card.querySelector('#btn-ai-enhance');
-    this.shadeZoomCanvas = this.card.querySelector('#shade-zoom-canvas');
-    this.shadeGuideSelect = this.card.querySelector('#shade-guide-select');
-    this.shadeGuideDescription = this.card.querySelector('#shade-guide-description');
-    
-    this.shadeDiffA = null;
-    this.shadeDiffB = null;
-    this.shadeMapRect = null;
-    
-    this.currentShadeGuideId = 'vita-classical'; 
-    this.currentCalibId = 'A2';
-    
-    this.shadeOffset = { l: 0, a: 0, b: 0 };
-    this.calibPoints = []; 
-    this.shadeMatrixValues = "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0";
-    
-    this.renderShadePalette();
-    this.initShadeGuide();
-
-    if (this.shadeCalibResetBtn) {
-        this.shadeCalibResetBtn.addEventListener('click', () => {
-            this.shadeOffset = { l: 0, a: 0, b: 0 };
-            this.calibPoints = [];
-            this.updateStats();
-            this.drawCanvas();
-            alert('色調補正をリセットしました。');
-        });
-    }
-
-    if (this.aiEnhanceBtn) {
-        this.aiEnhanceBtn.classList.remove('active');
-        this.aiEnhanceBtn.addEventListener('click', () => {
-            this.aiEnhanceBtn.classList.toggle('active');
-            this.updateAutoCorrectionMatrix();
-            this.drawCanvas();
-        });
-    }
-  }
-
-
-
-  checkPrivacyModal(privacyModal) {
-      const agreeBtn = document.getElementById('agree-button');
-      if (privacyModal && agreeBtn) {
-          privacyModal.classList.remove('hidden');
-          if (window.lucide) lucide.createIcons();
-
-          if (!agreeBtn.hasListener) {
-              agreeBtn.addEventListener('click', () => {
-                  privacyModal.classList.add('hidden');
-                  if (window.lucide) lucide.createIcons();
-              });
-              agreeBtn.hasListener = true;
-          }
-      }
   }
 
   initEventListeners() {
@@ -812,28 +687,6 @@ class BaseAnalysisCard {
       this.drawCanvas();
   }
 
-  solveAutoCorrection() {
-      if (this.calibPoints.length === 0) {
-          this.shadeMatrixValues = "1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0"; return;
-      }
-      let sRI = 0, sRO = 0, sGI = 0, sGO = 0, sBI = 0, sBO = 0;
-      this.calibPoints.forEach(p => {
-          const ideal = ColorSpace.labToRgb(p.idealLab.l, p.idealLab.a, p.idealLab.b);
-          sRI += p.sampledRGB.r; sRO += ideal.r; sGI += p.sampledRGB.g; sGO += ideal.g; sBI += p.sampledRGB.b; sBO += ideal.b;
-      });
-      const gR = Math.min(3, sRO / (sRI || 1)); const gG = Math.min(3, sGO / (sGI || 1)); const gB = Math.min(3, sBO / (sBI || 1));
-      this.shadeMatrixValues = `${gR.toFixed(3)} 0 0 0 0  0 ${gG.toFixed(3)} 0 0 0  0 0 ${gB.toFixed(3)} 0 0  0 0 0 1 0`;
-  }
-
-  updateAutoCorrectionMatrix() {
-      const matrix = document.getElementById('shade-auto-matrix');
-      if (!matrix) return;
-      if (this.aiEnhanceBtn && this.aiEnhanceBtn.classList.contains('active')) {
-          this.solveAutoCorrection();
-          matrix.setAttribute('values', this.shadeMatrixValues);
-          this.canvas.style.filter = 'url(#shade-auto-filter)';
-      } else this.canvas.style.filter = 'none';
-  }
 
   /**
    * Phase 8の歯列正中プロットを基に、Phase 3の基準角を再現する回転を適用する
@@ -1290,129 +1143,9 @@ class BaseAnalysisCard {
     });
   }
 
-  calibrateShade(rX, rY) {
-      if (!this.currentImage || !window.ColorSpace || !window.SHADE_GUIDES) return;
-      const c = this.sampleColorAt(rX, rY);
-      this.lastSampledColor = c;
-      const sLab = window.ColorSpace.rgbToLab(c.r, c.g, c.b);
 
-      const tId = this.currentCalibId || 'A2';
-      const g = window.SHADE_GUIDES[this.currentShadeGuideId];
-      const tS = g ? g.shades.find(sh => sh.id === tId) : null;
-      let tLab = tS ? { l: tS.l, a: tS.a, b: tS.b } : null;
-
-      if (tId && tLab) {
-          const off = { l: tLab.l - sLab.l, a: tLab.a - sLab.a, b: tLab.b - sLab.b };
-          this.calibPoints.push({ id: tId, sampledRGB: c, idealLab: tLab, offset: off, x: rX, y: rY });
-          let sL = 0, sA = 0, sB = 0;
-          this.calibPoints.forEach(p => { sL += p.offset.l; sA += p.offset.a; sB += p.offset.b; });
-          this.shadeOffset = { l: sL/this.calibPoints.length, a: sA/this.calibPoints.length, b: sB/this.calibPoints.length };
-          this.updateStats(); this.drawCanvas();
-          this.showShadeToast(`${tId} としてプロットしました。`);
-      }
-  }
-
-  initShadeGuide() {
-      const select = this.card.querySelector('#shade-guide-select');
-      if (select) {
-          select.addEventListener('change', (e) => { 
-              const newId = e.target.value;
-              this.currentShadeGuideId = newId; 
-              
-              const g = window.SHADE_GUIDES[newId];
-              if (g) {
-                  // Update description
-                  if (this.shadeGuideDescription) {
-                      this.shadeGuideDescription.textContent = g.description;
-                  }
-                  // Reset active patch to the first one in the new guide
-                  if (g.shades && g.shades.length > 0) {
-                      this.currentCalibId = g.shades[0].id;
-                  }
-                  // Re-render palette
-                  this.renderShadePalette(); 
-                  // Update stats to sync magnifier/labels
-                  this.updateStats(); 
-              }
-          });
-      }
-      
-      if (this.shadePalette) {
-          this.shadePalette.addEventListener('click', (e) => {
-              const btn = e.target.closest('.shade-btn'); if (!btn) return;
-              this.shadePalette.querySelectorAll('.shade-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active');
-              this.currentCalibId = btn.dataset.shade;
-              const cal = this.card.querySelector('#tool-shade-calibrator');
-              if (cal) { cal.checked = true; this.activeTool = 'shade-calibrator'; const con = this.shadePalette.closest('.palette-container'); if (con) con.classList.add('open'); }
-          });
-      }
-  }
-
-  renderShadePalette() {
-      if (!this.shadePalette || !window.SHADE_GUIDES || !window.ColorSpace) return; 
-      const g = window.SHADE_GUIDES[this.currentShadeGuideId]; 
-      if (!g) return;
-      
-      this.shadePalette.innerHTML = '';
-      
-      // Safety: Auto-select first shade if current selection is invalid for this guide
-      if (!g.shades.find(s => s.id === this.currentCalibId)) {
-          if (g.shades.length > 0) this.currentCalibId = g.shades[0].id;
-      }
-
-      g.shades.forEach(s => {
-          const btn = document.createElement('button'); 
-          btn.type = 'button'; 
-          btn.className = 'shade-btn'; 
-          if (s.id === this.currentCalibId) btn.classList.add('active');
-          btn.dataset.shade = s.id; 
-          btn.textContent = s.id;
-          if (s.label) btn.title = s.label; // For ColorChecker patch names
-          
-          const rgb = window.ColorSpace.labToRgb(s.l, s.a, s.b); 
-          btn.style.setProperty('--shade-color', `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`);
-          this.shadePalette.appendChild(btn);
-      });
-  }
-
-  showShadeToast(msg) {
-      let t = document.getElementById('shade-toast');
-      if (!t) { t = document.createElement('div'); t.id = 'shade-toast'; t.style.cssText = 'position:fixed; bottom:20px; right:20px; background:rgba(37,99,235,0.9); color:white; padding:10px 20px; border-radius:30px; z-index:9999;'; document.body.appendChild(t); }
-      t.textContent = msg; t.style.opacity = '1'; setTimeout(() => { t.style.opacity = '0'; }, 2000);
-  }
-
-  prepareOffScreenCanvas() {
-      if (!this.currentImage) return;
-      if (BaseAnalysisCard.lastRenderedImage === this.currentImage) return;
-      
-      const canvas = BaseAnalysisCard.offScreenCanvas;
-      const ctx = BaseAnalysisCard.offScreenCtx;
-      canvas.width = this.currentImage.width;
-      canvas.height = this.currentImage.height;
-      ctx.drawImage(this.currentImage, 0, 0);
-      BaseAnalysisCard.lastRenderedImage = this.currentImage;
-  }
-
-  sampleColorAt(rX, rY) {
-      if (!this.currentImage) return { r: 0, g: 0, b: 0 };
-      this.prepareOffScreenCanvas();
-      const ctx = BaseAnalysisCard.offScreenCtx;
-      const data = ctx.getImageData(rX - 2, rY - 2, 5, 5).data;
-      let r = 0, g = 0, b = 0; for (let i = 0; i < data.length; i += 4) { r += data[i]; g += data[i+1]; b += data[i+2]; }
-      return { r: Math.round(r/25), g: Math.round(g/25), b: Math.round(b/25) };
-  }
-  updateShade(rX, rY) {
-      const c = this.sampleColorAt(rX, rY);
-      this.lastSampledColor = c; // Always track the last sampled color
-      if (this.activeTool === 'shade-diff') {
-          if (!this.shadeDiffA || (this.shadeDiffA && this.shadeDiffB)) { this.shadeDiffA = { x: rX, y: rY, ...c }; this.shadeDiffB = null; }
-          else this.shadeDiffB = { x: rX, y: rY, ...c };
-      } else {
-          this.lines['shadeSample'] = { x: rX, y: rY, ...c };
-      }
-      this.updateStats(); this.drawCanvas();
-  }
-
+  // --- Data Export Methods (for AI Training) ---
+  
   // --- Data Export Methods (for AI Training) ---
   
   /**
