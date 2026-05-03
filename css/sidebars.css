@@ -66,8 +66,8 @@
   left: 260px;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 110px;
+  width: 36px; /* Slightly wider by default for easier tapping */
+  height: 120px; /* Slightly taller */
   background: var(--bg-sidebar);
   border: 1px solid var(--border);
   border-left: none;
@@ -85,11 +85,11 @@
   clip-path: polygon(0 0, 100% 18%, 100% 82%, 0 100%);
 }
 
-.sidebar-handle:hover {
+.sidebar-handle:hover,
+.sidebar-handle:active {
   background: white;
   color: var(--primary);
-  width: 38px;
-  padding-left: 8px;
+  /* No width change to prevent layout shift on touch */
 }
 
 .sidebar-collapsed .sidebar-handle {
@@ -111,8 +111,8 @@
   right: 280px;
   top: 50%;
   transform: translateY(-50%);
-  width: 32px;
-  height: 110px;
+  width: 36px;
+  height: 120px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-right: none;
@@ -130,11 +130,11 @@
   clip-path: polygon(100% 0, 0 18%, 0 82%, 100% 100%);
 }
 
-.right-panel-handle:hover {
+.right-panel-handle:hover,
+.right-panel-handle:active {
   background: white;
   color: var(--primary);
-  width: 38px;
-  padding-right: 8px;
+  /* No width change */
 }
 
 .right-panel-collapsed .right-panel-handle {

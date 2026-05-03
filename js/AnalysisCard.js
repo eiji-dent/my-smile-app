@@ -109,6 +109,24 @@ class BaseAnalysisCard {
     }
   }
 
+  prepareOffScreenCanvas() {
+    if (!this.currentImage) return;
+    const canvas = BaseAnalysisCard.offScreenCanvas;
+    const ctx = BaseAnalysisCard.offScreenCtx;
+    
+    // Use original image dimensions
+    canvas.width = this.currentImage.width;
+    canvas.height = this.currentImage.height;
+    
+    ctx.save();
+    // Move to center, rotate, and draw
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate(this.imgRotation);
+    ctx.drawImage(this.currentImage, -this.currentImage.width / 2, -this.currentImage.height / 2);
+    ctx.restore();
+    console.log("[BaseAnalysisCard] Offscreen canvas prepared for AI");
+  }
+
   initEventListeners() {
       const handleToolChange = (toolValue) => {
           this.activeTool = toolValue;
@@ -951,8 +969,15 @@ class BaseAnalysisCard {
   }
 
   resizeCanvas() {
+    if (!this.dropZone || !this.canvas) return;
     const rect = this.dropZone.getBoundingClientRect();
-    this.canvas.width = rect.width; this.canvas.height = rect.height;
+    
+    // Set internal canvas resolution to match its display size
+    // Note: We could use devicePixelRatio here, but for simplicity and performance 
+    // with current drawing logic, matching the bounding rect is safer.
+    this.canvas.width = rect.width;
+    this.canvas.height = rect.height;
+    
     this.drawCanvas();
   }
 

@@ -7,19 +7,21 @@
   box-shadow: 0 4px 20px -2px rgba(30, 41, 59, 0.1);
 }
 
-.lab-card .card-header {
+/* Force dark header for Lab/Simulation phases to ensure text visibility */
+.view-container .analysis-card.lab-card .card-header {
+  background: #1e293b !important;
   background-color: #1e293b !important;
   color: #f8fafc !important;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #334155 !important;
 }
 
-.lab-card .card-header h3,
-.lab-card .card-header h2 {
+.view-container .analysis-card.lab-card .card-header h3,
+.view-container .analysis-card.lab-card .card-header h2 {
   color: #f8fafc !important;
 }
 
-.lab-card .card-header .btn-ghost {
-  color: #94a3b8;
+.view-container .analysis-card.lab-card .card-header .btn-ghost {
+  color: #94a3b8 !important;
 }
 
 .lab-card .card-header .btn-ghost:hover {

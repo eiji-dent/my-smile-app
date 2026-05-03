@@ -13,21 +13,29 @@
   --bg-card: #ffffff;
   --bg-sidebar: #fafbfd;
 
-  --text-main: #1e293b;
-  --text-muted: #475569;
-  /* Darkened from #64748b */
-  --text-light: #64748b;
-  /* Darkened from #94a3b8 */
-
-  --primary: #2563eb;
+  --primary: #2563eb; /* Original Professional Blue */
   --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-
-  --accent: #0ea5e9;
-  --warning: #f59e0b;
+  --primary-light: rgba(37, 99, 235, 0.1);
+  
+  --primary-ai: #7c3aed; /* Premium AI Purple */
+  --primary-ai-hover: #6d28d9;
+  --primary-ai-light: rgba(124, 58, 237, 0.1);
+  
+  --accent: #f59e0b;
   --success: #10b981;
+  --warning: #f59e0b;
   --danger: #ef4444;
+  
+  --bg-main: #f8fafc;
+  --bg-sidebar: rgba(255, 255, 255, 0.85);
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+  --border: #e2e8f0;
+  --border-light: #f1f5f9;
 
+  --bg-main: #f8fafc;
   --border: #e2e8f0;
   --border-light: #f1f5f9;
 

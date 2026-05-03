@@ -1,14 +1,38 @@
 .tab-navigation {
   display: flex;
-  justify-content: center;
-  padding: 0.5rem 1rem 0.75rem 1rem; /* Tighter padding for flush look */
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  justify-content: center; /* Center the tabs */
+  align-items: center;
+  padding: 0 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 100;
+  min-height: 60px;
+}
+
+.header-logo-area {
+  position: absolute; /* Fix logo to the left */
+  left: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  pointer-events: none; /* Allow clicks to pass through to elements behind if necessary */
+}
+
+.header-logo-icon {
+  pointer-events: auto; /* Re-enable clicks for the logo itself */
+  height: 100%;
+  width: auto;
+}
+
+.header-logo-text {
+  height: 85%; /* Slightly smaller than icon for perfect alignment */
+  width: auto;
+  opacity: 1;
 }
 
 .tab-segmented-control {
@@ -75,8 +99,38 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Sidebar active state adjustment (optional) */
-.nav-item.active-section {
-  background-color: var(--primary-light);
-  color: var(--primary);
+/* Tablet / Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  .tab-navigation {
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .header-logo-area {
+    display: none; /* Hide logo on small screens to save space for tabs */
+  }
+
+  .tab-segmented-control {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    gap: 4px;
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .tab-btn i {
+    display: none; /* Hide icons on very small screens to save space */
+  }
+}
+
+@media (max-width: 480px) {
+  .tab-btn {
+    padding: 6px 4px;
+    font-size: 0.75rem;
+  }
 }

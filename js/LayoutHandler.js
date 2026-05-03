@@ -24,8 +24,13 @@ const LayoutHandler = {
       this.sidebarToggle.addEventListener('click', () => this.toggleLeftSidebar());
     }
     if (this.sidebarHandle) {
-      this.sidebarHandle.addEventListener('click', (e) => this.handleFastToggle(e, 'left'));
-      this.sidebarHandle.addEventListener('touchstart', (e) => this.handleFastToggle(e, 'left'), { passive: true });
+      const handleLeft = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.handleFastToggle(e, 'left');
+      };
+      this.sidebarHandle.addEventListener('click', handleLeft);
+      this.sidebarHandle.addEventListener('touchstart', handleLeft, { passive: false });
     }
 
     // Right Panel triggers
@@ -33,8 +38,13 @@ const LayoutHandler = {
       this.rightToggle.addEventListener('click', () => this.toggleRightPanel());
     }
     if (this.rightHandle) {
-      this.rightHandle.addEventListener('click', (e) => this.handleFastToggle(e, 'right'));
-      this.rightHandle.addEventListener('touchstart', (e) => this.handleFastToggle(e, 'right'), { passive: true });
+      const handleRight = (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        this.handleFastToggle(e, 'right');
+      };
+      this.rightHandle.addEventListener('click', handleRight);
+      this.rightHandle.addEventListener('touchstart', handleRight, { passive: false });
     }
 
     if (this.overlay) {

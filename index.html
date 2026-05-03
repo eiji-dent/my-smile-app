@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>歯科審美画像解析ツール [Precision Core Beta]</title>
+  <title>Reprosmile | AI Aesthetic Dentistry Analysis</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,8 +60,8 @@
   <div id="auth-modal">
     <div class="auth-card">
       <div class="auth-header">
-        <i data-lucide="lock" class="lock-icon"></i>
-        <h2>関係者専用アクセス認証</h2>
+        <img src="assets/images/logo-white.png" alt="Reprosmile" class="auth-logo-img">
+        <p class="auth-subtitle">Professional Aesthetic Analysis Tool</p>
       </div>
       <div class="auth-body">
         <p class="auth-intro">本ツールは、研究および評価目的のベータ版プロトタイプです。アクセスには専用パスワードが必要です。</p>
@@ -138,10 +138,6 @@
   <div class="app-container">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="logo-area">
-        <i data-lucide="activity" class="logo-icon"></i>
-        <span class="logo-text">柴田の審美歯科<br>画像解析ツール</span>
-      </div>
 
       <nav class="nav-menu">
         <div class="nav-section">ジャンプメニュー</div>
@@ -219,7 +215,7 @@
         
         <!-- Combined Cloud Sync & PDF Button -->
         <button id="export-combined-btn" class="btn btn-primary w-full btn-lg" style="padding: 18px; margin-top: 10px; font-weight: 700; font-size: 1.05rem;">
-          <i data-lucide="send"></i> 解析データを送信して<br>レポートを出力
+          <i data-lucide="pencil"></i> 解析して<br>レポートを出力
         </button>
         
         <!-- Cloud Sync Status Indicator -->
@@ -237,6 +233,10 @@
 
       <!-- Tab Navigation -->
       <nav class="tab-navigation">
+        <div class="header-logo-area">
+          <img src="assets/images/logo-icon.png" alt="Reprosmile Icon" class="header-logo-icon">
+          <img src="assets/images/logo-text-only.png" alt="Reprosmile" class="header-logo-text">
+        </div>
         <div class="tab-segmented-control">
           <button id="tab-btn-analysis" class="tab-btn active">
             <i data-lucide="microscope"></i>
@@ -265,19 +265,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -289,13 +289,13 @@
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-frontal" id="tool-interpupillary" value="interpupillary"
                   class="tool-radio">
-                <label for="tool-interpupillary" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線を引く</label>
-
-                <input type="radio" name="tool-frontal" id="tool-midline" value="midline" class="tool-radio">
-                <label for="tool-midline" class="tool-label"><i data-lucide="align-center"></i> 顔面正中線を引く</label>
+                <label for="tool-interpupillary" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線</label>
 
                 <input type="radio" name="tool-frontal" id="tool-commissural" value="commissural" class="tool-radio">
-                <label for="tool-commissural" class="tool-label"><i data-lucide="smile"></i> 口角線を引く</label>
+                <label for="tool-commissural" class="tool-label"><i data-lucide="smile"></i> 口角線</label>
+
+                <input type="radio" name="tool-frontal" id="tool-midline" value="midline" class="tool-radio">
+                <label for="tool-midline" class="tool-label"><i data-lucide="align-center"></i> 顔面正中線</label>
 
                 <input type="radio" name="tool-frontal" id="tool-vertical-prop" value="vertical-proportions"
                   class="tool-radio">
@@ -315,7 +315,7 @@
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
                 <div class="canvas-placeholder">
-                  <i data-lucide="camera-off"></i>
+                  <i data-lucide="image-plus"></i>
                   <p>正面画像をドロップ</p>
                 </div>
               </div>
@@ -357,19 +357,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -380,7 +380,7 @@
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-lateral" id="tool-eline" value="eline" class="tool-radio">
-                <label for="tool-eline" class="tool-label"><i data-lucide="ruler"></i> E-line を引く (4点計測)</label>
+                <label for="tool-eline" class="tool-label"><i data-lucide="ruler"></i> E-line  (4点計測)</label>
 
                 <input type="radio" name="tool-lateral" id="tool-nla" value="nla" class="tool-radio">
                 <label for="tool-nla" class="tool-label"><i data-lucide="split-square-vertical"></i> 鼻唇角 (NLA)
@@ -398,7 +398,7 @@
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
                 <div class="canvas-placeholder">
-                  <i data-lucide="camera-off"></i>
+                  <i data-lucide="image-plus"></i>
                   <p>側方（横顔）画像をドロップ</p>
                 </div>
               </div>
@@ -460,19 +460,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -489,10 +489,10 @@
 
                 <input type="radio" name="tool-emidline" id="tool-interpupillary-e" value="interpupillary-e"
                   class="tool-radio">
-                <label for="tool-interpupillary-e" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線を引く</label>
+                <label for="tool-interpupillary-e" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線</label>
 
                 <input type="radio" name="tool-emidline" id="tool-incisal-edge" value="incisal-edge" class="tool-radio">
-                <label for="tool-incisal-edge" class="tool-label"><i data-lucide="scissors"></i> 前歯切端線を引く</label>
+                <label for="tool-incisal-edge" class="tool-label"><i data-lucide="scissors"></i> 前歯切端線</label>
               </div>
               <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
                 <button class="btn btn-primary rotate-inter-btn" data-phase="e-sound" title="瞳孔間線に合わせる"><i
@@ -508,7 +508,7 @@
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
                 <div class="canvas-placeholder">
-                  <i data-lucide="camera-off"></i>
+                  <i data-lucide="image-plus"></i>
                   <p>顔全体と前歯が写ったE音画像のアップ画像をドロップ</p>
                 </div>
               </div>
@@ -555,19 +555,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -593,7 +593,7 @@
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
-                <i data-lucide="camera-off"></i>
+                <i data-lucide="image-plus"></i>
                 <p>スマイル時・E音発音時のアップ画像をドロップ</p>
               </div>
             </div>
@@ -682,19 +682,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -712,7 +712,7 @@
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
-                <i data-lucide="camera-off"></i>
+                <i data-lucide="image-plus"></i>
                 <p>M音(安静位)のアップ画像をドロップ</p>
               </div>
             </div>
@@ -746,19 +746,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -776,7 +776,7 @@
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
-                <i data-lucide="camera-off"></i>
+                <i data-lucide="image-plus"></i>
                 <p>S音発音時のアップ画像をドロップ</p>
               </div>
             </div>
@@ -810,19 +810,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -840,7 +840,7 @@
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
-                <i data-lucide="camera-off"></i>
+                <i data-lucide="image-plus"></i>
                 <p>F/V音発音時のアップ画像をドロップ</p>
               </div>
             </div>
@@ -874,19 +874,19 @@
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
-                <span>基準点・基準線を表示</span>
+                <span>プロットを表示</span>
               </label>
             </div>
             <div class="card-actions">
               <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
-              <button class="btn btn-secondary send-data-btn" title="解析データを送信">
-                <i data-lucide="send"></i> 解析データを送信
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> 解析
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" class="file-input" accept="image/*" hidden>
               </label>
             </div>
@@ -932,7 +932,7 @@
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
               <div class="canvas-placeholder">
-                <i data-lucide="camera-off"></i>
+                <i data-lucide="image-plus"></i>
                 <p>圧排時の正面アップ画像をドロップ</p>
               </div>
             </div>
@@ -1151,7 +1151,7 @@
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
-                    <i data-lucide="upload"></i> 画像を読み込む
+                    <i data-lucide="image-plus"></i> 画像を読み込む
                     <input type="file" class="file-input" accept="image/*" hidden>
                   </label>
                 </div>
@@ -1176,7 +1176,7 @@
                   <canvas class="analysis-canvas"></canvas>
                   <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
                   <div class="canvas-placeholder">
-                    <i data-lucide="camera-off"></i>
+                    <i data-lucide="image-plus"></i>
                     <p>正面の画像をドロップ</p>
                   </div>
                 </div>
@@ -1200,7 +1200,7 @@
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
-                    <i data-lucide="upload"></i> 画像を読み込む
+                    <i data-lucide="image-plus"></i> 画像を読み込む
                     <input type="file" class="file-input" accept="image/*" hidden>
                   </label>
                 </div>
@@ -1225,7 +1225,7 @@
                   <canvas class="analysis-canvas"></canvas>
                   <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
                   <div class="canvas-placeholder">
-                    <i data-lucide="camera-off"></i>
+                    <i data-lucide="image-plus"></i>
                     <p>頭側の画像をドロップ</p>
                   </div>
                 </div>
@@ -1260,7 +1260,7 @@
                 <div class="sub-actions">
                   <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
                   <label class="btn btn-secondary btn-upload btn-sm">
-                    <i data-lucide="upload"></i> 画像を読み込む
+                    <i data-lucide="image-plus"></i> 画像を読み込む
                     <input type="file" class="file-input" accept="image/*" hidden>
                   </label>
                 </div>
@@ -1399,11 +1399,11 @@
             <div class="card-actions">
               <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
               <div class="btn btn-secondary btn-upload-trigger" data-slot="A">
-                <i data-lucide="upload"></i> 黒背景 (開口時)
+                <i data-lucide="image-plus"></i> 黒背景 (開口時)
                 <input type="file" class="file-input" accept="image/*" hidden>
               </div>
               <div class="btn btn-secondary btn-upload-trigger" data-slot="B">
-                <i data-lucide="upload"></i> 白背景 (咬合時)
+                <i data-lucide="image-plus"></i> 白背景 (咬合時)
                 <input type="file" class="file-input" accept="image/*" hidden>
               </div>
             </div>
@@ -1610,7 +1610,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <label class="btn btn-secondary" title="口腔内写真を読み込む">
-                <i data-lucide="upload"></i> 画像を読み込む
+                <i data-lucide="image-plus"></i> 画像を読み込む
                 <input type="file" id="sim-file-input" accept="image/*" hidden>
               </label>
               <button id="sim-btn-reset" class="btn btn-ghost icon-btn" title="リセット">
