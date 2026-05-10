@@ -85,7 +85,7 @@ class BaseAnalysisCard {
       const calId = 'tool-calib-' + this.phase;
       if (!document.getElementById(calId)) {
           const rd = document.createElement('input'); rd.type = 'radio'; rd.name = 'tool-'+this.phase; rd.id = calId; rd.value = 'calib'; rd.className = 'tool-radio';
-          const lb = document.createElement('label'); lb.htmlFor = calId; lb.className = 'tool-label'; lb.style.marginRight = 'auto'; 
+          const lb = document.createElement('label'); lb.htmlFor = calId; lb.className = 'tool-label'; 
           lb.innerHTML = '<i data-lucide="ruler"></i> 実寸キャリブ';
           tSelector.prepend(lb); tSelector.prepend(rd);
           if(window.lucide) window.lucide.createIcons({root: lb});
@@ -649,7 +649,7 @@ class BaseAnalysisCard {
               const mpResult = landmarker.detect(canvas);
               if (mpResult && mpResult.faceLandmarks?.length > 0) {
                   this.applyAILandmarks(mpResult);
-                  result = { success: true, message: "正面顔貌の解析が完了しました。" };
+                  result = { success: true, message: "正面顔貌の計測が完了しました。" };
               }
           } else if (this.phase === 'lateral' && window.Phase2Engine) {
               result = await window.Phase2Engine.analyze(this, canvas);
@@ -671,7 +671,7 @@ class BaseAnalysisCard {
           }
 
           if (result.success) {
-              this.showTooltip(result.message || "解析が完了しました。");
+              this.showTooltip(result.message || "計測が完了しました。");
               this.drawCanvas(); // Force redraw with new landmarks
           } else if (result.message) {
               alert(result.message);
@@ -679,7 +679,7 @@ class BaseAnalysisCard {
 
       } catch (err) {
           console.error("Specialized AI Error:", err); 
-          alert("解析中にエラーが発生しました：\n" + (err.message || "不明なエラー"));
+          alert("計測中にエラーが発生しました：\n" + (err.message || "不明なエラー"));
       } finally {
           aiBtn.disabled = false; aiBtn.innerHTML = originalHTML;
           this.card.classList.remove('ai-scanning');
@@ -897,7 +897,7 @@ class BaseAnalysisCard {
               this.lines.midline = { startX: mT.x, startY: mT.y, endX: mB.x, endY: mB.y };
               this.lines.commissural = { startX: lM.x, startY: lM.y, endX: rM.x, endY: rM.y };
               
-              // 垂直6点分析 (Vertical Proportions)
+              // 垂直6点計測 (Vertical Proportions)
               this.lines.verticalProportions = [
                   getPt(10),   // 1. 髪際 (Hairline)
                   getPt(9),    // 2. 眉間 (Glabella)
@@ -1224,8 +1224,13 @@ class BaseAnalysisCard {
    * 解析データをサーバーへ送信（学習データ自動収集）
    */
   async sendAnalysisData() {
-      if (!this.currentImage) return alert("解析する画像がありません。");
+      if (!this.currentImage) return alert("計測する画像がありません。");
       
+      // 確認ダイアログを追加
+      if (!confirm("プロットは正確ですか？\nこのまま計測を確定してもよろしいですか？")) {
+          return; // キャンセルされた場合は中断
+      }
+
       const sendBtn = this.card.querySelector('.send-data-btn');
       if (sendBtn) sendBtn.disabled = true;
 
@@ -1234,7 +1239,7 @@ class BaseAnalysisCard {
       this.updateStats();
 
       // 2. トースト通知を表示
-      this.showToast("解析データを送信しました");
+      this.showToast("計測データを送信しました");
 
       try {
           // 3. 元画像（無加工）のBase64取得

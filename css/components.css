@@ -72,10 +72,11 @@
 
 /* Horizontal Toolbar inside Card */
 .horizontal-toolbar {
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: flex-start; /* Ensure left-alignment as per user request */
+  gap: 1rem;
   flex-wrap: wrap; 
   border-bottom: 1px solid var(--border-light);
   background-color: rgba(255, 255, 255, 0.5);
@@ -87,13 +88,18 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap; /* Prevent caption from wrapping or pushing others */
+  flex-shrink: 0; /* Don't let it shrink */
 }
 
 .tool-selector {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap; /* Allow tools to wrap */
+  flex-wrap: wrap; 
   gap: 8px;
+  align-items: center;
+  flex: 1; /* Take remaining space but allow items to wrap within */
+  min-width: 0; /* Prevent flex overflow */
 }
 
 .tool-radio {
@@ -192,6 +198,50 @@
   color: var(--text-light);
   z-index: 1;
   pointer-events: none;
+  width: 100%; /* Ensure it spans for ::before */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Guide Silhouettes Backgrounds */
+.canvas-placeholder[class*="guide-"]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%; /* Adjusted from 100% for better balance */
+  height: 70%;
+  background-size: contain; /* Maintain aspect ratio */
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15;
+  z-index: -1;
+  mix-blend-mode: multiply; /* Make white background transparent */
+}
+
+.guide-frontal::before { background-image: url('../assets/images/guide-frontal.png'); }
+.guide-lateral::before { background-image: url('../assets/images/guide-lateral.png'); }
+.guide-smile::before { background-image: url('../assets/images/guide-smile.png'); }
+.guide-frontal-smile::before { background-image: url('../assets/images/guide-frontal-smile-v3.png'); }
+.guide-intraoral::before { background-image: url('../assets/images/guide-intraoral.png'); }
+
+/* Specific override for Top View to match Frontal scale */
+.canvas-placeholder.guide-top::before { 
+  background-image: url('../assets/images/guide-top-v5.png'); 
+  width: 90% !important; 
+  height: 90% !important; 
+  opacity: 0.11; /* Slightly darker than 0.08 for better visibility */
+  filter: contrast(50%) brightness(160%) sepia(1) hue-rotate(175deg) saturate(1.5); 
+}
+
+/* Specific override for Chapter 3 (E-position) to double the size */
+#card-emidline .canvas-placeholder.guide-frontal-smile::before {
+  width: 120% !important;
+  height: 120% !important;
 }
 
 .canvas-placeholder i {
@@ -985,16 +1035,16 @@ body.is-exporting * {
 }
 
 .auth-header {
-    background: var(--primary);
+    background: #1D4489; /* Matching logo background */
     padding: 2.5rem 2rem;
     text-align: center;
 }
 
 .auth-logo-img {
     width: 100%;
-    max-width: 220px;
+    max-width: 320px;
     height: auto;
-    margin-bottom: 0.5rem;
+    margin: 0;
 }
 
 .auth-subtitle {
@@ -1099,6 +1149,51 @@ body.is-exporting * {
 .auth-submit-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
 
 .hidden { display: none !important; }
+
+/* Alignment Indicator (Absolute positioning to prevent layout disruption) */
+.alignment-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  text-align: center;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.alignment-indicator i {
+  width: 48px;
+  height: 48px;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.align-msg {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.6;
+}
+
+.align-info {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.align-actions {
+  display: flex;
+  gap: 1rem;
+}
 
 /* Toast Notifications */
 #toast-container {

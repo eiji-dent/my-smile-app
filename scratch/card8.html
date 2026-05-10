@@ -1,0 +1,264 @@
+        <!-- CARD 8: Retracted -->
+        <div class="analysis-card" id="card-intraoral" data-phase="intraoral">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑤ 歯牙・歯肉の計測</h3>
+              <div class="calibration-status-badge hidden"></div>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>プロットを表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
+                <i data-lucide="sparkles"></i> AI自動プロット
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> プロットを確定して計測
+              </button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="image-plus"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector" autocomplete="off">
+                <input type="radio" name="tool-intraoral" id="tool-wl" value="wl-ratio" class="tool-radio">
+                <label for="tool-wl" class="tool-label"><i data-lucide="bounding-box"></i> W/L 比率 (8点)</label>
+
+                <input type="radio" name="tool-intraoral" id="tool-red" value="red-prop" class="tool-radio">
+                <label for="tool-red" class="tool-label"><i data-lucide="sliders-horizontal"></i> 幅径バランス (7点)</label>
+
+                <input type="radio" name="tool-intraoral" id="tool-pink" value="pink-esth" class="tool-radio">
+                <label for="tool-pink" class="tool-label"><i data-lucide="droplet"></i> ピンク・エステティック (6点)</label>
+
+                <input type="radio" name="tool-intraoral" id="tool-axial" value="axial-incl" class="tool-radio">
+                <label for="tool-axial" class="tool-label"><i data-lucide="italic"></i> 歯冠傾斜度 (14点)</label>
+
+                <input type="radio" name="tool-intraoral" id="tool-papilla" value="papilla" class="tool-radio">
+                <label for="tool-papilla" class="tool-label"><i data-lucide="triangle-dashed"></i>
+                  ブラックトライアングル (10点)</label>
+              </div>
+              <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
+                <button class="btn btn-primary apply-p3-mid-btn" title="Phase3の顔貌正中に合わせる"><i
+                    data-lucide="align-center-vertical"></i> 顔貌正中に合わせる (Phase 3基準)</button>
+              </div>
+            </div>
+
+            <!-- DropZone + Canvas Area -->
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <div class="alignment-indicator hidden">
+                <i data-lucide="scan-line"></i>
+                <div class="align-msg">顔貌に対する正中の傾斜を再現するために<br>歯列正中をプロットしてください</div>
+                <div class="align-info">基準角 (Phase 3): <span class="p3-angle-val">--</span>°</div>
+                <div class="align-actions">
+                  <button class="btn btn-primary align-yes-btn">はい（プロット開始）</button>
+                  <button class="btn btn-secondary align-cancel-btn">中止する</button>
+                </div>
+              </div>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder guide-intraoral">
+                <i data-lucide="image-plus"></i>
+                <p>圧排時の正面アップ画像をドロップ</p>
+              </div>
+            </div>
+
+            <!-- Dynamic Stats Tables Container -->
+            <div class="quick-stats lateral-stats" id="retracted-stats-container">
+
+              <!-- Table: W/L Ratio -->
+              <div id="table-wl" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>W/L 歯冠プロポーション</strong></td>
+                      <td class="wl-r-val">-- %</td>
+                      <td class="wl-l-val">-- %</td>
+                      <td>75% 〜 85% (80%基準)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>プロファイル診断</strong></td>
+                      <td class="wl-r-profile">--</td>
+                      <td class="wl-l-profile">--</td>
+                      <td>細長(女性的) 〜 幅広(男性的)</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※中切歯の幅(Width)と長さ(Length)の比率。セントラル・ドミナンスの要です。</div>
+              </div>
+
+              <!-- Table: RED / Golden Proportion (Expanded 7-points) -->
+              <div id="table-red" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側バランス (中：側：犬)</th>
+                      <th>左側バランス (中：側：犬)</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>RED Proportion</strong></td>
+                      <td class="red-r-val">-- %</td>
+                      <td class="red-l-val">-- %</td>
+                      <td>標準: 70%, 長顔: 62%, 短顔: 80%</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Golden Percentage</strong></td>
+                      <td class="gp-r-val">-- : -- : --</td>
+                      <td class="gp-l-val">-- : -- : --</td>
+                      <td>25.0 : 15.0 : 10.0</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中切歯：側切歯：犬歯比率</strong></td>
+                      <td class="silver-r-val">-- : 1.00 : --</td>
+                      <td class="silver-l-val">-- : 1.00 : --</td>
+                      <td>黄金比(1.618:1:0.618) 　白銀比(1.414:1:0.707)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中切歯 幅の左右差</strong></td>
+                      <td colspan="2" class="red-diff1-val" style="text-align: center;">-- mm</td>
+                      <td>0 mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯 幅の左右差</strong></td>
+                      <td colspan="2" class="red-diff2-val" style="text-align: center;">-- mm</td>
+                      <td>2 mm</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※正面から見た「見かけの幅」の比率です。左右の対称性も同時に確認します。</div>
+              </div>
+
+              <!-- Table: Pink Esthetics (Refactored to 4-column) -->
+              <div id="table-pink" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>左右中切歯 GZPの高低差</strong></td>
+                      <td colspan="2" class="pz-asym-val" style="text-align: center;">-- mm</td>
+                      <td>1mm以下</td>
+                    </tr>
+                    <tr>
+                      <td><strong>左右犬歯 GZPの高低差</strong></td>
+                      <td colspan="2" class="pz-canine-val" style="text-align: center;">-- mm</td>
+                      <td>2mm以下</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯 GZL (垂直レベル)</strong></td>
+                      <td class="pz-level-r-val">-- mm</td>
+                      <td class="pz-level-l-val">-- mm</td>
+                      <td>中+犬ラインより約1.0mm 冠側</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※中・側・犬のゼニス（歯肉最深点）が描くHigh-Low-Highラインと左右の対称性を診査します。</div>
+              </div>
+
+              <!-- Table: Axial Inclination (NEW) -->
+              <div id="table-axial" class="stats-table-group">
+                <table class="analysis-table">
+                  <thead>
+                    <tr>
+                      <th>評価項目</th>
+                      <th>右側の傾き</th>
+                      <th>左側の傾き</th>
+                      <th>基準値</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>中切歯の傾斜度</strong></td>
+                      <td class="ax1-r-val">-- °</td>
+                      <td class="ax1-l-val">-- °</td>
+                      <td>約 3° の倒れ込み</td>
+                    </tr>
+                    <tr>
+                      <td><strong>側切歯の傾斜度</strong></td>
+                      <td class="ax2-r-val">-- °</td>
+                      <td class="ax2-l-val">-- °</td>
+                      <td>約 5° の倒れ込み</td>
+                    </tr>
+                    <tr>
+                      <td><strong>犬歯の傾斜度</strong></td>
+                      <td class="ax3-r-val">-- °</td>
+                      <td class="ax3-l-val">-- °</td>
+                      <td>約 8° の倒れ込み</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text">※正中から遠ざかるほど歯冠軸の傾きが強くなるのが美しい配列の条件です。</div>
+              </div>
+
+              <!-- Table: Black Triangle (Matrix Style) -->
+              <div id="table-papilla" class="stats-table-group">
+                <table class="analysis-table bt-matrix-table">
+                  <colgroup>
+                    <col style="width: 35%;">
+                    <col style="width: 20%;">
+                    <col style="width: 20%;">
+                    <col style="width: 25%;">
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th>部位</th>
+                      <th>右側 (Right)</th>
+                      <th>左側 (Left)</th>
+                      <th>左右差 (Diff)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>側-犬 間 ブラックトライアングル</strong></td>
+                      <td class="bt-val-1">-- mm</td>
+                      <td class="bt-val-5">-- mm</td>
+                      <td class="bt-diff-lc">-- mm</td>
+                    </tr>
+                    <tr>
+                      <td><strong>中-側 間 ブラックトライアングル</strong></td>
+                      <td class="bt-val-2">-- mm</td>
+                      <td class="bt-val-4">-- mm</td>
+                      <td class="bt-diff-cl">-- mm</td>
+                    </tr>
+                    <tr class="midline-row">
+                      <td><strong>正中 ブラックトライアングル</strong></td>
+                      <td colspan="2" class="bt-val-3" style="text-align: center; font-weight: bold; font-size: 1.1em;">-- mm</td>
+                      <td class="text-muted" style="text-align: center;">-</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="note-text" style="margin-top: 10px;">
+                  <span style="color: var(--success)">●</span> 2mm未満: 正常 
+                  <span style="color: #f59e0b; margin-left: 10px;">●</span> 2mm以上: 警告 (左右差含)
+                  <span style="color: var(--danger); margin-left: 10px;">●</span> 3mm以上: 危険
+                </div>
+              </div>
+
+            </div> <!-- end retracted-stats-container -->
+            <div class="instruction-tooltip hidden"></div>
+          </div> <!-- end card-content -->
+        </div> <!-- end analysis-card (Phase 8) -->

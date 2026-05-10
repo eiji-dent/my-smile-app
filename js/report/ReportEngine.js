@@ -49,8 +49,8 @@ class ReportEngine {
     }
 
     async handleExport() {
-        if (!window.PDFGenerator || !window.DataExporter) {
-            alert('レポート生成またはデータ同期モジュールが見つかりません。');
+        if (!window.PDFGenerator) {
+            alert('レポート生成モジュールが見つかりません。');
             return;
         }
 
@@ -64,13 +64,7 @@ class ReportEngine {
         try {
             this.showLoading(true);
             
-            // Step 1: Force Cloud Sync (Automatically extracting features for learning)
-            if (window.DataExporter && window.DataExporter.syncAllToCloud) {
-                this.updateProgress('解析データをクラウドに送信中...');
-                await window.DataExporter.syncAllToCloud();
-            }
-
-            // Step 2: Generate PDF
+            // Generate PDF
             this.updateProgress('PDFレポートを生成中...');
             const pdf = await window.PDFGenerator.generate((step) => {
                 this.updateProgress(step);

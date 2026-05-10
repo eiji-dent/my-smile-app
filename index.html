@@ -61,7 +61,6 @@
     <div class="auth-card">
       <div class="auth-header">
         <img src="assets/images/logo-white.png" alt="Reprosmile" class="auth-logo-img">
-        <p class="auth-subtitle">Professional Aesthetic Analysis Tool</p>
       </div>
       <div class="auth-body">
         <p class="auth-intro">本ツールは、研究および評価目的のベータ版プロトタイプです。アクセスには専用パスワードが必要です。</p>
@@ -95,7 +94,7 @@
       </div>
       <div class="privacy-body">
         <section>
-          <h3>1. 画像データとAI解析の安全性</h3>
+          <h3>1. 画像データとAI計測の安全性</h3>
           <p>本アプリでの画像解析（自動計測を含む）は原則としてブラウザ内（ローカル）で処理されます。<strong>「送信」ボタンを押さない限り、画像データやプロット情報が外部サーバーへ送信・保存されることはありません。</strong>また、ブラウザを閉じると作業データは破棄され、自動的に保存されることもありません。</p>
         </section>
         <section>
@@ -103,7 +102,7 @@
           <p>「送信」ボタンをクリックして明示的に提供されたデータは、分析精度の向上およびAIアルゴリズムの学習に活用されます。正面・側貌等の顔貌写真が含まれる場合、それらを<strong>将来の歯科医療発展のための学習データとして提供することに同意いただいたもの</strong>とみなします。</p>
         </section>
         <section>
-          <h3>3. 解析結果の解釈と免責事項</h3>
+          <h3>3. 計測結果の解釈と免責事項</h3>
           <p>AIや計算ロジックによる解析結果は、あくまで診断を補助するための「参考値」です。撮影条件（角度・照明）により誤差が生じる可能性があるため、最終的な臨床判断は歯科医師の責任において行ってください。本アプリの使用により生じた損害等について、開発者は一切の責任を負いません。</p>
         </section>
         <section>
@@ -143,35 +142,35 @@
         <div class="nav-section">ジャンプメニュー</div>
         <a href="#card-frontal" class="nav-item">
           <i data-lucide="user"></i>
-          ① 正面顔貌の分析
+          ① 正面顔貌の計測
         </a>
         <a href="#card-lateral" class="nav-item">
-          <i data-lucide="user-plus"></i>
-          ② 側方顔貌の分析
+          <i data-lucide="circle-user-round"></i>
+          ② 側方顔貌の計測
         </a>
         <a href="#card-emidline" class="nav-item">
-          <i data-lucide="align-center-horizontal"></i>
-          ③ E音 (正中・カント)
+          <i data-lucide="smile"></i>
+          ③ フルスマイルの計測（顔貌）
         </a>
         <a href="#card-esound" class="nav-item">
-          <i data-lucide="mic"></i>
-          ④ E音 (Micro-esthetics)
-        </a>
-        <a href="#card-msound" class="nav-item">
-          <i data-lucide="volume-1"></i>
-          ⑤ M音 (Rest position)
-        </a>
-        <a href="#card-ssound" class="nav-item">
-          <i data-lucide="list-music"></i>
-          ⑥ S音 (Clearance)
-        </a>
-        <a href="#card-fvsound" class="nav-item">
-          <i data-lucide="speaker"></i>
-          ⑦ F/V音 (Fricatives)
+          <i data-lucide="scan-face"></i>
+          ④ フルスマイルの計測
         </a>
         <a href="#card-intraoral" class="nav-item">
-          <i data-lucide="zoom-in"></i>
-          ⑧ 圧排時の分析
+          <i data-lucide="aperture"></i>
+          ⑤ 歯牙・歯肉の計測
+        </a>
+        <a href="#card-msound" class="nav-item">
+          <i data-lucide="pause"></i>
+          ⑥ 安静位の計測
+        </a>
+        <a href="#card-ssound" class="nav-item">
+          <i data-lucide="audio-lines"></i>
+          ⑦ S音 発音時の計測
+        </a>
+        <a href="#card-fvsound" class="nav-item">
+          <i data-lucide="mic-2"></i>
+          ⑧ F/V音 発音時の計測
         </a>
         <div class="nav-section">技工指示 (Laboratory)</div>
         <a href="#chapter-hbar" class="nav-item">
@@ -215,7 +214,7 @@
         
         <!-- Combined Cloud Sync & PDF Button -->
         <button id="export-combined-btn" class="btn btn-primary w-full btn-lg" style="padding: 18px; margin-top: 10px; font-weight: 700; font-size: 1.05rem;">
-          <i data-lucide="pencil"></i> 解析して<br>レポートを出力
+          <i data-lucide="pencil"></i> 計測して<br>レポートを出力
         </button>
         
         <!-- Cloud Sync Status Indicator -->
@@ -240,7 +239,7 @@
         <div class="tab-segmented-control">
           <button id="tab-btn-analysis" class="tab-btn active">
             <i data-lucide="microscope"></i>
-            分析ツール (1-8)
+            分析補助ツール (1-8)
           </button>
           <button id="tab-btn-lab" class="tab-btn">
             <i data-lucide="wrench"></i>
@@ -261,7 +260,7 @@
         <div class="analysis-card" id="card-frontal" data-phase="frontal">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>① 正面顔貌の分析 (Frontal Macro-esthetics)</h3>
+              <h3>① 正面顔貌の計測</h3>
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
@@ -273,7 +272,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
+                <i data-lucide="pencil"></i> プロットを確定して計測
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
@@ -295,17 +294,17 @@
                 <label for="tool-commissural" class="tool-label"><i data-lucide="smile"></i> 口角線</label>
 
                 <input type="radio" name="tool-frontal" id="tool-midline" value="midline" class="tool-radio">
-                <label for="tool-midline" class="tool-label"><i data-lucide="align-center"></i> 顔面正中線</label>
+                <label for="tool-midline" class="tool-label"><i data-lucide="align-center-vertical"></i> 顔面正中線</label>
 
                 <input type="radio" name="tool-frontal" id="tool-vertical-prop" value="vertical-proportions"
                   class="tool-radio">
-                <label for="tool-vertical-prop" class="tool-label"><i data-lucide="activity"></i> 垂直計測 (6点)</label>
+                <label for="tool-vertical-prop" class="tool-label"><i data-lucide="list-filter"></i> 垂直計測 (6点)</label>
               </div>
               <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
                 <button class="btn btn-primary rotate-inter-btn" data-phase="frontal" title="瞳孔間線に合わせる"><i
-                    data-lucide="align-horizontal-justify-center"></i> 瞳孔間線に合わせる</button>
+                    data-lucide="eye"></i> 瞳孔間線に合わせる</button>
                 <button class="btn btn-primary rotate-mid-btn" data-phase="frontal" title="顔貌正中に合わせる"><i
-                    data-lucide="align-vertical-justify-center"></i> 顔貌正中に合わせる</button>
+                    data-lucide="align-center-vertical"></i> 顔貌正中に合わせる</button>
               </div>
             </div>
             <div class="horizontal-card-layout portrait-layout">
@@ -314,7 +313,7 @@
                 <canvas class="analysis-canvas"></canvas>
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
-                <div class="canvas-placeholder">
+                <div class="canvas-placeholder guide-frontal">
                   <i data-lucide="image-plus"></i>
                   <p>正面画像をドロップ</p>
                 </div>
@@ -353,7 +352,7 @@
         <div class="analysis-card" id="card-lateral" data-phase="lateral">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>② 側方顔貌の分析 (Lateral Macro-esthetics)</h3>
+              <h3>② 側方顔貌の計測</h3>
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
@@ -365,7 +364,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
+                <i data-lucide="pencil"></i> プロットを確定して計測
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
@@ -380,15 +379,15 @@
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-lateral" id="tool-eline" value="eline" class="tool-radio">
-                <label for="tool-eline" class="tool-label"><i data-lucide="ruler"></i> E-line  (4点計測)</label>
+                <label for="tool-eline" class="tool-label"><i data-lucide="slash"></i> E-line  (4点計測)</label>
 
                 <input type="radio" name="tool-lateral" id="tool-nla" value="nla" class="tool-radio">
-                <label for="tool-nla" class="tool-label"><i data-lucide="split-square-vertical"></i> 鼻唇角 (NLA)
-                  (3点計測)</label>
+                <label for="tool-nla" class="tool-label"><i data-lucide="scale-3d"></i> 鼻唇角 (NLA)
+                   (3点計測)</label>
 
                 <input type="radio" name="tool-lateral" id="tool-convexity" value="convexity" class="tool-radio">
-                <label for="tool-convexity" class="tool-label"><i data-lucide="align-start-vertical"></i> 側貌凸型度
-                  (Convexity) (3点計測)</label>
+                <label for="tool-convexity" class="tool-label"><i data-lucide="spline"></i> 側貌凸型度
+                   (Convexity) (3点計測)</label>
               </div>
             </div>
             <div class="horizontal-card-layout portrait-layout">
@@ -397,7 +396,7 @@
                 <canvas class="analysis-canvas"></canvas>
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
-                <div class="canvas-placeholder">
+                <div class="canvas-placeholder guide-lateral">
                   <i data-lucide="image-plus"></i>
                   <p>側方（横顔）画像をドロップ</p>
                 </div>
@@ -456,7 +455,7 @@
         <div class="analysis-card" id="card-emidline" data-phase="e-midline">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>③ E音 発音時 (正中・傾斜パラメーター)</h3>
+              <h3>③ フルスマイルの計測（顔貌）</h3>
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
@@ -468,7 +467,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
+                <i data-lucide="pencil"></i> プロットを確定して計測
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
@@ -482,23 +481,23 @@
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-emidline" id="tool-fmidline" value="f-midline" class="tool-radio">
-                <label for="tool-fmidline" class="tool-label"><i data-lucide="move-vertical"></i> 顔面正中線</label>
+                <label for="tool-fmidline" class="tool-label"><i data-lucide="align-center-vertical"></i> 顔面正中線</label>
 
                 <input type="radio" name="tool-emidline" id="tool-dmidline" value="d-midline" class="tool-radio">
-                <label for="tool-dmidline" class="tool-label"><i data-lucide="list"></i> 歯列正中線</label>
+                <label for="tool-dmidline" class="tool-label"><i data-lucide="road"></i> 歯列正中線</label>
 
                 <input type="radio" name="tool-emidline" id="tool-interpupillary-e" value="interpupillary-e"
                   class="tool-radio">
                 <label for="tool-interpupillary-e" class="tool-label"><i data-lucide="eye"></i> 瞳孔間線</label>
 
                 <input type="radio" name="tool-emidline" id="tool-incisal-edge" value="incisal-edge" class="tool-radio">
-                <label for="tool-incisal-edge" class="tool-label"><i data-lucide="scissors"></i> 前歯切端線</label>
+                <label for="tool-incisal-edge" class="tool-label"><i data-lucide="space"></i> 前歯切端線</label>
               </div>
               <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
                 <button class="btn btn-primary rotate-inter-btn" data-phase="e-sound" title="瞳孔間線に合わせる"><i
-                    data-lucide="align-horizontal-justify-center"></i> 瞳孔間線に合わせる</button>
+                    data-lucide="eye"></i> 瞳孔間線に合わせる</button>
                 <button class="btn btn-primary rotate-mid-btn" data-phase="e-sound" title="顔貌正中に合わせる"><i
-                    data-lucide="align-vertical-justify-center"></i> 顔貌正中に合わせる</button>
+                    data-lucide="align-center-vertical"></i> 顔貌正中に合わせる</button>
               </div>
             </div>
 
@@ -507,9 +506,9 @@
                 <canvas class="analysis-canvas"></canvas>
                 <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                   value="100">
-                <div class="canvas-placeholder">
+                <div class="canvas-placeholder guide-frontal-smile">
                   <i data-lucide="image-plus"></i>
-                  <p>顔全体と前歯が写ったE音画像のアップ画像をドロップ</p>
+                  <p>顔全体と前歯が写ったフルスマイル画像をドロップ</p>
                 </div>
               </div>
 
@@ -551,7 +550,7 @@
         <div class="analysis-card" id="card-esound" data-phase="e-sound">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>④ E音 / フルスマイル の分析 (Mini-esthetics)</h3>
+              <h3>④ フルスマイルの計測</h3>
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
@@ -563,7 +562,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
+                <i data-lucide="pencil"></i> プロットを確定して計測
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
@@ -577,14 +576,14 @@
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-esound" id="tool-arc" value="smile-arc" class="tool-radio">
-                <label for="tool-arc" class="tool-label"><i data-lucide="smile-plus"></i> スマイルアーク (6点)</label>
+                <label for="tool-arc" class="tool-label"><i data-lucide="spline"></i> スマイルアーク (6点)</label>
 
                 <input type="radio" name="tool-esound" id="tool-corridor" value="corridor" class="tool-radio">
-                <label for="tool-corridor" class="tool-label"><i data-lucide="split-square-horizontal"></i> バッカルコリドー
-                  (4点)</label>
+                <label for="tool-corridor" class="tool-label"><i data-lucide="arrow-left-right"></i> バッカルコリドー
+                   (4点)</label>
 
                 <input type="radio" name="tool-esound" id="tool-gingival" value="gingival" class="tool-radio">
-                <label for="tool-gingival" class="tool-label"><i data-lucide="move-vertical"></i> 歯肉露出量・切縁 (4点)</label>
+                <label for="tool-gingival" class="tool-label"><i data-lucide="space"></i> 歯肉露出量・切縁 (4点)</label>
               </div>
             </div>
 
@@ -592,7 +591,7 @@
               <canvas class="analysis-canvas"></canvas>
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
-              <div class="canvas-placeholder">
+              <div class="canvas-placeholder guide-smile">
                 <i data-lucide="image-plus"></i>
                 <p>スマイル時・E音発音時のアップ画像をドロップ</p>
               </div>
@@ -673,204 +672,11 @@
             <div class="instruction-tooltip hidden"></div>
           </div>
         </div>
-
-        <!-- CARD 5: M-Sound -->
-        <div class="analysis-card" id="card-msound" data-phase="m-sound">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h3>⑤ M音 安静位の分析 (Rest position)</h3>
-              <div class="calibration-status-badge hidden"></div>
-              <label class="plot-toggle">
-                <input type="checkbox" class="card-plot-toggle" checked>
-                <span>プロットを表示</span>
-              </label>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
-                <i data-lucide="sparkles"></i> AI自動プロット
-              </button>
-              <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
-              </button>
-              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
-              <label class="btn btn-secondary btn-upload">
-                <i data-lucide="image-plus"></i> 画像を読み込む
-                <input type="file" class="file-input" accept="image/*" hidden>
-              </label>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="horizontal-toolbar">
-              <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector" autocomplete="off">
-                <input type="radio" name="tool-msound" id="tool-mmeasure" value="mmeasure" class="tool-radio">
-                <label for="tool-mmeasure" class="tool-label"><i data-lucide="ruler"></i> 安静時露出量を測る</label>
-              </div>
-            </div>
-            <div class="canvas-wrapper drop-zone">
-              <canvas class="analysis-canvas"></canvas>
-              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
-                value="100">
-              <div class="canvas-placeholder">
-                <i data-lucide="image-plus"></i>
-                <p>M音(安静位)のアップ画像をドロップ</p>
-              </div>
-            </div>
-            <div class="quick-stats lateral-stats">
-              <table class="analysis-table">
-                <thead>
-                  <tr>
-                    <th>評価項目</th>
-                    <th>測定値</th>
-                    <th>基準値</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>安静時露出量 (Resting display)</strong></td>
-                    <td class="mmeasure-val">-- mm</td>
-                    <td>1.0 〜 3.0 mm</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="instruction-tooltip hidden"></div>
-          </div>
-        </div>
-
-        <!-- CARD 6: S-Sound -->
-        <div class="analysis-card" id="card-ssound" data-phase="s-sound">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h3>⑥ S音 発音時の分析 (Speaking clearance)</h3>
-              <div class="calibration-status-badge hidden"></div>
-              <label class="plot-toggle">
-                <input type="checkbox" class="card-plot-toggle" checked>
-                <span>プロットを表示</span>
-              </label>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
-                <i data-lucide="sparkles"></i> AI自動プロット
-              </button>
-              <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
-              </button>
-              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
-              <label class="btn btn-secondary btn-upload">
-                <i data-lucide="image-plus"></i> 画像を読み込む
-                <input type="file" class="file-input" accept="image/*" hidden>
-              </label>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="horizontal-toolbar">
-              <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector" autocomplete="off">
-                <input type="radio" name="tool-ssound" id="tool-smeasure" value="smeasure" class="tool-radio">
-                <label for="tool-smeasure" class="tool-label"><i data-lucide="ruler"></i> Sクリアランスを測る</label>
-              </div>
-            </div>
-            <div class="canvas-wrapper drop-zone">
-              <canvas class="analysis-canvas"></canvas>
-              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
-                value="100">
-              <div class="canvas-placeholder">
-                <i data-lucide="image-plus"></i>
-                <p>S音発音時のアップ画像をドロップ</p>
-              </div>
-            </div>
-            <div class="quick-stats lateral-stats">
-              <table class="analysis-table">
-                <thead>
-                  <tr>
-                    <th>評価項目</th>
-                    <th>測定値</th>
-                    <th>基準値</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Sクリアランス (Closest speaking space)</strong></td>
-                    <td class="smeasure-val">-- mm</td>
-                    <td>1.0 〜 1.5 mm</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="instruction-tooltip hidden"></div>
-          </div>
-        </div>
-
-        <!-- CARD 7: F/V-Sound -->
-        <div class="analysis-card" id="card-fvsound" data-phase="fv-sound">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h3>⑦ F/V音 発音時の分析 (Fricatives)</h3>
-              <div class="calibration-status-badge hidden"></div>
-              <label class="plot-toggle">
-                <input type="checkbox" class="card-plot-toggle" checked>
-                <span>プロットを表示</span>
-              </label>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
-                <i data-lucide="sparkles"></i> AI自動プロット
-              </button>
-              <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
-              </button>
-              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
-              <label class="btn btn-secondary btn-upload">
-                <i data-lucide="image-plus"></i> 画像を読み込む
-                <input type="file" class="file-input" accept="image/*" hidden>
-              </label>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="horizontal-toolbar">
-              <span class="tool-caption">使用するツール：</span>
-              <div class="tool-selector" autocomplete="off">
-                <input type="radio" name="tool-fvsound" id="tool-fvmeasure" value="fvmeasure" class="tool-radio">
-                <label for="tool-fvmeasure" class="tool-label"><i data-lucide="ruler"></i> D&Wラインとの距離</label>
-              </div>
-            </div>
-            <div class="canvas-wrapper drop-zone">
-              <canvas class="analysis-canvas"></canvas>
-              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
-                value="100">
-              <div class="canvas-placeholder">
-                <i data-lucide="image-plus"></i>
-                <p>F/V音発音時のアップ画像をドロップ</p>
-              </div>
-            </div>
-            <div class="quick-stats lateral-stats">
-              <table class="analysis-table">
-                <thead>
-                  <tr>
-                    <th>評価項目</th>
-                    <th>測定値</th>
-                    <th>基準値</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>ドライ・ウェットラインとの距離</strong></td>
-                    <td class="fvmeasure-val">-- mm</td>
-                    <td>0 mm (接触が理想)</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="instruction-tooltip hidden"></div>
-          </div>
-        </div>
-
         <!-- CARD 8: Retracted -->
         <div class="analysis-card" id="card-intraoral" data-phase="intraoral">
           <div class="card-header">
             <div class="card-title-group">
-              <h3>⑧ 圧排時の分析 (Intraoral Micro-esthetics)</h3>
+              <h3>⑤ 歯牙・歯肉の計測</h3>
               <div class="calibration-status-badge hidden"></div>
               <label class="plot-toggle">
                 <input type="checkbox" class="card-plot-toggle" checked>
@@ -882,7 +688,7 @@
                 <i data-lucide="sparkles"></i> AI自動プロット
               </button>
               <button class="btn btn-secondary send-data-btn" title="解析">
-                <i data-lucide="pencil"></i> 解析
+                <i data-lucide="pencil"></i> プロットを確定して計測
               </button>
               <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
               <label class="btn btn-secondary btn-upload">
@@ -896,24 +702,24 @@
               <span class="tool-caption">使用するツール：</span>
               <div class="tool-selector" autocomplete="off">
                 <input type="radio" name="tool-intraoral" id="tool-wl" value="wl-ratio" class="tool-radio">
-                <label for="tool-wl" class="tool-label"><i data-lucide="box-select"></i> W/L 比率 (8点)</label>
+                <label for="tool-wl" class="tool-label"><i data-lucide="scan"></i> W/L 比率 (8点)</label>
 
                 <input type="radio" name="tool-intraoral" id="tool-red" value="red-prop" class="tool-radio">
-                <label for="tool-red" class="tool-label"><i data-lucide="bar-chart"></i> 幅径バランス (7点)</label>
+                <label for="tool-red" class="tool-label"><i data-lucide="sliders-horizontal"></i> 幅径バランス (7点)</label>
 
                 <input type="radio" name="tool-intraoral" id="tool-pink" value="pink-esth" class="tool-radio">
-                <label for="tool-pink" class="tool-label"><i data-lucide="heart"></i> ピンク・エステティック (6点)</label>
+                <label for="tool-pink" class="tool-label"><i data-lucide="droplet"></i> ピンク・エステティック (6点)</label>
 
                 <input type="radio" name="tool-intraoral" id="tool-axial" value="axial-incl" class="tool-radio">
-                <label for="tool-axial" class="tool-label"><i data-lucide="scissors"></i> 歯冠傾斜度 (14点)</label>
+                <label for="tool-axial" class="tool-label"><i data-lucide="italic"></i> 歯冠傾斜度 (14点)</label>
 
                 <input type="radio" name="tool-intraoral" id="tool-papilla" value="papilla" class="tool-radio">
-                <label for="tool-papilla" class="tool-label"><i data-lucide="triangle"></i>
+                <label for="tool-papilla" class="tool-label"><i data-lucide="triangle-dashed"></i>
                   ブラックトライアングル (10点)</label>
               </div>
               <div class="rotation-controls" style="margin-left: 10px; display:inline-flex; gap: 8px;">
                 <button class="btn btn-primary apply-p3-mid-btn" title="Phase3の顔貌正中に合わせる"><i
-                    data-lucide="scan-line"></i> 顔貌正中に合わせる (Phase 3基準)</button>
+                    data-lucide="align-center-vertical"></i> 顔貌正中に合わせる (Phase 3基準)</button>
               </div>
             </div>
 
@@ -931,7 +737,7 @@
               </div>
               <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
                 value="100">
-              <div class="canvas-placeholder">
+              <div class="canvas-placeholder guide-intraoral">
                 <i data-lucide="image-plus"></i>
                 <p>圧排時の正面アップ画像をドロップ</p>
               </div>
@@ -1130,6 +936,199 @@
             <div class="instruction-tooltip hidden"></div>
           </div> <!-- end card-content -->
         </div> <!-- end analysis-card (Phase 8) -->
+
+        <!-- CARD 5: M-Sound -->
+        <div class="analysis-card" id="card-msound" data-phase="m-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑥ 安静位の計測</h3>
+              <div class="calibration-status-badge hidden"></div>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>プロットを表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
+                <i data-lucide="sparkles"></i> AI自動プロット
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> プロットを確定して計測
+              </button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="image-plus"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector" autocomplete="off">
+                <input type="radio" name="tool-msound" id="tool-mmeasure" value="mmeasure" class="tool-radio">
+                <label for="tool-mmeasure" class="tool-label"><i data-lucide="ruler"></i> 安静時露出量を測る</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder guide-smile">
+                <i data-lucide="image-plus"></i>
+                <p>M音(安静位)のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>安静時露出量 (Resting display)</strong></td>
+                    <td class="mmeasure-val">-- mm</td>
+                    <td>1.0 〜 3.0 mm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 6: S-Sound -->
+        <div class="analysis-card" id="card-ssound" data-phase="s-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑦ S音 発音時の計測</h3>
+              <div class="calibration-status-badge hidden"></div>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>プロットを表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
+                <i data-lucide="sparkles"></i> AI自動プロット
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> プロットを確定して計測
+              </button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="image-plus"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector" autocomplete="off">
+                <input type="radio" name="tool-ssound" id="tool-smeasure" value="smeasure" class="tool-radio">
+                <label for="tool-smeasure" class="tool-label"><i data-lucide="ruler"></i> Sクリアランスを測る</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder guide-smile">
+                <i data-lucide="image-plus"></i>
+                <p>S音発音時のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Sクリアランス (Closest speaking space)</strong></td>
+                    <td class="smeasure-val">-- mm</td>
+                    <td>1.0 〜 1.5 mm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
+        <!-- CARD 7: F/V-Sound -->
+        <div class="analysis-card" id="card-fvsound" data-phase="fv-sound">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h3>⑧ F/V音 発音時の計測</h3>
+              <div class="calibration-status-badge hidden"></div>
+              <label class="plot-toggle">
+                <input type="checkbox" class="card-plot-toggle" checked>
+                <span>プロットを表示</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button class="btn btn-secondary ai-analyze-btn" title="AI自動プロットを実行">
+                <i data-lucide="sparkles"></i> AI自動プロット
+              </button>
+              <button class="btn btn-secondary send-data-btn" title="解析">
+                <i data-lucide="pencil"></i> プロットを確定して計測
+              </button>
+              <button class="btn btn-ghost icon-btn btn-reset" title="線をリセット"><i data-lucide="rotate-ccw"></i></button>
+              <label class="btn btn-secondary btn-upload">
+                <i data-lucide="image-plus"></i> 画像を読み込む
+                <input type="file" class="file-input" accept="image/*" hidden>
+              </label>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector" autocomplete="off">
+                <input type="radio" name="tool-fvsound" id="tool-fvmeasure" value="fvmeasure" class="tool-radio">
+                <label for="tool-fvmeasure" class="tool-label"><i data-lucide="ruler"></i> D&Wラインとの距離</label>
+              </div>
+            </div>
+            <div class="canvas-wrapper drop-zone">
+              <canvas class="analysis-canvas"></canvas>
+              <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5"
+                value="100">
+              <div class="canvas-placeholder guide-smile">
+                <i data-lucide="image-plus"></i>
+                <p>F/V音発音時のアップ画像をドロップ</p>
+              </div>
+            </div>
+            <div class="quick-stats lateral-stats">
+              <table class="analysis-table">
+                <thead>
+                  <tr>
+                    <th>評価項目</th>
+                    <th>測定値</th>
+                    <th>基準値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>ドライ・ウェットラインとの距離</strong></td>
+                    <td class="fvmeasure-val">-- mm</td>
+                    <td>0 mm (接触が理想)</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="instruction-tooltip hidden"></div>
+          </div>
+        </div>
+
       </div> <!-- end analysis-view -->
 
       <!-- View 2: Lab Tools -->
@@ -1175,7 +1174,7 @@
                 <div class="canvas-wrapper drop-zone">
                   <canvas class="analysis-canvas"></canvas>
                   <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
-                  <div class="canvas-placeholder">
+                  <div class="canvas-placeholder guide-frontal">
                     <i data-lucide="image-plus"></i>
                     <p>正面の画像をドロップ</p>
                   </div>
@@ -1224,7 +1223,7 @@
                 <div class="canvas-wrapper drop-zone">
                   <canvas class="analysis-canvas"></canvas>
                   <input type="range" class="vertical-zoom-slider" orient="vertical" min="100" max="500" step="5" value="100">
-                  <div class="canvas-placeholder">
+                  <div class="canvas-placeholder guide-top">
                     <i data-lucide="image-plus"></i>
                     <p>頭側の画像をドロップ</p>
                   </div>
@@ -1270,7 +1269,7 @@
                 <span class="tool-caption">ツール：</span>
                 <div class="tool-selector" autocomplete="off">
                   <input type="radio" name="tool-shade-take" id="tool-shade-calibrator" value="shade-calibrator" class="tool-radio">
-                  <label for="tool-shade-calibrator" class="tool-label" style="margin-right: auto;"><i data-lucide="crosshair"></i> 色調補正</label>
+                  <label for="tool-shade-calibrator" class="tool-label"><i data-lucide="crosshair"></i> 色調補正</label>
 
                   <input type="radio" name="tool-shade-take" id="tool-shade-picker" value="shade-picker" class="tool-radio">
                   <label for="tool-shade-picker" class="tool-label"><i data-lucide="pipette"></i> シェードテイキング</label>
@@ -1398,14 +1397,14 @@
             </div>
             <div class="card-actions">
               <button class="btn btn-ghost icon-btn btn-reset" title="リセット"><i data-lucide="rotate-ccw"></i></button>
-              <div class="btn btn-secondary btn-upload-trigger" data-slot="A">
+              <label class="btn btn-secondary btn-upload btn-upload-trigger" data-slot="A">
                 <i data-lucide="image-plus"></i> 黒背景 (開口時)
                 <input type="file" class="file-input" accept="image/*" hidden>
-              </div>
-              <div class="btn btn-secondary btn-upload-trigger" data-slot="B">
+              </label>
+              <label class="btn btn-secondary btn-upload btn-upload-trigger" data-slot="B">
                 <i data-lucide="image-plus"></i> 白背景 (咬合時)
                 <input type="file" class="file-input" accept="image/*" hidden>
-              </div>
+              </label>
             </div>
           </div>
           
@@ -1506,7 +1505,7 @@
                   <div id="material-recommendation-container" class="material-recommendation-card">
                     <strong style="display:block; margin-bottom:8px; font-size: 0.75rem; color:#2563eb; text-transform: uppercase; letter-spacing: 0.05em;">推奨マテリアル・技法</strong>
                     <div id="material-recommendation-content">
-                      <span class="rec-material-name">解析を開始してください</span>
+                      <span class="rec-material-name">計測を開始してください</span>
                       <span class="rec-reason">プロットが完了すると、不透明度とTP値に基づいた最適なマテリアルがここに表示されます。</span>
                     </div>
                   </div>
@@ -1685,7 +1684,7 @@
                       </div>
                       <div class="sim-popover-footer">
                         <div class="sim-tooth-item sim-tooth-custom-btn" data-value="自由">
-                          <span style="font-size: 0.75rem;">自由指定（歯肉・過剰歯など）</span>
+                          <span style="font-size: 0.75rem;">自由指定（過剰歯など）</span>
                         </div>
                       </div>
                     </div>
@@ -1814,7 +1813,7 @@
             <div class="selection-card active" id="sel-analysis">
               <div class="card-icon"><i data-lucide="microscope"></i></div>
               <div class="card-info">
-                <span class="card-title">分析ツール</span>
+                <span class="card-title">分析補助ツール</span>
                 <span class="card-desc">Phase 1 〜 8 の診断結果</span>
               </div>
               <div class="custom-checkbox"><i data-lucide="check"></i></div>
@@ -1843,7 +1842,7 @@
           <div class="app-logo">
             <i data-lucide="activity"></i>
           </div>
-          <h1>柴田の審美歯科 画像解析システム</h1>
+          <h1>柴田の審美歯科 画像計測システム</h1>
           <p class="subtitle">Precision Core [Beta Build]</p>
         </div>
         <div class="cover-main">
@@ -1878,7 +1877,7 @@
       <div class="modal-content" style="max-width: 400px; text-align: center;">
         <div class="modal-header">
           <i data-lucide="help-circle"></i>
-          <h3 id="data-send-title">解析データの送信</h3>
+          <h3 id="data-send-title">計測データの送信</h3>
         </div>
         <div class="modal-body" style="padding: 40px 24px;">
           <p id="data-send-msg" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: var(--text-main);">
