@@ -18,9 +18,8 @@ window.MaterialChoice = {
     lastPanPt: { x: 0, y: 0 },
     initialized: false,
 
-    // Step-by-step plotting guide
-    // 0: Wait image | 1: Pick Ref A | 2: Pick Target A | 3: Pick Ref B | 4: Pick Target B | 5: Done
-    plottingStep: 1, 
+    // Active Tool State
+    activeTool: 'ref', // 'ref' or 'target'
 
     /**
      * Initializes the precision analysis engine
@@ -67,7 +66,6 @@ window.MaterialChoice = {
         triggers.forEach(trig => {
             const slot = trig.dataset.slot;
             const input = trig.querySelector('.file-input');
-            trig.onclick = (e) => { if (e.target !== input) input.click(); };
             input.onchange = (e) => { if (e.target.files[0]) this.handleUpload(e.target.files[0], slot); };
         });
 
@@ -103,6 +101,15 @@ window.MaterialChoice = {
 
         const rst = this.container.querySelector('.btn-reset');
         if (rst) rst.onclick = (e) => { e.preventDefault(); this.reset(); };
+
+        // Tool Selector Listeners
+        const toolRadios = this.container.querySelectorAll('input[name="tool-material"]');
+        toolRadios.forEach(radio => {
+            radio.onchange = (e) => {
+                this.activeTool = e.target.value;
+                this.updateGuide();
+            };
+        });
     },
 
     handleUpload(file, slot) {
@@ -134,28 +141,20 @@ window.MaterialChoice = {
     updateGuide() {
         let text = "";
         let rightText = "";
-        switch(this.plottingStep) {
-            case 1: 
-                text = "画像A：背景（口腔内黒）を選択"; 
-                rightText = "【マテリアル選択】 まず、画像A（左）の口腔内の最も暗い部分をプロットして基準黒を設定してください。";
-                break;
-            case 2: 
-                text = "画像A：計測点を選択"; 
-                rightText = "【マテリアル選択】 次に、画像Aの解析したい歯面の中央（切縁付近など）をプロットしてください。";
-                break;
-            case 3: 
-                text = "画像B：背景（下顎前歯白）を選択"; 
-                rightText = "【マテリアル選択】 続いて、画像B（右）の下顎前歯など、背景となる白い歯面部分をプロパットしてください。";
-                break;
-            case 4: 
-                text = "画像B：計測点を選択"; 
-                rightText = "【マテリアル選択】 最後に、画像Bの解析したい歯面（画像Aと同じ位置）をプロットしてください。";
-                break;
-            default: 
-                text = "解析完了"; 
-                rightText = "【マテリアル選択】 点をドラッグして微調整が可能です。不透明度スコアと推奨マテリアルを確認してください。";
-                break;
+        if (this.activeTool === 'ref') {
+            text = "背景（基準点）を選択中";
+            rightText = "【マテリアル選択】 ツール『背景(基準)を選択』が有効です。黒背景画像（左）と白背景画像（右）の、それぞれの基準となる暗い部分（口腔内など）を1箇所ずつプロットしてください。";
+        } else {
+            text = "測定部位を選択中";
+            rightText = "【マテリアル選択】 ツール『測定部位を選択』が有効です。解析したい歯面の中央付近を、両方の画像で同じ位置になるようにプロットしてください。";
         }
+        
+        // Final completion check for rightText if all points are placed
+        if (this.refA && this.targetA && this.refB && this.targetB) {
+            text = "解析完了";
+            rightText = "【マテリアル選択】 4点のプロットが完了しました。点をドラッグして微調整が可能です。不透明度スコアと推奨マテリアルを確認してください。";
+        }
+
         if (this.guideEl) this.guideEl.textContent = text;
         if (this.rightGuideEl) this.rightGuideEl.textContent = rightText;
     },
@@ -212,22 +211,18 @@ window.MaterialChoice = {
                 return;
             }
 
-            // Normal sequential plotting
+            // Tool-based plotting
             const rgb = this.getAverageColor(type, coords.ix, coords.iy, 5);
             if (rgb) {
                 const lab = window.ColorSpace.rgbToLab(rgb.r, rgb.g, rgb.b);
                 const p = { x: coords.ix, y: coords.iy, lab, rgb };
                 
-                if (type === 'a') {
-                    if (this.plottingStep <= 2) {
-                        if (this.plottingStep === 1) { this.refA = p; this.plottingStep = 2; }
-                        else { this.targetA = p; this.plottingStep = 3; }
-                    } else { this.targetA = p; }
+                if (this.activeTool === 'ref') {
+                    if (type === 'a') this.refA = p;
+                    else this.refB = p;
                 } else {
-                    if (this.plottingStep >= 3) {
-                        if (this.plottingStep === 3) { this.refB = p; this.plottingStep = 4; }
-                        else { this.targetB = p; this.plottingStep = 5; }
-                    } else { this.refB = p; }
+                    if (type === 'a') this.targetA = p;
+                    else this.targetB = p;
                 }
 
                 this.updateUI(); this.analyze(); this.redraw(); this.updateGuide();
@@ -455,19 +450,41 @@ window.MaterialChoice = {
     checkStatus() { if (this.imageA && this.imageB) this.updateStatusIndicator('active'); },
 
     reset() {
-        this.imageA=null; this.imageB=null; 
-        this.refA=null; this.targetA=null; this.refB=null; this.targetB=null;
-        this.plottingStep = 1; this.zoomLevel=1.0; this.panX=0; this.panY=0;
-        if (this.zoomSlider) this.zoomSlider.value=100;
+        // Keep imageA and imageB, only reset points
+        this.refA = null; this.targetA = null; this.refB = null; this.targetB = null;
+        this.activeTool = 'ref'; this.zoomLevel = 1.0; this.panX = 0; this.panY = 0;
+        if (this.zoomSlider) this.zoomSlider.value = 100;
+        
+        // Reset radio buttons
+        const refRadio = this.container.querySelector('#tool-mat-ref');
+        if (refRadio) refRadio.checked = true;
+
         ['a','b'].forEach(t => {
-            const it = document.getElementById(`material-item-${t}`); if(it) it.classList.remove('has-image');
+            // Keep 'has-image' class if image exists
+            const it = document.getElementById(`material-item-${t}`);
+            if (it && !this['image' + t.toUpperCase()]) it.classList.remove('has-image');
+            
             const card = document.getElementById(`sample-${t}-card`);
-            if(card) {
+            if (card) {
                 card.querySelectorAll('.lab-val').forEach(el => el.textContent = '--');
+                // Clear swatches
+                const swatchRef = document.getElementById(`material-swatch-${t}-ref`);
+                const swatchTarget = document.getElementById(`material-swatch-${t}-target`);
+                if (swatchRef) swatchRef.style.backgroundColor = 'transparent';
+                if (swatchTarget) swatchTarget.style.backgroundColor = 'transparent';
             }
         });
-        this.scoreEl.textContent="--"; this.recommendationEl.textContent="解析を開始してください。";
-        this.updateStatusIndicator('ready'); this.updateGuide(); this.redraw();
+
+        if (this.scoreEl) this.scoreEl.textContent = "--";
+        if (this.tpEl) this.tpEl.textContent = "--";
+        if (this.recommendationEl) this.recommendationEl.textContent = "解析を開始してください。";
+        
+        const container = document.getElementById('material-recommendation-container');
+        if (container) container.className = 'material-recommendation-card';
+
+        this.updateStatusIndicator('active'); // Since images are still there
+        this.updateGuide();
+        this.redraw();
     }
 };
 

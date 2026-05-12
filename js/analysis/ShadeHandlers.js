@@ -30,7 +30,7 @@ window.ShadeHandlers = {
 
     _setStat(el, val, color, card, placeholder = '--') {
         if (!el) return;
-        if (card.isDataSent && val !== null && val !== undefined) {
+        if (val !== null && val !== undefined) {
             el.textContent = val;
             el.style.color = color || '';
         } else {

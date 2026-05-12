@@ -1409,6 +1409,18 @@
           </div>
           
           <div class="card-content">
+            <!-- Tool Selector for Chapter 11 -->
+            <div class="horizontal-toolbar">
+              <span class="tool-caption">使用するツール：</span>
+              <div class="tool-selector" autocomplete="off">
+                <input type="radio" name="tool-material" id="tool-mat-ref" value="ref" class="tool-radio" checked>
+                <label for="tool-mat-ref" class="tool-label"><i data-lucide="crosshair"></i> 背景(基準)を選択</label>
+
+                <input type="radio" name="tool-material" id="tool-mat-target" value="target" class="tool-radio">
+                <label for="tool-mat-target" class="tool-label"><i data-lucide="target"></i> 測定部位を選択</label>
+              </div>
+            </div>
+
             <div id="chapter-material-isolation">
               <!-- Grid Container -->
               <div id="material-canvases-fix">

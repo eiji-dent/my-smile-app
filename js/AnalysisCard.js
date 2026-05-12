@@ -1008,6 +1008,22 @@ class BaseAnalysisCard {
     return { realX, realY, mouseX: mX, mouseY: mY, scale, xOffset: xO, yOffset: yO };
   }
 
+  sampleColorAt(x, y) {
+      if (!this.currentImage) return { r: 255, g: 255, b: 255 };
+      if (!BaseAnalysisCard.sampleCanvas) {
+          BaseAnalysisCard.sampleCanvas = document.createElement('canvas');
+          BaseAnalysisCard.sampleCanvas.width = 1;
+          BaseAnalysisCard.sampleCanvas.height = 1;
+          BaseAnalysisCard.sampleCtx = BaseAnalysisCard.sampleCanvas.getContext('2d', { willReadFrequently: true });
+      }
+      const sx = Math.max(0, Math.min(Math.round(x), this.currentImage.width - 1));
+      const sy = Math.max(0, Math.min(Math.round(y), this.currentImage.height - 1));
+      BaseAnalysisCard.sampleCtx.clearRect(0, 0, 1, 1);
+      BaseAnalysisCard.sampleCtx.drawImage(this.currentImage, sx, sy, 1, 1, 0, 0, 1, 1);
+      const data = BaseAnalysisCard.sampleCtx.getImageData(0, 0, 1, 1).data;
+      return { r: data[0], g: data[1], b: data[2] };
+  }
+
   updateMagnifier(e) {
     if(!this.loupeCanvas || !this.loupeCtx) return;
     const coords = this.getMouseCoords(e);
