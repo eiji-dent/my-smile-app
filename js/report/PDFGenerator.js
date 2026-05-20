@@ -131,7 +131,7 @@ class PDFGenerator {
                         } else {
                             pdf.addImage(imgData1, 'JPEG', margin, 15, contentWidth, h1, undefined, 'FAST');
                         }
-                        pdf.setFontSize(9); pdf.text(`Aesthetic Dentistry Analysis Tool`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+                        pdf.setFontSize(9); pdf.text(`Reprosmile`, pageWidth / 2, pageHeight - 5, { align: 'center' });
                         continue;
                     }
 
@@ -184,7 +184,7 @@ class PDFGenerator {
 
                     const hS = (canvasS.height * contentWidth) / canvasS.width;
                     pdf.addImage(canvasS.toDataURL('image/jpeg', 0.6), 'JPEG', margin, 15, contentWidth, hS, undefined, 'FAST');
-                    pdf.setFontSize(9); pdf.text(`Aesthetic Dentistry Analysis Tool`, pageWidth / 2, pageHeight - 5, { align: 'center' });
+                    pdf.setFontSize(9); pdf.text(`Reprosmile`, pageWidth / 2, pageHeight - 5, { align: 'center' });
                 }
             }
 

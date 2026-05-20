@@ -1,7 +1,7 @@
 {
-  "name": "aesthetic-dentistry-analysis-tool",
+  "name": "reprosmile",
   "version": "1.0.0",
-  "description": "Aesthetic Dentistry Analysis Tool using MediaPipe Face Mesh",
+  "description": "Reprosmile: AI Aesthetic Dentistry Analysis Tool using MediaPipe Face Mesh",
   "main": "index.html",
   "scripts": {
     "start": "serve ."
